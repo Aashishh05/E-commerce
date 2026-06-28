@@ -1,5 +1,6 @@
 import User from "../models/userModel.js";
 import bcrypt from "bcrypt";
+import { generateToken } from "../utils/jwt.js";
 
 //Register
 
@@ -32,20 +33,34 @@ export const registerUser = async (req, res) => {
       role: role || "buyer",
     });
 
+    const token = generateToken(newUser._id);
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
     return res.status(201).json({
       success: true,
       message: "User registered successfully",
-      user: {
-        id: newUser._id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
+      data: {
+        user: {
+          id: newUser._id,
+          name: newUser.name,
+          email: newUser.email,
+          role: newUser.role,
+          isVerified: newUser.isVerified,
+        },
       },
     });
   } catch (error) {
+    console.error(error);
+
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Registration failed",
     });
   }
 };
@@ -81,20 +96,32 @@ export const loginUser = async (req, res) => {
       });
     }
 
+    const token = generateToken(user._id);
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
     return res.status(200).json({
       success: true,
       message: "Login successful",
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
+      data: {
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
       },
     });
   } catch (error) {
+    console.error(error);
+
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Login failed",
     });
   }
 };
@@ -103,14 +130,22 @@ export const loginUser = async (req, res) => {
 
 export const logout = async (req, res) => {
   try {
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
     return res.status(200).json({
       success: true,
       message: "Logout successful",
     });
   } catch (error) {
+    console.error(error);
+
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Logout failed",
     });
   }
 };
@@ -130,12 +165,16 @@ export const getUser = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      user,
+      data: {
+        user,
+      },
     });
   } catch (error) {
+    console.error(error);
+
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Failed to fetch user",
     });
   }
 };
@@ -169,12 +208,16 @@ export const updateProfile = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Profile updated successfully",
-      user,
+      data: {
+        user,
+      },
     });
   } catch (error) {
+    console.error(error);
+
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Failed to update profile",
     });
   }
 };
