@@ -1,3 +1,5 @@
+import mainRoutes from "./routes/mainRoutes.js";
+
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -6,8 +8,9 @@ import ConnectDB from "./config/db.js";
 
 ConnectDB();
 const app = express();
-
 app.use(express.json());
+
+app.use("/api", mainRoutes);
 
 app.get("/", (req, res) => {
   res.json("API is running.....");
