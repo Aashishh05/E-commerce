@@ -11,6 +11,10 @@ const cartSchema = new mongoose.Schema(
 
     items: [
       {
+        name: {
+          type: String,
+          required: [true, "product name is required"],
+        },
         product: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Product",
@@ -27,6 +31,9 @@ const cartSchema = new mongoose.Schema(
         price: {
           type: Number,
           required: true,
+        },
+        image: {
+          type: String,
         },
       },
     ],
