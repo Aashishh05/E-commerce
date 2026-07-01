@@ -5,10 +5,10 @@ import {
   logout,
   registerUser,
   updateProfile,
-} from "../controller/authController";
-import { protect } from "../middleware/authMiddleware";
+} from "../controller/authController.js";
+import { protect } from "../middleware/authMiddleware.js";
 import { body } from "express-validator";
-import { validate } from "../middleware/validate";
+import { validate } from "../middleware/validate.js";
 
 const router = express.Router();
 
