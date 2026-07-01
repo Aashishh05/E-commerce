@@ -24,13 +24,14 @@ const productSchema = new mongoose.Schema(
 
     description: {
       type: String,
-      required: [true, "product description is required"],
+      required: [true, "Product description is required"],
       maxlength: 2000,
     },
+
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
-      required: [true, "product category is required"],
+      required: [true, "Product category is required"],
     },
 
     subCategory: {
@@ -45,13 +46,13 @@ const productSchema = new mongoose.Schema(
 
     price: {
       type: Number,
-      required: [true, "product price is required"],
+      required: [true, "Product price is required"],
       min: 0,
     },
 
     stock: {
       type: Number,
-      required: [true, "stock quantity is required"],
+      required: [true, "Stock quantity is required"],
       default: 0,
       min: 0,
     },
@@ -88,21 +89,23 @@ const productSchema = new mongoose.Schema(
       },
     ],
 
-    rating: {
+    averageRating: {
       type: Number,
       default: 0,
       min: 0,
       max: 5,
     },
 
-    totalReviews: {
+    numReviews: {
       type: Number,
       default: 0,
+      min: 0,
     },
 
     sold: {
       type: Number,
       default: 0,
+      min: 0,
     },
 
     isFeatured: {
@@ -130,8 +133,18 @@ productSchema.pre("save", function (next) {
       .replace(/\s+/g, "-")
       .replace(/-+/g, "-");
   }
+
   next();
 });
+
+productSchema.index({ seller: 1 });
+productSchema.index({ category: 1 });
+productSchema.index({ subCategory: 1 });
+productSchema.index({ status: 1 });
+productSchema.index({ isFeatured: 1 });
+productSchema.index({ averageRating: -1 });
+productSchema.index({ sold: -1 });
+productSchema.index({ createdAt: -1 });
 
 const Product = mongoose.model("Product", productSchema);
 
