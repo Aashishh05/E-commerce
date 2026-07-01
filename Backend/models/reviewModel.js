@@ -15,6 +15,11 @@ const reviewSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    seller: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Seller",
+      required: true,
+    },
 
     order: {
       type: mongoose.Schema.Types.ObjectId,
