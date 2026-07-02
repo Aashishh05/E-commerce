@@ -1,12 +1,13 @@
 import express from "express";
 import {
+  cancelOrder,
   createOrder,
   getMyOrders,
   getOrderById,
   getSellerOrders,
   updateOrderStatus,
-} from "../controller/orderController";
-import { protect, authorize } from "../middleware/authMiddleware";
+} from "../controller/orderController.js";
+import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 

@@ -5,8 +5,8 @@ import {
   getAllProducts,
   getProductById,
   updateProduct,
-} from "../controller/productController";
-import { authorize, protect } from "../middleware/authMiddleware";
+} from "../controller/productController.js";
+import { authorize, protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 

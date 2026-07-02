@@ -144,9 +144,7 @@ orderSchema.pre("save", function (next) {
   next();
 });
 
-orderSchema.index({ buyer: 1 });
 orderSchema.index({ "orderItems.sellerId": 1 });
-orderSchema.index({ status: 1 });
 orderSchema.index({ createdAt: -1 });
 
 const Order = mongoose.model("Order", orderSchema);

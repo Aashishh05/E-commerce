@@ -71,7 +71,6 @@ const sellerSchema = new mongoose.Schema(
   },
 );
 
-sellerSchema.index({ user: 1 });
 sellerSchema.index({ verificationStatus: 1 });
 
 const Seller = mongoose.model("Seller", sellerSchema);
