@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import slugify from "slugify";
 
 const categorySchema = new mongoose.Schema(
   {
@@ -41,8 +42,6 @@ categorySchema.pre("save", function (next) {
       trim: true,
     });
   }
-
-  next();
 });
 
 const Category = mongoose.model("Category", categorySchema);
