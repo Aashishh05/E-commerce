@@ -5,10 +5,12 @@ dotenv.config();
 
 import express from "express";
 import ConnectDB from "./config/db.js";
+import cookieParser from "cookie-parser";
 
 ConnectDB();
 const app = express();
 app.use(express.json());
+app.use(cookieParser());
 
 app.use("/api", mainRoutes);
 
