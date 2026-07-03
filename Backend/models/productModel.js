@@ -133,8 +133,6 @@ productSchema.pre("save", function (next) {
       .replace(/\s+/g, "-")
       .replace(/-+/g, "-");
   }
-
-  next();
 });
 
 productSchema.index({ seller: 1 });

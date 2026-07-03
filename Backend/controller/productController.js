@@ -1,14 +1,11 @@
 import Product from "../models/productModel.js";
-import Seller from "../models/sellerModel.js";
 
 export const createProduct = async (req, res) => {
   try {
-    const seller = await Seller.findOne({ userId: req.user._id });
-
-    if (!seller) {
-      return res.status(404).json({
+    if (req.user.role !== "seller") {
+      return res.status(403).json({
         success: false,
-        message: "Seller profile not found",
+        message: "Only sellers can create products",
       });
     }
 
@@ -32,7 +29,7 @@ export const createProduct = async (req, res) => {
     }
 
     const product = await Product.create({
-      seller: seller._id,
+      seller: req.user._id,
       name,
       description,
       category,
@@ -66,7 +63,7 @@ export const getAllProducts = async (req, res) => {
 
     const { search, category, minPrice, maxPrice, tag } = req.query;
 
-    let query = {};
+    const query = {};
 
     if (search) {
       query.$or = [
@@ -88,9 +85,9 @@ export const getAllProducts = async (req, res) => {
       .populate("seller", "name email")
       .populate("category", "name")
       .populate("subCategory", "name")
+      .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit)
-      .sort({ createdAt: -1 });
+      .limit(limit);
 
     const total = await Product.countDocuments(query);
 
@@ -143,24 +140,22 @@ export const getProductById = async (req, res) => {
 
 export const updateProduct = async (req, res) => {
   try {
-    const seller = await Seller.findOne({ userId: req.user._id });
-
-    if (!seller) {
-      return res.status(404).json({
+    if (req.user.role !== "seller") {
+      return res.status(403).json({
         success: false,
-        message: "Seller profile not found",
+        message: "Only sellers can update products",
       });
     }
 
     const product = await Product.findOne({
       _id: req.params.id,
-      seller: seller._id,
+      seller: req.user._id,
     });
 
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: "Product not found",
+        message: "Product not found or you are not the owner",
       });
     }
 
@@ -212,24 +207,22 @@ export const updateProduct = async (req, res) => {
 
 export const deleteProduct = async (req, res) => {
   try {
-    const seller = await Seller.findOne({ userId: req.user._id });
-
-    if (!seller) {
-      return res.status(404).json({
+    if (req.user.role !== "seller") {
+      return res.status(403).json({
         success: false,
-        message: "Seller profile not found",
+        message: "Only sellers can delete products",
       });
     }
 
     const product = await Product.findOne({
       _id: req.params.id,
-      seller: seller._id,
+      seller: req.user._id,
     });
 
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: "Product not found",
+        message: "Product not found or you are not the owner",
       });
     }
 
