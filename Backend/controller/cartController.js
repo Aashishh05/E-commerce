@@ -1,6 +1,18 @@
 import Cart from "../models/cartModel.js";
 import Product from "../models/productModel.js";
 
+// Check buyer role
+const checkBuyer = (req, res) => {
+  if (req.user.role !== "buyer") {
+    res.status(403).json({
+      success: false,
+      message: "Only buyers can access the cart",
+    });
+    return false;
+  }
+  return true;
+};
+
 // Recalculate cart totals
 const recalculateCart = (cart) => {
   let totalItems = 0;
@@ -16,9 +28,10 @@ const recalculateCart = (cart) => {
 };
 
 // Add to Cart
-
 export const addToCart = async (req, res) => {
   try {
+    if (!checkBuyer(req, res)) return;
+
     const { product, quantity = 1 } = req.body;
 
     if (quantity < 1) {
@@ -37,7 +50,7 @@ export const addToCart = async (req, res) => {
       });
     }
 
-    if (prod.status !== "active") {
+    if (prod.status !== "Active") {
       return res.status(400).json({
         success: false,
         message: "Product is not available",
@@ -76,7 +89,7 @@ export const addToCart = async (req, res) => {
       name: prod.name,
       quantity,
       price: prod.price,
-      image: Array.isArray(prod.images) ? prod.images[0] : prod.images || "",
+      image: prod.images.length ? prod.images[0].url : "",
     });
 
     recalculateCart(cart);
@@ -97,9 +110,10 @@ export const addToCart = async (req, res) => {
 };
 
 // Get Cart
-
 export const getCart = async (req, res) => {
   try {
+    if (!checkBuyer(req, res)) return;
+
     let cart = await Cart.findOne({ user: req.user._id }).populate(
       "items.product",
     );
@@ -126,9 +140,10 @@ export const getCart = async (req, res) => {
 };
 
 // Update Cart Item
-
 export const updateCartItem = async (req, res) => {
   try {
+    if (!checkBuyer(req, res)) return;
+
     const { product, quantity } = req.body;
 
     if (quantity < 1) {
@@ -191,11 +206,11 @@ export const updateCartItem = async (req, res) => {
   }
 };
 
-// Remove Item from Cart
-
 export const removeFromCart = async (req, res) => {
   try {
-    const { product } = req.params;
+    if (!checkBuyer(req, res)) return;
+
+    const productId = String(req.params.id);
 
     const cart = await Cart.findOne({ user: req.user._id });
 
@@ -209,7 +224,7 @@ export const removeFromCart = async (req, res) => {
     const originalLength = cart.items.length;
 
     cart.items = cart.items.filter(
-      (item) => item.product.toString() !== product,
+      (item) => String(item.product) !== productId
     );
 
     if (cart.items.length === originalLength) {
@@ -219,13 +234,14 @@ export const removeFromCart = async (req, res) => {
       });
     }
 
-    recalculateCart(cart);
+    cart.totalItems = cart.items.reduce((a, i) => a + i.quantity, 0);
+    cart.totalPrice = cart.items.reduce((a, i) => a + i.quantity * i.price, 0);
 
     await cart.save();
 
     res.status(200).json({
       success: true,
-      message: "Item removed from cart successfully",
+      message: "Product removed from cart successfully",
       data: cart,
     });
   } catch (error) {
@@ -235,12 +251,14 @@ export const removeFromCart = async (req, res) => {
     });
   }
 };
-
 // Clear Cart
-
-export const clearCart = async (req, res) => {
+export const deleteCart = async (req, res) => {
   try {
-    const cart = await Cart.findOne({ user: req.user._id });
+    if (!checkBuyer(req, res)) return;
+
+    const cart = await Cart.findOneAndDelete({
+      user: req.user._id,
+    });
 
     if (!cart) {
       return res.status(404).json({
@@ -249,16 +267,9 @@ export const clearCart = async (req, res) => {
       });
     }
 
-    cart.items = [];
-    cart.totalItems = 0;
-    cart.totalPrice = 0;
-
-    await cart.save();
-
     res.status(200).json({
       success: true,
-      message: "Cart cleared successfully",
-      data: cart,
+      message: "Cart deleted successfully",
     });
   } catch (error) {
     res.status(500).json({

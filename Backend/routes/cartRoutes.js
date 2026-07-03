@@ -1,7 +1,7 @@
 import express from "express";
 import {
   addToCart,
-  clearCart,
+  deleteCart,
   getCart,
   removeFromCart,
   updateCartItem,
@@ -14,6 +14,6 @@ router.post("/add", protect, authorize("buyer"), addToCart);
 router.get("/get", protect, authorize("buyer"), getCart);
 router.put("/update/:id", protect, authorize("buyer"), updateCartItem);
 router.delete("/remove/:id", protect, authorize("buyer"), removeFromCart);
-router.delete("/clear", protect, authorize("buyer"), clearCart);
+router.delete("/clear", protect, authorize("buyer"), deleteCart);
 
 export default router;
