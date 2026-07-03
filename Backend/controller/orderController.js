@@ -22,48 +22,7 @@ export const createOrder = async (req, res) => {
       shippingPrice = 0,
     } = req.body;
 
-    const cart = await Cart.findOne({ user: req.user._id }).populate(
-      "items.product",
-    );
-
-    if (!cart || cart.items.length === 0) {
-      return res.status(400).json({ success: false, message: "Cart is empty" });
-    }
-
-    let orderItems = [];
-    let totalAmount = shippingPrice;
-
-    for (const items of cart.items) {
-      const product = await Product.findById(items.product._id);
-
-      if (!product) {
-        return res.status(404).json({
-          success: false,
-          message: `${items.name} no longer exists`,
-        });
-      }
-
-      if (product.stock < items.quantity) {
-        return res
-          .status(400)
-          .json({ success: false, message: `${product.name} is out of stock` });
-      }
-
-      product.stock -= items.quantity;
-      await product.save();
-
-      orderItems.push({
-        product: product._id,
-        sellerId: product.seller,
-        name: product.name,
-        image: product.images,
-        price: product.price,
-        quantity: items.quantity,
-      });
-
-      totalAmount += product.price * items.quantity;
-    }
-
+    // Validate shipping address
     if (
       !shippingAddress ||
       !shippingAddress.address ||
@@ -76,15 +35,76 @@ export const createOrder = async (req, res) => {
       });
     }
 
+    // Get user's cart
+    const cart = await Cart.findOne({ user: req.user._id }).populate(
+      "items.product",
+    );
+    if (!cart || cart.items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Cart is empty",
+      });
+    }
+
+    let orderItems = [];
+    let totalAmount = Number(shippingPrice);
+
+    // Validate stock & prepare order items
+    for (const item of cart.items) {
+      const product = item.product;
+
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: "One or more products no longer exist",
+        });
+      }
+
+      if (product.status !== "Active") {
+        return res.status(400).json({
+          success: false,
+          message: `${product.name} is not available`,
+        });
+      }
+
+      if (product.stock < item.quantity) {
+        return res.status(400).json({
+          success: false,
+          message: `${product.name} is out of stock`,
+        });
+      }
+
+      // Reduce stock
+      product.stock -= item.quantity;
+
+      // Increase sold count
+      product.sold += item.quantity;
+
+      await product.save();
+
+      orderItems.push({
+        product: product._id,
+        sellerId: product.seller,
+        name: product.name,
+        image: product.images,
+        price: product.price,
+        quantity: item.quantity,
+      });
+
+      totalAmount += product.price * item.quantity;
+    }
+
+    // Create order
     const order = await Order.create({
       buyer: req.user._id,
       orderItems,
       shippingAddress,
-      shippingPrice,
       paymentMethod,
+      shippingPrice,
       totalAmount,
     });
 
+    // Clear cart
     cart.items = [];
     cart.totalItems = 0;
     cart.totalPrice = 0;
@@ -103,7 +123,6 @@ export const createOrder = async (req, res) => {
     });
   }
 };
-
 // get my orders
 
 export const getMyOrders = async (req, res) => {

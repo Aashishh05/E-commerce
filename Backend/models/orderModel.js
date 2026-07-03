@@ -141,7 +141,6 @@ orderSchema.pre("save", function (next) {
     const random = Math.random().toString(36).substring(2, 7);
     this.orderId = `ORD-${timestamp}-${random}`.toUpperCase();
   }
-  next();
 });
 
 orderSchema.index({ "orderItems.sellerId": 1 });
