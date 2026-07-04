@@ -334,3 +334,123 @@ export const blockSeller = async (req, res) => {
     });
   }
 };
+
+// get all products
+
+import Product from "../models/productModel.js";
+import Review from "../models/reviewModel.js";
+import Cart from "../models/cartModel.js";
+
+/*
+========================================
+ADMIN - GET ALL PRODUCTS
+GET /api/admin/products
+========================================
+*/
+
+export const getAllProducts = async (req, res) => {
+  try {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+
+    const search = req.query.search || "";
+    const category = req.query.category;
+    const seller = req.query.seller;
+    const status = req.query.status;
+
+    const query = {};
+
+    if (search) {
+      query.name = {
+        $regex: search,
+        $options: "i",
+      };
+    }
+
+    if (category) {
+      query.category = category;
+    }
+
+    if (seller) {
+      query.seller = seller;
+    }
+
+    if (status) {
+      query.status = status;
+    }
+
+    const totalProducts = await Product.countDocuments(query);
+
+    const products = await Product.find(query)
+      .populate({
+        path: "seller",
+        select: "shopName verificationStatus isVerified",
+      })
+      .populate({
+        path: "category",
+        select: "name",
+      })
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      totalProducts,
+      currentPage: page,
+      totalPages: Math.ceil(totalProducts / limit),
+      data: products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// delete product
+
+export const deleteProduct = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.productId);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    // Delete all reviews of this product
+    await Review.deleteMany({
+      product: product._id,
+    });
+
+    // Remove product from all carts
+    await Cart.updateMany(
+      {},
+      {
+        $pull: {
+          items: {
+            product: product._id,
+          },
+        },
+      },
+    );
+
+    // Delete the product
+    await Product.findByIdAndDelete(product._id);
+
+    res.status(200).json({
+      success: true,
+      message: "Product deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
