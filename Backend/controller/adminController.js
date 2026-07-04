@@ -554,17 +554,6 @@ export const getOrderById = async (req, res) => {
 
 // dashboard stats
 
-import User from "../models/userModel.js";
-import Seller from "../models/sellerModel.js";
-import Product from "../models/productModel.js";
-import Order from "../models/orderModel.js";
-
-/*
-========================================
-ADMIN - DASHBOARD STATS
-GET /api/admin/dashboard
-========================================
-*/
 
 export const getDashboardStats = async (req, res) => {
   try {
