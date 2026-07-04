@@ -454,3 +454,99 @@ export const deleteProduct = async (req, res) => {
     });
   }
 };
+
+// get all orders
+
+export const getAllOrders = async (req, res) => {
+  try {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+
+    const status = req.query.status;
+    const paymentStatus = req.query.paymentStatus;
+    const buyer = req.query.buyer;
+
+    const query = {};
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (paymentStatus) {
+      query.paymentStatus = paymentStatus;
+    }
+
+    if (buyer) {
+      query.buyer = buyer;
+    }
+
+    const totalOrders = await Order.countDocuments(query);
+
+    const orders = await Order.find(query)
+      .populate({
+        path: "buyer",
+        select: "name email",
+      })
+      .populate({
+        path: "orderItems.product",
+        select: "name price images",
+      })
+      .populate({
+        path: "orderItems.sellerId",
+        select: "shopName",
+      })
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    res.status(200).json({
+      success: true,
+      count: orders.length,
+      totalOrders,
+      currentPage: page,
+      totalPages: Math.ceil(totalOrders / limit),
+      data: orders,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// get order by id
+export const getOrderById = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.orderId)
+      .populate({
+        path: "buyer",
+        select: "name email phone address",
+      })
+      .populate({
+        path: "orderItems.product",
+        select: "name price images description",
+      })
+      .populate({
+        path: "orderItems.sellerId",
+        select: "shopName",
+      });x
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: order,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
