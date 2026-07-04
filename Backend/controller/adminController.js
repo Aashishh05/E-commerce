@@ -530,7 +530,8 @@ export const getOrderById = async (req, res) => {
       .populate({
         path: "orderItems.sellerId",
         select: "shopName",
-      });x
+      });
+    x;
 
     if (!order) {
       return res.status(404).json({
@@ -542,6 +543,89 @@ export const getOrderById = async (req, res) => {
     res.status(200).json({
       success: true,
       data: order,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// dashboard stats
+
+import User from "../models/userModel.js";
+import Seller from "../models/sellerModel.js";
+import Product from "../models/productModel.js";
+import Order from "../models/orderModel.js";
+
+/*
+========================================
+ADMIN - DASHBOARD STATS
+GET /api/admin/dashboard
+========================================
+*/
+
+export const getDashboardStats = async (req, res) => {
+  try {
+    // USERS
+    const totalUsers = await User.countDocuments({ role: "buyer" });
+
+    // SELLERS
+    const totalSellers = await Seller.countDocuments();
+    const pendingSellers = await Seller.countDocuments({
+      verificationStatus: "pending",
+    });
+
+    // PRODUCTS
+    const totalProducts = await Product.countDocuments();
+
+    // ORDERS
+    const totalOrders = await Order.countDocuments();
+
+    // REVENUE (only delivered orders)
+    const revenueData = await Order.aggregate([
+      {
+        $match: { status: "delivered" },
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: "$totalAmount" },
+        },
+      },
+    ]);
+
+    const totalRevenue =
+      revenueData.length > 0 ? revenueData[0].totalRevenue : 0;
+
+    // ORDER STATUS BREAKDOWN
+    const orderStatusStats = await Order.aggregate([
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // format status into object
+    const statusSummary = {};
+    orderStatusStats.forEach((item) => {
+      statusSummary[item._id] = item.count;
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalUsers,
+        totalSellers,
+        pendingSellers,
+        totalProducts,
+        totalOrders,
+        totalRevenue,
+        orderStatus: statusSummary,
+      },
     });
   } catch (error) {
     res.status(500).json({
