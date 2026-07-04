@@ -3,7 +3,7 @@ import Review from "../models/reviewModel.js";
 import User from "../models/userModel.js";
 import Cart from "../models/cartModel.js";
 import Order from "../models/orderModel.js";
-
+import Seller from "../models/sellerModel.js";
 
 // get all users
 export const getAllUsers = async (req, res) => {
@@ -65,7 +65,6 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
-
 // get user by id
 export const getUserById = async (req, res) => {
   try {
@@ -90,7 +89,6 @@ export const getUserById = async (req, res) => {
     });
   }
 };
-
 
 // togele user
 export const toggleUserStatus = async (req, res) => {
@@ -128,7 +126,6 @@ export const toggleUserStatus = async (req, res) => {
     });
   }
 };
-
 
 //Delete user
 export const deleteUser = async (req, res) => {
@@ -202,6 +199,138 @@ export const deleteUser = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message,
+    });
+  }
+};
+
+// get all seller
+
+export const getAllSellers = async (req, res) => {
+  try {
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const limit = Math.max(parseInt(req.query.limit) || 10, 1);
+
+    const skip = (page - 1) * limit;
+
+    const total = await Seller.countDocuments();
+
+    const sellers = await Seller.find()
+      .populate("user", "name email role")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.status(200).json({
+      success: true,
+      count: sellers.length,
+      total_seller: total,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      data: { sellers },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// get seller by id
+export const getSellerById = async (req, res) => {
+  try {
+    const seller = await Seller.findById(req.params.id).populate(
+      "user",
+      "name email role",
+    );
+
+    if (!seller) {
+      return res.status(404).json({
+        success: false,
+        message: "Seller not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: seller,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+//verify seller
+export const verifySeller = async (req, res) => {
+  try {
+    const { status } = req.body; // approved or rejected
+
+    if (!["approved", "rejected"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Status must be either approved or rejected",
+      });
+    }
+
+    const seller = await Seller.findById(req.params.sellerId);
+
+    if (!seller) {
+      return res.status(404).json({
+        success: false,
+        message: "Seller not found",
+      });
+    }
+
+    seller.verificationStatus = status;
+
+    await seller.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Seller ${status} successfully`,
+      data: { seller },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to verify seller",
+      error: error.message,
+    });
+  }
+};
+
+// Block / unBlock seller
+
+export const blockSeller = async (req, res) => {
+  try {
+    const seller = await Seller.findById(req.params.sellerId);
+
+    if (!seller) {
+      return res.status(404).json({
+        success: false,
+        message: "Seller not found",
+      });
+    }
+
+    seller.isBlocked = !seller.isBlocked;
+
+    await seller.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Seller ${
+        seller.isBlocked ? "blocked" : "unblocked"
+      } successfully`,
+      data: { seller },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to block seller",
+      error: error.message,
     });
   }
 };
