@@ -40,6 +40,12 @@ const userSchema = new mongoose.Schema(
       zipCode: String,
       country: String,
     },
+    otp:{
+      type:String,
+    },
+    otpExpire:{
+      type:String,
+    },
     isActive: {
       type: Boolean,
       default: true,

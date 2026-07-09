@@ -1,10 +1,13 @@
 import express from "express";
 import {
+  forgotPassword,
   getUser,
   loginUser,
   logout,
   registerUser,
+  resetPassword,
   updateProfile,
+  verifyOTP,
 } from "../controller/authController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { body } from "express-validator";
@@ -35,4 +38,7 @@ router.post("/logout", logout);
 router.get("/me", protect, getUser);
 router.put("/profile", protect, updateProfile);
 
+router.post("/verify-otp", verifyOTP);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 export default router;
