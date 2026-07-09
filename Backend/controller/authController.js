@@ -28,12 +28,12 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    let image = {};
+    let images = {};
 
     if (req.file) {
       const uploadImage = await UploadToCloudinary(req.file.path, "E-commerce");
 
-      image = {
+      images = {
         url: uploadImage.url,
         public_id: uploadImage.public_id,
         path: uploadImage.path,
@@ -46,6 +46,7 @@ export const registerUser = async (req, res) => {
     const newUser = await User.create({
       name,
       email,
+      images,
       password: hashedPassword,
       otp: generateOTP,
       otpExpire: Date.now() + 10 * 60 * 1000,
