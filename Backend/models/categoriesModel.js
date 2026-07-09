@@ -26,6 +26,7 @@ const categorySchema = new mongoose.Schema(
     image: {
       url: String,
       public_id: String,
+      path:String,
     },
 
     isActive: {
@@ -46,6 +47,7 @@ categorySchema.pre("save", function (next) {
       trim: true,
     });
   }
+  next()
 });
 
 const Category = mongoose.model("Category", categorySchema);

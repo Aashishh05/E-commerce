@@ -1,4 +1,7 @@
 import Category from "../models/categoriesModel.js";
+import UploadToCloudinary from "../utils/uploadCloudinaryImage.js";
+import deleteCloudinaryImage from "../utils/deleteCloudinaryImage.js";
+import fs from "fs";
 
 export const createCategory = async (req, res) => {
   try {
@@ -26,9 +29,26 @@ export const createCategory = async (req, res) => {
       });
     }
 
+    let image = {};
+
+    if (req.file) {
+      const uploadImage = await UploadToCloudinary(req.file.path, "E-commerce");
+
+      image = {
+        url: uploadImage.url,
+        public_id: uploadImage.public_id,
+        path: uploadImage.path,
+      };
+
+      if (fs.existsSync(req.file.path)) {
+        fs.unlink(req.file.path, () => {});
+      }
+    }
+
     const category = await Category.create({
       name: trimmedName,
       description: description?.trim(),
+      image,
     });
 
     res.status(201).json({
@@ -93,7 +113,7 @@ export const updateCategory = async (req, res) => {
   try {
     const { name, description } = req.body;
 
-    if (!name && !description) {
+    if (!name && !description && !req.file) {
       return res.status(400).json({
         success: false,
         message: "Provide at least one field to update",
@@ -135,6 +155,24 @@ export const updateCategory = async (req, res) => {
       category.description = description.trim();
     }
 
+    if (req.file) {
+      if (category.image?.public_id) {
+        await deleteCloudinaryImage(category.image.public_id);
+      }
+
+      const uploadImage = await UploadToCloudinary(req.file.path, "E-commerce");
+
+      category.image = {
+        url: uploadImage.url,
+        public_id: uploadImage.public_id,
+        path: uploadImage.path,
+      };
+
+      if (fs.existsSync(req.file.path)) {
+        fs.unlink(req.file.path, () => {});
+      }
+    }
+
     await category.save();
 
     res.status(200).json({
@@ -160,6 +198,10 @@ export const deleteCategory = async (req, res) => {
         success: false,
         message: "Category not found",
       });
+    }
+
+    if (category.image?.public_id) {
+      await deleteCloudinaryImage(category.image.public_id);
     }
 
     await category.deleteOne();
