@@ -22,7 +22,6 @@ export const createOrder = async (req, res) => {
       shippingPrice = 0,
     } = req.body;
 
-    // Validate shipping address
     if (
       !shippingAddress ||
       !shippingAddress.address ||
@@ -35,7 +34,6 @@ export const createOrder = async (req, res) => {
       });
     }
 
-    // Get user's cart
     const cart = await Cart.findOne({ user: req.user._id }).populate(
       "items.product",
     );
@@ -49,7 +47,6 @@ export const createOrder = async (req, res) => {
     let orderItems = [];
     let totalAmount = Number(shippingPrice);
 
-    // Validate stock & prepare order items
     for (const item of cart.items) {
       const product = item.product;
 
@@ -74,10 +71,7 @@ export const createOrder = async (req, res) => {
         });
       }
 
-      // Reduce stock
       product.stock -= item.quantity;
-
-      // Increase sold count
       product.sold += item.quantity;
 
       await product.save();
@@ -94,7 +88,6 @@ export const createOrder = async (req, res) => {
       totalAmount += product.price * item.quantity;
     }
 
-    // Create order
     const order = await Order.create({
       buyer: req.user._id,
       orderItems,
@@ -104,7 +97,6 @@ export const createOrder = async (req, res) => {
       totalAmount,
     });
 
-    // Clear cart
     cart.items = [];
     cart.totalItems = 0;
     cart.totalPrice = 0;
@@ -123,7 +115,6 @@ export const createOrder = async (req, res) => {
     });
   }
 };
-// get my orders
 
 export const getMyOrders = async (req, res) => {
   try {
@@ -143,8 +134,6 @@ export const getMyOrders = async (req, res) => {
     });
   }
 };
-
-// get single order
 
 export const getOrderById = async (req, res) => {
   try {
@@ -177,8 +166,6 @@ export const getOrderById = async (req, res) => {
   }
 };
 
-// cancel order
-
 export const cancelOrder = async (req, res) => {
   try {
     const { cancelReason } = req.body;
@@ -206,6 +193,7 @@ export const cancelOrder = async (req, res) => {
 
       if (product) {
         product.stock += item.quantity;
+        product.sold = Math.max(0, product.sold - item.quantity);
         await product.save();
       }
     }
@@ -224,8 +212,6 @@ export const cancelOrder = async (req, res) => {
   }
 };
 
-// Seller orders
-
 export const getSellerOrders = async (req, res) => {
   try {
     const seller = await Seller.findOne({ user: req.user._id });
@@ -241,10 +227,31 @@ export const getSellerOrders = async (req, res) => {
       "orderItems.sellerId": seller._id,
     }).sort({ createdAt: -1 });
 
+    const sellerOrders = orders.map((order) => {
+      const sellerItems = order.orderItems.filter(
+        (item) => item.sellerId.toString() === seller._id.toString(),
+      );
+
+      return {
+        _id: order._id,
+        orderId: order.orderId,
+        buyer: order.buyer,
+        shippingAddress: order.shippingAddress,
+        status: order.status,
+        paymentMethod: order.paymentMethod,
+        paymentStatus: order.paymentStatus,
+        trackingNumber: order.trackingNumber,
+        isDelivered: order.isDelivered,
+        deliveredAt: order.deliveredAt,
+        createdAt: order.createdAt,
+        orderItems: sellerItems,
+      };
+    });
+
     res.status(200).json({
       success: true,
-      count: orders.length,
-      data: orders,
+      count: sellerOrders.length,
+      data: sellerOrders,
     });
   } catch (error) {
     res.status(500).json({
@@ -253,8 +260,6 @@ export const getSellerOrders = async (req, res) => {
     });
   }
 };
-
-// order status
 
 export const updateOrderStatus = async (req, res) => {
   try {
