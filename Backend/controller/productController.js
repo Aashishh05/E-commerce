@@ -1,4 +1,5 @@
 import Product from "../models/productModel.js";
+import UploadToCloudinary from "../utils/uploadCloudinaryImage.js";
 
 export const createProduct = async (req, res) => {
   try {
@@ -28,6 +29,18 @@ export const createProduct = async (req, res) => {
       });
     }
 
+    let images = {};
+
+    if (req.file) {
+      const imageUplaod = await UploadToCloudinary(req.file.path, "E-commerce");
+
+      images = {
+        url: imageUplaod.url,
+        public_id: imageUplaod.public_id,
+        path: imageUplaod.path,
+      };
+    }
+
     const product = await Product.create({
       seller: req.user._id,
       name,
@@ -35,6 +48,7 @@ export const createProduct = async (req, res) => {
       category,
       subCategory,
       brand,
+      images,
       price,
       stock,
       specifications: specifications || {},
@@ -190,6 +204,24 @@ export const updateProduct = async (req, res) => {
     if (specifications) product.specifications = specifications;
     if (tags) product.tags = tags;
 
+    if (req.file) {
+      if (product.images?.public_id) {
+        await deleteCloudinaryImage(product.images.public_id);
+      }
+
+      if (product.images?.path && fs.existsSync(product.images.path)) {
+        fs.unlink(product.images.path);
+      }
+
+      const imageUplaod = await UploadToCloudinary(req.file.path, "E-commerce");
+
+      product.images = {
+        url: imageUplaod.url,
+        public_id: imageUplaod.public_id,
+        path: imageUplaod.path,
+      };
+    }
+
     await product.save();
 
     res.status(200).json({
@@ -204,7 +236,6 @@ export const updateProduct = async (req, res) => {
     });
   }
 };
-
 export const deleteProduct = async (req, res) => {
   try {
     if (req.user.role !== "seller") {
@@ -224,6 +255,14 @@ export const deleteProduct = async (req, res) => {
         success: false,
         message: "Product not found or you are not the owner",
       });
+    }
+
+    if (product.images?.public_id) {
+      await deleteCloudinaryImage(product.images.public_id);
+    }
+
+    if (product.images?.path && fs.existsSync(product.images.path)) {
+      fs.unlink(product.images.path);
     }
 
     await product.deleteOne();
