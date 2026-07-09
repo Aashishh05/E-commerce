@@ -1,19 +1,19 @@
 import Cart from "../models/cartModel.js";
 import Product from "../models/productModel.js";
 
-// Check buyer role
-const checkBuyer = (req, res) => {
+// Helper: Check buyer role and handle responses cleanly
+const isNotBuyer = (req, res) => {
   if (req.user.role !== "buyer") {
     res.status(403).json({
       success: false,
       message: "Only buyers can access the cart",
     });
-    return false;
+    return true; // Yes, it is NOT a buyer (block execution)
   }
-  return true;
+  return false; // No, it's fine (continue execution)
 };
 
-// Recalculate cart totals
+// Helper: Recalculate cart totals dynamically
 const recalculateCart = (cart) => {
   let totalItems = 0;
   let totalPrice = 0;
@@ -30,7 +30,7 @@ const recalculateCart = (cart) => {
 // Add to Cart
 export const addToCart = async (req, res) => {
   try {
-    if (!checkBuyer(req, res)) return;
+    if (isNotBuyer(req, res)) return;
 
     const { product, quantity = 1 } = req.body;
 
@@ -80,20 +80,24 @@ export const addToCart = async (req, res) => {
     if (existingItem) {
       return res.status(400).json({
         success: false,
-        message: "Product already exists in cart",
+        message: "Product already exists in cart. Use update instead.",
       });
     }
 
+    // Map the product object properties directly to match your Cart Schema
     cart.items.push({
       product: prod._id,
       name: prod.name,
       quantity,
       price: prod.price,
-      image: prod.images.length ? prod.images[0].url : "",
+      image: {
+        url: prod.images?.url || "",
+        public_id: prod.images?.public_id || "",
+        path: prod.images?.path || "",
+      },
     });
 
     recalculateCart(cart);
-
     await cart.save();
 
     res.status(201).json({
@@ -112,7 +116,7 @@ export const addToCart = async (req, res) => {
 // Get Cart
 export const getCart = async (req, res) => {
   try {
-    if (!checkBuyer(req, res)) return;
+    if (isNotBuyer(req, res)) return;
 
     let cart = await Cart.findOne({ user: req.user._id }).populate(
       "items.product",
@@ -139,10 +143,10 @@ export const getCart = async (req, res) => {
   }
 };
 
-// Update Cart Item
+// Update Cart Item Quantity
 export const updateCartItem = async (req, res) => {
   try {
-    if (!checkBuyer(req, res)) return;
+    if (isNotBuyer(req, res)) return;
 
     const { product, quantity } = req.body;
 
@@ -190,7 +194,6 @@ export const updateCartItem = async (req, res) => {
     item.quantity = quantity;
 
     recalculateCart(cart);
-
     await cart.save();
 
     res.status(200).json({
@@ -206,12 +209,12 @@ export const updateCartItem = async (req, res) => {
   }
 };
 
+// Remove Item from Cart
 export const removeFromCart = async (req, res) => {
   try {
-    if (!checkBuyer(req, res)) return;
+    if (isNotBuyer(req, res)) return;
 
     const productId = String(req.params.id);
-
     const cart = await Cart.findOne({ user: req.user._id });
 
     if (!cart) {
@@ -224,7 +227,7 @@ export const removeFromCart = async (req, res) => {
     const originalLength = cart.items.length;
 
     cart.items = cart.items.filter(
-      (item) => String(item.product) !== productId
+      (item) => String(item.product) !== productId,
     );
 
     if (cart.items.length === originalLength) {
@@ -234,9 +237,7 @@ export const removeFromCart = async (req, res) => {
       });
     }
 
-    cart.totalItems = cart.items.reduce((a, i) => a + i.quantity, 0);
-    cart.totalPrice = cart.items.reduce((a, i) => a + i.quantity * i.price, 0);
-
+    recalculateCart(cart);
     await cart.save();
 
     res.status(200).json({
@@ -251,10 +252,11 @@ export const removeFromCart = async (req, res) => {
     });
   }
 };
-// Clear Cart
+
+// Delete / Clear Whole Cart
 export const deleteCart = async (req, res) => {
   try {
-    if (!checkBuyer(req, res)) return;
+    if (isNotBuyer(req, res)) return;
 
     const cart = await Cart.findOneAndDelete({
       user: req.user._id,
@@ -269,7 +271,7 @@ export const deleteCart = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Cart deleted successfully",
+      message: "Cart cleared successfully",
     });
   } catch (error) {
     res.status(500).json({
