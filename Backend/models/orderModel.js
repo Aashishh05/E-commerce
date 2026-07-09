@@ -20,7 +20,8 @@ const orderItemSchema = new mongoose.Schema(
     },
 
     image: {
-      type: String,
+      url: String,
+      public_id: String,
       required: true,
     },
 

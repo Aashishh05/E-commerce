@@ -38,6 +38,10 @@ const reviewSchema = new mongoose.Schema(
       trim: true,
       maxlength: 1000,
     },
+    image: {
+      url: String,
+      public_id: String,
+    },
 
     title: {
       type: String,

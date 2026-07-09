@@ -25,9 +25,9 @@ const userSchema = new mongoose.Schema(
       enum: ["admin", "seller", "buyer"],
       default: "buyer",
     },
-    image: {
-      type: String,
-      default: "",
+    images: {
+      url: String,
+      public_id: String,
     },
     phone: {
       type: String,
@@ -40,11 +40,11 @@ const userSchema = new mongoose.Schema(
       zipCode: String,
       country: String,
     },
-    otp:{
-      type:String,
+    otp: {
+      type: String,
     },
-    otpExpire:{
-      type:String,
+    otpExpire: {
+      type: String,
     },
     isActive: {
       type: Boolean,

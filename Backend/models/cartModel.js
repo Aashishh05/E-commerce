@@ -33,7 +33,8 @@ const cartSchema = new mongoose.Schema(
           required: true,
         },
         image: {
-          type: String,
+          url: String,
+          public_id: String,
         },
       },
     ],
