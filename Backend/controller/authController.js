@@ -2,12 +2,15 @@ import User from "../models/userModel.js";
 import bcrypt from "bcrypt";
 import { generateToken } from "../utils/jwt.js";
 import { transporter } from "../config/nodemailer.js";
+import UploadToCloudinary from "../utils/uploadCloudinaryImage.js";
+import deleteCloudinaryImage from "../utils/deleteCloudinaryImage.js";
+import fs from "fs";
 
 //Register
 
 export const registerUser = async (req, res) => {
   try {
-    const { name, email, password, role, otp } = req.body;
+    const { name, email, password, role } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({
@@ -25,6 +28,18 @@ export const registerUser = async (req, res) => {
       });
     }
 
+    let image = {};
+
+    if (req.file) {
+      const uploadImage = await UploadToCloudinary(req.file.path, "E-commerce");
+
+      image = {
+        url: uploadImage.url,
+        public_id: uploadImage.public_id,
+        path: uploadImage.path,
+      };
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const generateOTP = Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -32,7 +47,7 @@ export const registerUser = async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      otp,
+      otp: generateOTP,
       otpExpire: Date.now() + 10 * 60 * 1000,
       role: role || "buyer",
     });
@@ -42,7 +57,7 @@ export const registerUser = async (req, res) => {
       to: email,
       subject: "try this otp",
       text: "this is your otp",
-      html: `${otp}`,
+      html: `${generateOTP}`,
     });
 
     const token = generateToken(newUser._id);
@@ -65,6 +80,7 @@ export const registerUser = async (req, res) => {
           role: newUser.role,
           isVerified: newUser.isVerified,
         },
+        token,
       },
     });
   } catch (error) {
@@ -108,6 +124,13 @@ export const loginUser = async (req, res) => {
       });
     }
 
+    if (!user.isVerified) {
+      return res.status(403).json({
+        success: false,
+        message: "Please verify your account before logging in",
+      });
+    }
+
     const token = generateToken(user._id);
     res.cookie("token", token, {
       httpOnly: true,
@@ -126,6 +149,7 @@ export const loginUser = async (req, res) => {
           email: user.email,
           role: user.role,
         },
+        token,
       },
     });
   } catch (error) {
@@ -217,6 +241,26 @@ export const updateProfile = async (req, res) => {
       });
     }
 
+    if (req.file) {
+      if (user.images?.public_id) {
+        await deleteCloudinaryImage(user.images.public_id);
+      }
+
+      if (user.images?.path && fs.existsSync(user.images.path)) {
+        fs.unlink(user.images.path);
+      }
+
+      const uploadImage = await UploadToCloudinary(req.file.path, "E-commerce");
+
+      user.images = {
+        url: uploadImage.url,
+        public_id: uploadImage.public_id,
+        path: uploadImage.path,
+      };
+
+      await user.save();
+    }
+
     return res.status(200).json({
       success: true,
       message: "Profile updated successfully",
@@ -233,7 +277,6 @@ export const updateProfile = async (req, res) => {
     });
   }
 };
-
 
 export const verifyOTP = async (req, res) => {
   try {

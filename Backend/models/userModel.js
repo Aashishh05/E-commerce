@@ -28,6 +28,7 @@ const userSchema = new mongoose.Schema(
     images: {
       url: String,
       public_id: String,
+      path:String,
     },
     phone: {
       type: String,

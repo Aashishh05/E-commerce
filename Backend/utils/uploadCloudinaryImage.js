@@ -9,6 +9,7 @@ const UploadToCloudinary = async (filepath) => {
     return {
       url: result.secure_url,
       public_id: result.public_id,
+      path:result.path,
     };
   } catch (error) {
     throw new Error(error.message);
