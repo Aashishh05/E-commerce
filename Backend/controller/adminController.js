@@ -264,18 +264,37 @@ export const getSellerById = async (req, res) => {
 };
 
 //verify seller
+
 export const verifySeller = async (req, res) => {
   try {
-    const { status } = req.body; // approved or rejected
-    console.log(status)
-
-    if (!["approved","pending", "rejected"].includes(verificationStatus)) {
+    if (!req.body) {
       return res.status(400).json({
         success: false,
-        message: "Status must be either approved or rejected",
+        message: "Request body is missing",
       });
     }
 
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        message: "Status is required",
+      });
+    }
+
+    // Normalize input
+    const normalizedStatus = status.trim().toLowerCase();
+
+    // Validate status value
+    if (!["approved", "pending", "rejected"].includes(normalizedStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: "Status must be approved, pending, or rejected",
+      });
+    }
+
+    // Find seller
     const seller = await Seller.findById(req.params.id);
 
     if (!seller) {
@@ -285,17 +304,23 @@ export const verifySeller = async (req, res) => {
       });
     }
 
-    seller.verificationStatus = status;
+    // Update verification status
+    seller.verificationStatus = normalizedStatus;
+
+    // Update isVerified flag
+    seller.isVerified = normalizedStatus === "approved";
 
     await seller.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      message: `Seller ${status} successfully`,
-      data: { seller },
+      message: `Seller ${normalizedStatus} successfully`,
+      data: seller,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error(error);
+
+    return res.status(500).json({
       success: false,
       message: "Failed to verify seller",
       error: error.message,
@@ -337,8 +362,6 @@ export const blockSeller = async (req, res) => {
 };
 
 // get all products
-
-
 
 /*
 ========================================
@@ -552,7 +575,6 @@ export const getOrderById = async (req, res) => {
 };
 
 // dashboard stats
-
 
 export const getDashboardStats = async (req, res) => {
   try {

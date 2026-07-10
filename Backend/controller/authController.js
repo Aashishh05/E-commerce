@@ -5,12 +5,12 @@ import { transporter } from "../config/nodemailer.js";
 import UploadToCloudinary from "../utils/uploadCloudinaryImage.js";
 import deleteCloudinaryImage from "../utils/deleteCloudinaryImage.js";
 import fs from "fs";
+import Seller from "../models/sellerModel.js";
 
-//Register
-
+// Register user
 export const registerUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, shopName, specialization } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({
@@ -20,49 +20,59 @@ export const registerUser = async (req, res) => {
     }
 
     const existingUser = await User.findOne({ email });
-
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "User already exists",
+        message: "User already exists with this email",
       });
     }
 
     let images = {};
-
     if (req.file) {
-      const uploadImage = await UploadToCloudinary(req.file.path, "E-commerce");
-
+      const uploaded = await UploadToCloudinary(req.file.path, "E-commerce");
       images = {
-        url: uploadImage.url,
-        public_id: uploadImage.public_id,
-        path: uploadImage.path,
+        url: uploaded.url,
+        public_id: uploaded.public_id,
+        path: uploaded.path,
       };
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const generateOTP = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    const newUser = await User.create({
+    // Create user
+    const user = await User.create({
       name,
       email,
       images,
       password: hashedPassword,
-      otp: generateOTP,
+      otp,
       otpExpire: Date.now() + 10 * 60 * 1000,
       role: role || "buyer",
     });
 
+    // If seller, create seller profile
+    if (role === "seller") {
+      await Seller.create({
+        user: user._id,
+        shopName: shopName || `${name}'s Shop`,
+        specialization: specialization || "General",
+      });
+    }
+
     await transporter.sendMail({
       from: process.env.SMTP_SENDER,
       to: email,
-      subject: "try this otp",
-      text: "this is your otp",
-      html: `${generateOTP}`,
+      subject: "Verify your account — OTP",
+      html: `
+        <h2>Welcome to the platform!</h2>
+        <p>Your verification OTP is:</p>
+        <h1>${otp}</h1>
+        <p>This OTP is valid for 10 minutes.</p>
+      `,
     });
 
-    const token = generateToken(newUser._id);
-
+    const token = generateToken(user._id);
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -72,30 +82,29 @@ export const registerUser = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: "User registered successfully",
+      message: "Registration successful",
       data: {
         user: {
-          id: newUser._id,
-          name: newUser.name,
-          email: newUser.email,
-          role: newUser.role,
-          isVerified: newUser.isVerified,
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isVerified: user.isVerified,
         },
         token,
       },
     });
   } catch (error) {
     console.error(error);
-
     return res.status(500).json({
       success: false,
       message: "Registration failed",
+      error: error.message,
     });
   }
 };
 
-// Login
-
+// Login user
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -107,19 +116,18 @@ export const loginUser = async (req, res) => {
       });
     }
 
+    // Find user
     const user = await User.findOne({ email });
-
     if (!user) {
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Invalid email or password",
       });
     }
 
-    const checkPassword = await bcrypt.compare(password, user.password);
-
-    if (!checkPassword) {
-      return res.status(400).json({
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({
         success: false,
         message: "Invalid email or password",
       });
@@ -132,12 +140,31 @@ export const loginUser = async (req, res) => {
       });
     }
 
+    // Check if account is active
+    if (!user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: "Account has been deactivated. Contact admin.",
+      });
+    }
+
+    if (user.role === "seller") {
+      const seller = await Seller.findOne({ user: user._id });
+      if (seller && seller.verificationStatus === "blocked") {
+        return res.status(403).json({
+          success: false,
+          message: "Your seller account has been blocked. Contact admin.",
+        });
+      }
+    }
+
+    // Generate token and set cookie
     const token = generateToken(user._id);
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     return res.status(200).json({
@@ -149,28 +176,27 @@ export const loginUser = async (req, res) => {
           name: user.name,
           email: user.email,
           role: user.role,
+          isVerified: user.isVerified,
         },
         token,
       },
     });
   } catch (error) {
     console.error(error);
-
     return res.status(500).json({
       success: false,
       message: "Login failed",
+      error: error.message,
     });
   }
 };
 
-//Logout
-
+// Logout user
 export const logout = async (req, res) => {
   try {
-    res.clearCookie("token", {
+    res.cookie("token", "", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      expires: new Date(0),
     });
 
     return res.status(200).json({
@@ -179,16 +205,15 @@ export const logout = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-
     return res.status(500).json({
       success: false,
       message: "Logout failed",
+      error: error.message,
     });
   }
 };
 
-// Get user
-
+// Get current user
 export const getUser = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
@@ -202,37 +227,27 @@ export const getUser = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      data: {
-        user,
-      },
+      data: { user },
     });
   } catch (error) {
     console.error(error);
-
     return res.status(500).json({
       success: false,
       message: "Failed to fetch user",
+      error: error.message,
     });
   }
 };
 
-//Update profile
-
+// Update profile
 export const updateProfile = async (req, res) => {
   try {
     const { name, phone, address } = req.body;
 
     const user = await User.findByIdAndUpdate(
       req.user.id,
-      {
-        name,
-        phone,
-        address,
-      },
-      {
-        new: true,
-        runValidators: true,
-      },
+      { name, phone, address },
+      { new: true, runValidators: true }
     ).select("-password");
 
     if (!user) {
@@ -242,21 +257,21 @@ export const updateProfile = async (req, res) => {
       });
     }
 
+    // Handle profile image update
     if (req.file) {
       if (user.images?.public_id) {
         await deleteCloudinaryImage(user.images.public_id);
       }
 
       if (user.images?.path && fs.existsSync(user.images.path)) {
-        fs.unlink(user.images.path);
+        fs.unlinkSync(user.images.path);
       }
 
-      const uploadImage = await UploadToCloudinary(req.file.path, "E-commerce");
-
+      const uploaded = await UploadToCloudinary(req.file.path, "E-commerce");
       user.images = {
-        url: uploadImage.url,
-        public_id: uploadImage.public_id,
-        path: uploadImage.path,
+        url: uploaded.url,
+        public_id: uploaded.public_id,
+        path: uploaded.path,
       };
 
       await user.save();
@@ -265,23 +280,23 @@ export const updateProfile = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Profile updated successfully",
-      data: {
-        user,
-      },
+      data: { user },
     });
   } catch (error) {
     console.error(error);
-
     return res.status(500).json({
       success: false,
       message: "Failed to update profile",
+      error: error.message,
     });
   }
 };
 
+// Verify OTP
 export const verifyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
+
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({
@@ -293,44 +308,50 @@ export const verifyOTP = async (req, res) => {
     if (!user.otp || !user.otpExpire) {
       return res.status(400).json({
         success: false,
-        message: "No OTP found. Please request a new OTP.",
+        message: "No OTP found. Please request a new one.",
       });
     }
 
     if (Date.now() > user.otpExpire) {
       return res.status(400).json({
         success: false,
-        message: "OTP has expired.",
+        message: "OTP has expired. Please request a new one.",
       });
     }
 
     if (user.otp !== otp) {
       return res.status(400).json({
         success: false,
-        message: "Invalid OTP.",
+        message: "Invalid OTP",
       });
     }
 
+    // Mark user as verified and clear OTP
+    user.isVerified = true;
+    user.otp = null;
+    user.otpExpire = null;
+    await user.save();
+
     return res.status(200).json({
       success: true,
-      message: "OTP verified successfully.",
+      message: "OTP verified successfully",
     });
   } catch (error) {
-    console.log(error);
-
+    console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Internal Server Error",
+      message: "OTP verification failed",
+      error: error.message,
     });
   }
 };
 
+// Forgot password
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
     const user = await User.findOne({ email });
-
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -338,14 +359,15 @@ export const forgotPassword = async (req, res) => {
       });
     }
 
+    // Generate and save OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
     user.otp = otp;
     user.otpExpire = Date.now() + 10 * 60 * 1000;
-
     await user.save();
 
+    // Send OTP email
     await transporter.sendMail({
+      from: process.env.SMTP_SENDER,
       to: user.email,
       subject: "Password Reset OTP",
       html: `
@@ -358,18 +380,19 @@ export const forgotPassword = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "OTP sent successfully.",
+      message: "OTP sent to your email",
     });
   } catch (error) {
-    console.log(error);
-
+    console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Internal Server Error",
+      message: "Failed to send OTP",
+      error: error.message,
     });
   }
 };
 
+// Reset password
 export const resetPassword = async (req, res) => {
   try {
     const { email, otp, password } = req.body;
@@ -377,48 +400,37 @@ export const resetPassword = async (req, res) => {
     if (!email || !otp || !password) {
       return res.status(400).json({
         success: false,
-        message: "Email, OTP and password are required",
+        message: "Email, OTP and new password are required",
       });
     }
 
     const user = await User.findOne({ email });
-
     if (!user) {
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
-    // Check if OTP exists
+
+    // Check OTP expiry first, then validate
+    if (Date.now() > user.otpExpire) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP has expired. Please request a new one.",
+      });
+    }
+
     if (String(user.otp) !== String(otp)) {
       return res.status(400).json({
         success: false,
         message: "Invalid OTP",
       });
     }
-    // Check OTP expiry
-    if (user.otpExpire < Date.now()) {
-      return res.status(400).json({
-        success: false,
-        message: "OTP has expired. Please request a new OTP",
-      });
-    }
 
-    // Verify OTP
-    if (user.otp !== otp) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid OTP",
-      });
-    }
-
-    // Hash new password
+    // Hash new password and clear OTP
     user.password = await bcrypt.hash(password, 10);
-
-    // Clear OTP after successful reset
     user.otp = null;
     user.otpExpire = null;
-
     await user.save();
 
     return res.status(200).json({
@@ -426,11 +438,11 @@ export const resetPassword = async (req, res) => {
       message: "Password reset successfully",
     });
   } catch (error) {
-    console.log(error);
-
+    console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Internal Server Error",
+      message: "Password reset failed",
+      error: error.message,
     });
   }
 };
