@@ -341,18 +341,24 @@ export const blockSeller = async (req, res) => {
       });
     }
 
-    seller.isBlocked = !seller.isBlocked;
+    if (seller.verificationStatus === "blocked") {
+      seller.verificationStatus = "approved";
+    } else {
+      seller.verificationStatus = "blocked";
+    }
 
     await seller.save();
 
     res.status(200).json({
       success: true,
       message: `Seller ${
-        seller.isBlocked ? "blocked" : "unblocked"
+        seller.verificationStatus === "blocked" ? "blocked" : "unblocked"
       } successfully`,
       data: { seller },
     });
   } catch (error) {
+    console.log(error);
+
     res.status(500).json({
       success: false,
       message: "Failed to block seller",
@@ -360,7 +366,6 @@ export const blockSeller = async (req, res) => {
     });
   }
 };
-
 // get all products
 
 /*
