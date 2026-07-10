@@ -4,6 +4,7 @@ import User from "../models/userModel.js";
 import Cart from "../models/cartModel.js";
 import Order from "../models/orderModel.js";
 import Seller from "../models/sellerModel.js";
+import mongoose from "mongoose";
 
 // get all users
 export const getAllUsers = async (req, res) => {

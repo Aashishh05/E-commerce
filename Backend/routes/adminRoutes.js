@@ -31,8 +31,8 @@ router.get("/dashboard", getDashboardStats);
 
 router.get("/users", getAllUsers);
 router.get("/users/:id", getUserById);
-router.put("/users/:id/status", toggleUserStatus);
-router.delete("/users/:id", deleteUser);
+router.put("/toggle-user/:id", toggleUserStatus);
+router.delete("/delete-user/:id", deleteUser);
 
 //   Seller Management
 
