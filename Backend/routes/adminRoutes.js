@@ -39,7 +39,7 @@ router.delete("/users/:id", deleteUser);
 router.get("/sellers", getAllSellers);
 router.get("/sellers/:id", getSellerById);
 router.put("/sellers/:id", verifySeller);
-router.put("/sellers/:sellerId/block", blockSeller);
+router.put("/block-seller/:id", blockSeller);
 
 //   Product Management
 

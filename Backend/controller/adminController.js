@@ -332,7 +332,7 @@ export const verifySeller = async (req, res) => {
 
 export const blockSeller = async (req, res) => {
   try {
-    const seller = await Seller.findById(req.params.sellerId);
+    const seller = await Seller.findById(req.params.id);
 
     if (!seller) {
       return res.status(404).json({
