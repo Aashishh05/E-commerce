@@ -337,9 +337,7 @@ export const blockSeller = async (req, res) => {
 
 // get all products
 
-import Product from "../models/productModel.js";
-import Review from "../models/reviewModel.js";
-import Cart from "../models/cartModel.js";
+
 
 /*
 ========================================

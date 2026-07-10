@@ -20,10 +20,17 @@ const orderItemSchema = new mongoose.Schema(
     },
 
     image: {
-      url: String,
-      public_id: String,
-      path:String,
-      required: true,
+      url: {
+        type: String,
+        required: true,
+      },
+      public_id: {
+        type: String,
+        required: true,
+      },
+      path: {
+        type: String,
+      },
     },
 
     price: {
@@ -143,7 +150,7 @@ orderSchema.pre("save", function (next) {
     const random = Math.random().toString(36).substring(2, 7);
     this.orderId = `ORD-${timestamp}-${random}`.toUpperCase();
   }
-  next()
+  next();
 });
 
 orderSchema.index({ "orderItems.sellerId": 1 });

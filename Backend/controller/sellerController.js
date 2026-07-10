@@ -1,4 +1,4 @@
-import Seller from "../models/sellerModel";
+import Seller from "../models/sellerModel.js";
 
 export const createSeller = async (req, res) => {
   try {
