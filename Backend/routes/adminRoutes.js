@@ -14,18 +14,17 @@ import {
   getOrderById,
   getDashboardStats,
 } from "../controller/adminController.js";
+import { authorize, protect } from "../middleware/authMiddleware.js";
 
-import { protect } from "../middleware/auth.js";
-import { authorize } from "../middleware/role.js";
+
 
 const router = express.Router();
 
 // Protect every admin route
 
-router.use(protect);
+router.use(protect)
 router.use(authorize("admin"));
 
-Dashboard;
 router.get("/dashboard", getDashboardStats);
 
 //   User Management
@@ -39,7 +38,7 @@ router.delete("/users/:id", deleteUser);
 
 router.get("/sellers", getAllSellers);
 router.get("/sellers/:id", getSellerById);
-router.put("/sellers/:sellerId/verify", verifySeller);
+router.put("/sellers/:id", verifySeller);
 router.put("/sellers/:sellerId/block", blockSeller);
 
 //   Product Management

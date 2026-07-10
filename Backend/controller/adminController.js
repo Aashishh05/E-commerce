@@ -267,15 +267,16 @@ export const getSellerById = async (req, res) => {
 export const verifySeller = async (req, res) => {
   try {
     const { status } = req.body; // approved or rejected
+    console.log(status)
 
-    if (!["approved", "rejected"].includes(status)) {
+    if (!["approved","pending", "rejected"].includes(verificationStatus)) {
       return res.status(400).json({
         success: false,
         message: "Status must be either approved or rejected",
       });
     }
 
-    const seller = await Seller.findById(req.params.sellerId);
+    const seller = await Seller.findById(req.params.id);
 
     if (!seller) {
       return res.status(404).json({

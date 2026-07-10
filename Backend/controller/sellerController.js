@@ -19,6 +19,7 @@ export const createSeller = async (req, res) => {
       logo,
       contactNumber,
       address,
+      verificationStatus,
       specialization,
     } = req.body;
 
@@ -35,6 +36,7 @@ export const createSeller = async (req, res) => {
       description,
       contactNumber,
       address,
+      verificationStatus,
       specialization,
     });
 
