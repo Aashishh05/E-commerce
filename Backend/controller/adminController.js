@@ -545,7 +545,7 @@ export const getAllOrders = async (req, res) => {
 // get order by id
 export const getOrderById = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.orderId)
+    const order = await Order.findById(req.params.id)
       .populate({
         path: "buyer",
         select: "name email phone address",
@@ -558,7 +558,7 @@ export const getOrderById = async (req, res) => {
         path: "orderItems.sellerId",
         select: "shopName",
       });
-    x;
+    
 
     if (!order) {
       return res.status(404).json({

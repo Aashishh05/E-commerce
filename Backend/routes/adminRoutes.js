@@ -49,6 +49,6 @@ router.delete("/products/:productId", deleteProduct);
 //   Order Management
 
 router.get("/orders", getAllOrders);
-router.get("/orders/:orderId", getOrderById);
+router.get("/orders/:id", getOrderById);
 
 export default router;
