@@ -11,7 +11,10 @@ const VerifyOTP = () => {
   const inputs = useRef([]);
 
   useEffect(() => {
-    if (timer === 0) { setCanResend(true); return; }
+    if (timer === 0) {
+      setCanResend(true);
+      return;
+    }
     const t = setTimeout(() => setTimer((s) => s - 1), 1000);
     return () => clearTimeout(t);
   }, [timer]);
@@ -32,9 +35,14 @@ const VerifyOTP = () => {
 
   const handlePaste = (e) => {
     e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
     const updated = [...otp];
-    pasted.split("").forEach((char, i) => { updated[i] = char; });
+    pasted.split("").forEach((char, i) => {
+      updated[i] = char;
+    });
     setOtp(updated);
     inputs.current[Math.min(pasted.length, 5)]?.focus();
   };
@@ -68,7 +76,8 @@ const VerifyOTP = () => {
         </h2>
         <div className="w-8 h-px bg-clay mt-3 mb-5" />
         <p className="text-sm text-text-muted font-light leading-relaxed">
-          A 6-digit code has been sent to your email. Enter it below to continue.
+          A 6-digit code has been sent to your email. Enter it below to
+          continue.
         </p>
       </div>
 
