@@ -12,18 +12,17 @@ import {
 } from "react-icons/tb";
 import { FcGoogle } from "react-icons/fc";
 import * as Yup from "yup";
+import toast from "react-hot-toast";
+import API from "../../utils/axios";
 
 const registerSchema = Yup.object({
   name: Yup.string().trim().min(2, "Too short").required("Name is required"),
-
   email: Yup.string()
     .email("Enter a valid email")
     .required("Email is required"),
-
   password: Yup.string()
     .min(6, "At least 6 characters")
     .required("Password is required"),
-
   confirmPassword: Yup.string()
     .oneOf([Yup.ref("password")], "Passwords don't match")
     .required("Please confirm your password"),
@@ -32,20 +31,31 @@ const registerSchema = Yup.object({
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null)
   const navigate = useNavigate();
 
-  const handleSubmit = (values, { setSubmitting }) => {
-    console.log("Register:", values);
+  const handleSubmit = async (values, { setSubmitting }) => {
+    try {
+      const payload = {
+        name: values.name,
+        email: values.email,
+        password: values.password,
+        role: "buyer",
+      };
 
+      const res = await API.post("/api/auth/register", payload);
 
-    setTimeout(() => {
+      toast.success(res.data.message || "Registration successful! 🎉");
+
+      setTimeout(() => {
+        navigate("/verify-otp", { state: { email: values.email } });
+      }, 1000);
+    } catch (error) {
+      const message =
+        error.response?.data?.message || "Registration failed. Try again.";
+      toast.error(message);
+    } finally {
       setSubmitting(false);
-      // Navigate to email verification
-      navigate("/verify-email", { state: { email: values.email } });
-    }, 1500);
+    }
   };
 
   const containerVariants = {
@@ -275,7 +285,11 @@ const Register = () => {
                     onClick={() => setShowConfirm(!showConfirm)}
                     className="flex-shrink-0 text-[#C8D3C3] hover:text-[#A4B494] transition"
                   >
-                    {showConfirm ? <TbEyeOff size={16} /> : <TbEye size={16} />}
+                    {showConfirm ? (
+                      <TbEyeOff size={16} />
+                    ) : (
+                      <TbEye size={16} />
+                    )}
                   </button>
                 </motion.div>
 
@@ -314,10 +328,14 @@ const Register = () => {
                   <motion.div
                     className="w-3.5 h-3.5 border-2 border-[#223026] border-t-transparent rounded-full"
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, linear: true }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
                   />
                 )}
-                {isSubmitting ? "Creating..." : "Create Account"}
+                {isSubmitting ? "Registering..." : "Create Account"}
               </motion.button>
 
               <motion.div
