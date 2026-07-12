@@ -5,76 +5,99 @@ const AuthLayout = () => {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen flex font-sans bg-cream">
+    // Full screen background with subtle ambient color
+    <div className="h-screen w-screen flex items-center justify-center bg-[#F7F6F2] relative overflow-hidden select-none p-4 sm:p-8">
+      
+      {/* Background Ambient Orbs */}
+      <motion.div
+        className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-[#E8D0B0]/30 blur-[120px] pointer-events-none"
+        animate={{ scale: [1, 1.1, 1] }}
+        transition={{ duration: 10, repeat: Infinity }}
+      />
+      <motion.div
+        className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] rounded-full bg-[#C8D3C3]/30 blur-[100px] pointer-events-none"
+        animate={{ scale: [1, 1.05, 1] }}
+        transition={{ duration: 8, repeat: Infinity, delay: 1 }}
+      />
 
-      {/* Left branding panel */}
-      <div className="hidden lg:flex w-[460px] shrink-0 relative bg-forest items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#2C3A2E] via-[#3A5240] to-[#2C3A2E]" />
+      {/* The Main Centered Floating Card */}
+      <motion.div 
+        className="w-full max-w-[1000px] h-full max-h-[700px] bg-white rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] flex overflow-hidden relative z-10"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      >
+        
+        {/* ================= LEFT PANEL (Card Image/Brand - 45%) ================= */}
+        <div className="hidden md:flex flex-col justify-between w-[45%] relative overflow-hidden bg-gradient-to-br from-[#223026] via-[#304438] to-[#1F2A22] p-10">
+          
+          {/* Subtle overlay textures */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,#435E4A_0%,transparent_70%)]" />
+          <svg className="absolute inset-0 opacity-[0.02] mix-blend-multiply" width="100%" height="100%">
+            <filter id="noise">
+              <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" />
+            </filter>
+            <rect width="100%" height="100%" filter="url(#noise)" />
+          </svg>
 
-        <svg
-          className="absolute -right-12 top-1/2 -translate-y-1/2 opacity-[0.07]"
-          width="420" height="420" viewBox="0 0 320 320" fill="none"
-        >
-          <path d="M160 10 C220 10 310 80 310 160 C310 240 240 310 160 310 C80 310 10 240 10 160 C10 80 100 10 160 10Z" stroke="#8FA67A" strokeWidth="1" fill="none" />
-          <path d="M160 40 C210 40 280 100 280 160 C280 220 220 280 160 280 C100 280 40 220 40 160 C40 100 110 40 160 40Z" stroke="#8FA67A" strokeWidth="0.7" fill="none" />
-          <path d="M160 10 L160 310" stroke="#8FA67A" strokeWidth="0.5" />
-          <path d="M10 160 L310 160" stroke="#8FA67A" strokeWidth="0.5" />
-          <path d="M50 50 L270 270" stroke="#8FA67A" strokeWidth="0.3" />
-          <path d="M270 50 L50 270" stroke="#8FA67A" strokeWidth="0.3" />
-        </svg>
-
-        <div className="relative z-10 px-14 text-center max-w-sm">
-          <Link to="/" className="inline-block mb-10">
-            <div className="font-serif text-2xl font-semibold tracking-[0.12em] text-cream uppercase">
-              Aura
-              <span className="block text-[9px] font-sans font-light tracking-[0.35em] text-sage-mid mt-[-2px]">
-                Botanicals
-              </span>
-            </div>
-          </Link>
-
-          <p className="text-[10px] tracking-[0.3em] text-sage-mid uppercase mb-5">
-            Pure · Sustainable · Botanical
-          </p>
-          <h2 className="font-serif text-[42px] font-light text-cream leading-[1.12] mb-5">
-            Your ritual,{" "}
-            <em className="italic text-clay">reimagined</em>
-          </h2>
-          <p className="text-sm text-sage-mid font-light leading-relaxed">
-            Sign in to track orders, save favourites, and unlock member-only rituals crafted just for you.
-          </p>
-
-          <div className="mt-10 pt-8 border-t border-[rgba(246,242,236,0.08)] text-[11px] text-sage-mid italic font-serif">
-            Est. 2018 · Pure &amp; Sustainable
-          </div>
-        </div>
-      </div>
-
-      {/* Right form panel */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-cream">
-        <motion.div
-          key={location.pathname}
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-          className="w-full max-w-sm"
-        >
-          {/* Mobile logo */}
-          <div className="lg:hidden text-center mb-8">
+          {/* Top Logo */}
+          <div className="relative z-10">
             <Link to="/">
-              <div className="font-serif text-xl font-semibold tracking-[0.12em] text-forest uppercase">
-                Aura
-                <span className="block text-[9px] font-sans font-light tracking-[0.35em] text-text-muted mt-[-1px]">
-                  Botanicals
-                </span>
-              </div>
+              <h1 className="text-2xl font-serif text-white tracking-widest font-light">NOVA</h1>
+              <p className="uppercase tracking-[0.4em] text-[9px] text-[#C8D3C3] mt-1 font-light">Marketplace</p>
             </Link>
           </div>
 
-          <Outlet />
-        </motion.div>
-      </div>
+          {/* Center Graphic / Text */}
+          <div className="relative z-10 my-auto">
+            <span className="inline-block px-3 py-1 rounded-full bg-white/10 backdrop-blur border border-white/10 text-[#D9E5D1] text-[9px] uppercase tracking-[0.2em] mb-4">
+              Premium Selection
+            </span>
+            <h2 className="font-serif text-4xl leading-[1.2] text-white font-light mb-4">
+              Curated items <br />
+              <span className="italic text-[#E7C59B]">for modern living.</span>
+            </h2>
+            <p className="text-[#C8D3C3]/80 leading-relaxed text-xs font-light max-w-xs">
+              Join thousands discovering premium products. Fast, secure, and delightful.
+            </p>
+          </div>
 
+          {/* Bottom Trust Badges */}
+          <div className="relative z-10 flex gap-6 border-t border-white/10 pt-6">
+            <div>
+              <p className="text-lg font-serif text-[#E7C59B]">100%</p>
+              <p className="text-[9px] text-[#C8D3C3] uppercase tracking-wider mt-1">Secure</p>
+            </div>
+            <div>
+              <p className="text-lg font-serif text-[#E7C59B]">24/7</p>
+              <p className="text-[9px] text-[#C8D3C3] uppercase tracking-wider mt-1">Support</p>
+            </div>
+          </div>
+        </div>
+
+        {/* ================= RIGHT PANEL (Form Area - 55%) ================= */}
+        <div className="w-full md:w-[55%] bg-white flex flex-col justify-center px-8 sm:px-14 py-8 relative">
+          
+          {/* Mobile Logo (Only shows on small screens) */}
+          <div className="md:hidden text-center mb-6">
+            <Link to="/">
+              <h1 className="text-2xl font-serif tracking-widest text-[#223026] font-light">NOVA</h1>
+            </Link>
+          </div>
+
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4 }}
+            className="w-full max-w-sm mx-auto"
+          >
+            {/* The routed form (Register/Login) injects here */}
+            <Outlet />
+          </motion.div>
+          
+        </div>
+      </motion.div>
     </div>
   );
 };

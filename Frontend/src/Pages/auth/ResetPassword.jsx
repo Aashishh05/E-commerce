@@ -1,133 +1,298 @@
 import { useState } from "react";
 import { Formik, Form } from "formik";
-import { Link } from "react-router-dom";
-import { TbLock, TbEye, TbEyeOff, TbArrowLeft } from "react-icons/tb";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import { TbLock, TbEye, TbEyeOff, TbCheck, TbArrowLeft } from "react-icons/tb";
 import * as Yup from "yup";
 
-const resetSchema = Yup.object({
-  password: Yup.string()
-    .min(6, "At least 6 characters")
+const resetPasswordSchema = Yup.object({
+  newPassword: Yup.string()
+    .min(8, "At least 8 characters")
     .required("Password is required"),
+
   confirmPassword: Yup.string()
-    .oneOf([Yup.ref("password")], "Passwords don't match")
+    .oneOf([Yup.ref("newPassword")], "Passwords don't match")
     .required("Please confirm your password"),
 });
 
 const ResetPassword = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const email = location.state?.email || "your account";
 
   const handleSubmit = (values, { setSubmitting }) => {
-    // TODO: dispatch resetPassword thunk
-    console.log(values);
-    setSubmitting(false);
+    console.log("Reset password:", values);
+
+    setTimeout(() => {
+      setSubmitting(false);
+      setResetSuccess(true);
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    }, 1500);
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.08,
+        delayChildren: 0.05,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 12 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+  };
+
+  if (resetSuccess) {
+    return (
+      <motion.div
+        className="w-full flex flex-col items-center text-center"
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
+        <motion.div className="mb-4" variants={itemVariants}>
+          <motion.div
+            className="w-16 h-16 rounded-full bg-gradient-to-br from-[#A4B494]/20 to-[#E7C59B]/20 flex items-center justify-center mx-auto mb-3"
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <TbCheck className="w-8 h-8 text-[#A4B494]" />
+          </motion.div>
+
+          <h1 className="font-serif text-2xl text-[#223026] font-light mb-2">
+            Password Reset
+          </h1>
+
+          <p className="text-xs text-[#7A8B7E] font-light leading-relaxed">
+            Your password has been updated. Sign in with your new password.
+          </p>
+        </motion.div>
+
+        <motion.p
+          className="text-[10px] text-gray-500 mt-4 font-light"
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          Redirecting...
+        </motion.p>
+      </motion.div>
+    );
+  }
+
   return (
-    <>
-      <div className="mb-8">
-        <p className="text-[10px] tracking-[0.3em] text-sage uppercase font-medium mb-1">
-          Almost there
-        </p>
-        <h2 className="font-serif text-[32px] font-light text-forest leading-tight">
-          Reset Password
-        </h2>
-        <div className="w-8 h-px bg-clay mt-3 mb-5" />
-        <p className="text-sm text-text-muted font-light leading-relaxed">
-          Choose a strong new password for your account.
-        </p>
-      </div>
+    <motion.div
+      className="w-full flex flex-col"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
+      <motion.div variants={itemVariants} className="mb-6">
+        <Link
+          to="/login"
+          className="inline-flex items-center gap-1.5 text-xs text-[#A4B494] hover:text-[#223026] transition font-light"
+        >
+          <TbArrowLeft size={14} />
+          Back
+        </Link>
+      </motion.div>
 
-      <Formik
-        initialValues={{ password: "", confirmPassword: "" }}
-        validationSchema={resetSchema}
-        onSubmit={handleSubmit}
-      >
-        {({ errors, touched, getFieldProps, isSubmitting }) => (
-          <Form>
-            <div className="mb-5">
-              <label className="block text-[11px] tracking-[0.15em] uppercase text-forest-mid font-medium mb-2">
-                New Password
-              </label>
-              <div
-                className={`flex items-center gap-3 px-4 py-3 bg-[#FAFAF7] border rounded-sm transition-colors duration-200 ${
-                  errors.password && touched.password
-                    ? "border-red-400"
-                    : "border-[#E2DDD6] focus-within:border-sage"
-                }`}
-              >
-                <TbLock className="text-text-muted shrink-0" size={17} />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  {...getFieldProps("password")}
-                  className="flex-1 bg-transparent outline-none text-sm text-charcoal placeholder:text-text-muted"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((p) => !p)}
-                  className="text-text-muted hover:text-forest transition-colors"
-                >
-                  {showPassword ? <TbEyeOff size={17} /> : <TbEye size={17} />}
-                </button>
-              </div>
-              {errors.password && touched.password && (
-                <p className="mt-1.5 text-xs text-red-500">{errors.password}</p>
-              )}
-            </div>
+      <motion.div className="mb-6" variants={itemVariants}>
+        <p className="uppercase tracking-[0.35em] text-[9px] text-[#A4B494] font-semibold">
+          Security Update
+        </p>
 
-            <div className="mb-5">
-              <label className="block text-[11px] tracking-[0.15em] uppercase text-forest-mid font-medium mb-2">
-                Confirm New Password
-              </label>
-              <div
-                className={`flex items-center gap-3 px-4 py-3 bg-[#FAFAF7] border rounded-sm transition-colors duration-200 ${
-                  errors.confirmPassword && touched.confirmPassword
-                    ? "border-red-400"
-                    : "border-[#E2DDD6] focus-within:border-sage"
-                }`}
-              >
-                <TbLock className="text-text-muted shrink-0" size={17} />
-                <input
-                  type={showConfirm ? "text" : "password"}
-                  placeholder="••••••••"
-                  {...getFieldProps("confirmPassword")}
-                  className="flex-1 bg-transparent outline-none text-sm text-charcoal placeholder:text-text-muted"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirm((p) => !p)}
-                  className="text-text-muted hover:text-forest transition-colors"
+        <h1 className="font-serif text-3xl text-[#223026] font-light mt-2 leading-tight">
+          New Password
+        </h1>
+
+        <p className="text-xs text-[#7A8B7E] mt-2 leading-relaxed font-light">
+          Create a strong password for your account.
+        </p>
+      </motion.div>
+
+      <motion.div variants={itemVariants} className="w-full">
+        <Formik
+          initialValues={{
+            newPassword: "",
+            confirmPassword: "",
+          }}
+          validationSchema={resetPasswordSchema}
+          onSubmit={handleSubmit}
+        >
+          {({ errors, touched, getFieldProps, isSubmitting, values }) => (
+            <Form className="space-y-4">
+              <motion.div variants={itemVariants}>
+                <label className="block mb-1.5 text-[10px] tracking-[0.15em] uppercase text-[#A4B494] font-bold">
+                  New Password
+                </label>
+
+                <motion.div
+                  className={`flex items-center gap-3 rounded-lg border bg-white/40 px-4 h-10 transition-all duration-300 shadow-sm ${
+                    touched.newPassword && errors.newPassword
+                      ? "border-[#EF5350] bg-[#FFEBEE]/20"
+                      : "border-[#E8E3DB] hover:border-[#D8B98F] focus-within:border-[#D8B98F] focus-within:bg-white/60"
+                  }`}
+                  whileFocus={{ scale: 1.01 }}
                 >
-                  {showConfirm ? <TbEyeOff size={17} /> : <TbEye size={17} />}
-                </button>
-              </div>
-              {errors.confirmPassword && touched.confirmPassword && (
-                <p className="mt-1.5 text-xs text-red-500">
-                  {errors.confirmPassword}
+                  <div
+                    className={`flex-shrink-0 ${
+                      touched.newPassword && errors.newPassword
+                        ? "text-[#EF5350]"
+                        : "text-[#A4B494]"
+                    }`}
+                  >
+                    <TbLock size={16} />
+                  </div>
+
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    {...getFieldProps("newPassword")}
+                    className="flex-1 bg-transparent outline-none text-[#223026] placeholder:text-[#C8D3C3] text-sm leading-tight"
+                    placeholder="••••••••"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="flex-shrink-0 text-[#C8D3C3] hover:text-[#A4B494] transition"
+                  >
+                    {showPassword ? (
+                      <TbEyeOff size={16} />
+                    ) : (
+                      <TbEye size={16} />
+                    )}
+                  </button>
+                </motion.div>
+
+                {touched.newPassword && errors.newPassword && (
+                  <motion.p
+                    className="text-[#EF5350] text-[9px] mt-1 font-light"
+                    initial={{ opacity: 0, y: -3 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    {errors.newPassword}
+                  </motion.p>
+                )}
+              </motion.div>
+
+              <motion.div variants={itemVariants}>
+                <label className="block mb-1.5 text-[10px] tracking-[0.15em] uppercase text-[#A4B494] font-bold">
+                  Confirm Password
+                </label>
+
+                <motion.div
+                  className={`flex items-center gap-3 rounded-lg border bg-white/40 px-4 h-10 transition-all duration-300 shadow-sm ${
+                    touched.confirmPassword && errors.confirmPassword
+                      ? "border-[#EF5350] bg-[#FFEBEE]/20"
+                      : "border-[#E8E3DB] hover:border-[#D8B98F] focus-within:border-[#D8B98F] focus-within:bg-white/60"
+                  }`}
+                  whileFocus={{ scale: 1.01 }}
+                >
+                  <div
+                    className={`flex-shrink-0 ${
+                      touched.confirmPassword && errors.confirmPassword
+                        ? "text-[#EF5350]"
+                        : "text-[#A4B494]"
+                    }`}
+                  >
+                    <TbLock size={16} />
+                  </div>
+
+                  <input
+                    type={showConfirm ? "text" : "password"}
+                    {...getFieldProps("confirmPassword")}
+                    className="flex-1 bg-transparent outline-none text-[#223026] placeholder:text-[#C8D3C3] text-sm leading-tight"
+                    placeholder="••••••••"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(!showConfirm)}
+                    className="flex-shrink-0 text-[#C8D3C3] hover:text-[#A4B494] transition"
+                  >
+                    {showConfirm ? <TbEyeOff size={16} /> : <TbEye size={16} />}
+                  </button>
+                </motion.div>
+
+                {values.newPassword &&
+                  values.confirmPassword &&
+                  values.newPassword === values.confirmPassword && (
+                    <motion.p
+                      className="text-[9px] text-[#7CB342] mt-1 flex items-center gap-1 font-light"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                    >
+                      <TbCheck size={12} /> Passwords match
+                    </motion.p>
+                  )}
+
+                {touched.confirmPassword && errors.confirmPassword && (
+                  <motion.p
+                    className="text-[#EF5350] text-[9px] mt-1 font-light"
+                    initial={{ opacity: 0, y: -3 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    {errors.confirmPassword}
+                  </motion.p>
+                )}
+              </motion.div>
+
+              <motion.div
+                className="bg-[#A4B494]/5 border border-[#A4B494]/20 rounded-lg p-3"
+                variants={itemVariants}
+              >
+                <p className="text-[9px] text-[#7A8B7E] leading-relaxed font-semibold">
+                  Use at least 8 characters with uppercase, lowercase, and
+                  numbers.
                 </p>
-              )}
-            </div>
+              </motion.div>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full py-[13px] bg-clay text-forest text-[11px] font-medium tracking-[0.15em] uppercase rounded-sm hover:bg-[#D4B892] transition-colors duration-200 disabled:opacity-60 mt-1"
-            >
-              {isSubmitting ? "Updating..." : "Update Password"}
-            </button>
-          </Form>
-        )}
-      </Formik>
+              <motion.button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full h-10 rounded-lg bg-gradient-to-r from-[#D8B98F] via-[#E9D3AE] to-[#D8B98F] text-[#223026] font-semibold tracking-widest uppercase text-xs shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:translate-y-0 disabled:cursor-not-allowed flex justify-center items-center gap-2 mt-4"
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                variants={itemVariants}
+              >
+                {isSubmitting && (
+                  <motion.div
+                    className="w-3.5 h-3.5 border-2 border-[#223026] border-t-transparent rounded-full"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, linear: true }}
+                  />
+                )}
 
-      <Link
-        to="/login"
-        className="flex items-center justify-center gap-2 mt-8 text-xs text-text-muted hover:text-forest transition-colors"
+                {isSubmitting ? "Updating..." : "Reset Password"}
+              </motion.button>
+            </Form>
+          )}
+        </Formik>
+      </motion.div>
+
+      <motion.p
+        className="text-center text-xs text-[#7A8B7E] mt-4 font-light"
+        variants={itemVariants}
       >
-        <TbArrowLeft size={14} />
-        Back to Sign In
-      </Link>
-    </>
+        Back to 
+        <Link
+          to="/login"
+          className="font-semibold text-green-800 hover:underline transition"
+        >
+           Sign In
+        </Link>
+      </motion.p>
+    </motion.div>
   );
 };
 
