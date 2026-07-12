@@ -6,7 +6,7 @@ const AuthLayout = () => {
 
   return (
     // Full screen background with subtle ambient color
-    <div className="h-screen w-screen flex items-center justify-center bg-[#F7F6F2] relative overflow-hidden select-none p-4 sm:p-8">
+    <div className="h-screen w-screen flex items-center justify-center 	bg-[#E8EDE6] relative overflow-hidden select-none p-4 sm:p-8">
       
       {/* Background Ambient Orbs */}
       <motion.div

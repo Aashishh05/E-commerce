@@ -32,10 +32,14 @@ const registerSchema = Yup.object({
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null)
   const navigate = useNavigate();
 
   const handleSubmit = (values, { setSubmitting }) => {
     console.log("Register:", values);
+
 
     setTimeout(() => {
       setSubmitting(false);
