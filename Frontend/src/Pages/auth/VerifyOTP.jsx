@@ -2,8 +2,8 @@ import { useState, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { TbArrowLeft, TbCheck, TbX } from "react-icons/tb";
+import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
-import API from "../../utils/axios";
 
 const VerifyOTP = () => {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -43,7 +43,7 @@ const VerifyOTP = () => {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     const otpCode = otp.join("");
 
     if (otpCode.length !== 6) {
@@ -54,51 +54,21 @@ const VerifyOTP = () => {
     setIsLoading(true);
     setError("");
 
-    try {
-      const response = await API.post("http://localhost:5000/api/auth/verify-otp", {
-        email,
-        otp: otpCode, 
-      });
-
-      console.log("OTP Verified successfully:", response.data);
-
-      toast.success(response.data.message || "Code verified successfully!", {
-        duration: 2000,
-        style: {
-          background: "#223026",
-          color: "#FAFAF8",
-          fontSize: "13px",
-          borderRadius: "8px",
-        },
-        iconTheme: {
-          primary: "#A4B494",
-          secondary: "#223026",
-        },
-      });
-
+    // Local transition: Skip verify-otp API here so the OTP is not cleared in the database.
+    // Instead, pass the OTP to the ResetPassword component which verifies it on submission.
+    setTimeout(() => {
+      setIsLoading(false);
       setVerified(true);
 
       setTimeout(() => {
-        navigate("/reset-password", { state: { email } });
-      }, 1500);
-
-    } catch (err) {
-      const message = err.response?.data?.message || err.message || "Invalid code. Try again.";
-      setError(message);
-
-      toast.error(message, {
-        duration: 4000,
-        style: {
-          background: "#FFEBEE",
-          color: "#EF5350",
-          border: "1px solid #EF5350",
-          fontSize: "13px",
-          borderRadius: "8px",
-        },
-      });
-    } finally {
-      setIsLoading(false);
-    }
+        navigate("/reset-password", { 
+          state: { 
+            email, 
+            otp: otpCode 
+          } 
+        });
+      }, 1200);
+    }, 800);
   };
 
   const handleResend = async () => {
@@ -294,6 +264,7 @@ const VerifyOTP = () => {
             </p>
 
             <button
+              type="button"
               onClick={handleResend}
               className="text-[#A4B494] hover:text-[#223026] font-semibold text-[12px] transition"
             >
