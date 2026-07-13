@@ -2,6 +2,8 @@ import { useState, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { TbArrowLeft, TbCheck, TbX } from "react-icons/tb";
+import toast, { Toaster } from "react-hot-toast";
+import API from "../../utils/axios";
 
 const VerifyOTP = () => {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -11,6 +13,7 @@ const VerifyOTP = () => {
   const inputRefs = useRef([]);
   const navigate = useNavigate();
   const location = useLocation();
+  
   const email = location.state?.email || "your email";
 
   const handleInputChange = (index, value) => {
@@ -40,7 +43,7 @@ const VerifyOTP = () => {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const otpCode = otp.join("");
 
     if (otpCode.length !== 6) {
@@ -49,27 +52,90 @@ const VerifyOTP = () => {
     }
 
     setIsLoading(true);
+    setError("");
 
-    setTimeout(() => {
-      console.log("Verifying OTP:", otpCode);
+    try {
+      const response = await API.post("http://localhost:5000/api/auth/verify-otp", {
+        email,
+        otp: otpCode, 
+      });
 
-      if (otpCode === "123456") {
-        setVerified(true);
+      console.log("OTP Verified successfully:", response.data);
 
-        setTimeout(() => {
-          navigate("/reset-password", { state: { email } });
-        }, 1500);
-      } else {
-        setError("Invalid code. Try again.");
-        setIsLoading(false);
-      }
-    }, 1500);
+      toast.success(response.data.message || "Code verified successfully!", {
+        duration: 2000,
+        style: {
+          background: "#223026",
+          color: "#FAFAF8",
+          fontSize: "13px",
+          borderRadius: "8px",
+        },
+        iconTheme: {
+          primary: "#A4B494",
+          secondary: "#223026",
+        },
+      });
+
+      setVerified(true);
+
+      setTimeout(() => {
+        navigate("/reset-password", { state: { email } });
+      }, 1500);
+
+    } catch (err) {
+      const message = err.response?.data?.message || err.message || "Invalid code. Try again.";
+      setError(message);
+
+      toast.error(message, {
+        duration: 4000,
+        style: {
+          background: "#FFEBEE",
+          color: "#EF5350",
+          border: "1px solid #EF5350",
+          fontSize: "13px",
+          borderRadius: "8px",
+        },
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     setOtp(["", "", "", "", "", ""]);
     setError("");
-    console.log("Resending OTP to:", email);
+    
+    try {
+      const response = await axios.post("http://localhost:5000/api/auth/forgot-password", { email });
+      
+      toast.success(response.data.message || "Code resent successfully!", {
+        duration: 4000,
+        style: {
+          background: "#223026",
+          color: "#FAFAF8",
+          fontSize: "13px",
+          borderRadius: "8px",
+        },
+        iconTheme: {
+          primary: "#A4B494",
+          secondary: "#223026",
+        },
+      });
+    } catch (err) {
+      const message = err.response?.data?.message || err.message || "Failed to resend code.";
+      setError(message);
+      
+      toast.error(message, {
+        duration: 4000,
+        style: {
+          background: "#FFEBEE",
+          color: "#EF5350",
+          border: "1px solid #EF5350",
+          fontSize: "13px",
+          borderRadius: "8px",
+        },
+      });
+    }
   };
 
   const containerVariants = {
@@ -96,6 +162,8 @@ const VerifyOTP = () => {
         animate="visible"
         variants={containerVariants}
       >
+        <Toaster position="top-center" reverseOrder={false} />
+        
         <motion.div className="mb-4" variants={itemVariants}>
           <motion.div
             className="w-16 h-16 rounded-full bg-gradient-to-br from-[#A4B494]/20 to-[#E7C59B]/20 flex items-center justify-center mx-auto mb-3"
@@ -132,6 +200,8 @@ const VerifyOTP = () => {
       animate="visible"
       variants={containerVariants}
     >
+      <Toaster position="top-center" reverseOrder={false} />
+
       <motion.div variants={itemVariants} className="mb-6">
         <Link
           to="/forgot-password"
@@ -206,7 +276,7 @@ const VerifyOTP = () => {
               <motion.div
                 className="w-3.5 h-3.5 border-2 border-[#223026] border-t-transparent rounded-full"
                 animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, linear: true }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               />
             )}
 
@@ -234,8 +304,6 @@ const VerifyOTP = () => {
               Code expires in 10 min
             </p>
           </motion.div>
-
-        
         </div>
       </motion.div>
     </motion.div>

@@ -4,6 +4,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { TbMail, TbArrowLeft, TbCheck } from "react-icons/tb";
 import * as Yup from "yup";
+import toast, { Toaster } from "react-hot-toast"; 
+import API from "../../utils/axios";
 
 const forgotPasswordSchema = Yup.object({
   email: Yup.string()
@@ -13,19 +15,51 @@ const forgotPasswordSchema = Yup.object({
 
 const ForgotPassword = () => {
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState(null); 
   const navigate = useNavigate();
 
-  const handleSubmit = (values, { setSubmitting }) => {
-    console.log("Forgot password:", values);
+  const handleSubmit = async (values, { setSubmitting }) => {
+    setError(null);
+    try {
+      const response = await API.post("http://localhost:5000/api/auth/forgot-password", values);
 
-    setTimeout(() => {
-      setSubmitting(false);
+
+      toast.success(response.data.message || "Reset code sent!", {
+        duration: 3000,
+        style: {
+          background: "#223026",
+          color: "#FAFAF8",
+          fontSize: "13px",
+          borderRadius: "8px",
+        },
+        iconTheme: {
+          primary: "#A4B494",
+          secondary: "#223026",
+        },
+      });
+
       setSubmitted(true);
 
       setTimeout(() => {
         navigate("/verify-otp", { state: { email: values.email } });
       }, 2000);
-    }, 1500);
+    } catch (err) {
+      const message = err.response?.data?.message || err.message || "Failed to send code. Please try again.";
+      setError(message);
+
+      toast.error(message, {
+        duration: 4000,
+        style: {
+          background: "#FFEBEE",
+          color: "#EF5350",
+          border: "1px solid #EF5350",
+          fontSize: "13px",
+          borderRadius: "8px",
+        },
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const containerVariants = {
@@ -52,6 +86,7 @@ const ForgotPassword = () => {
         animate="visible"
         variants={containerVariants}
       >
+        <Toaster position="top-center" reverseOrder={false} />
         <motion.div className="mb-4" variants={itemVariants}>
           <motion.div
             className="w-16 h-16 rounded-full bg-gradient-to-br from-[#A4B494]/20 to-[#E7C59B]/20 flex items-center justify-center mx-auto mb-3"
@@ -88,6 +123,8 @@ const ForgotPassword = () => {
       animate="visible"
       variants={containerVariants}
     >
+      <Toaster position="top-center" reverseOrder={false} />
+
       <motion.div variants={itemVariants} className="mb-6">
         <Link
           to="/login"
@@ -111,6 +148,17 @@ const ForgotPassword = () => {
           Enter your email and we'll send a code.
         </p>
       </motion.div>
+
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4 p-3 rounded-lg border border-[#EF5350] bg-[#FFEBEE]/20 text-[#EF5350] text-xs font-light text-center"
+          variants={itemVariants}
+        >
+          {error}
+        </motion.div>
+      )}
 
       <motion.div variants={itemVariants} className="w-full">
         <Formik
@@ -184,7 +232,7 @@ const ForgotPassword = () => {
                   <motion.div
                     className="w-3.5 h-3.5 border-2 border-[#223026] border-t-transparent rounded-full"
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, linear: true }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                   />
                 )}
 
@@ -199,7 +247,7 @@ const ForgotPassword = () => {
         className="text-center text-xs text-[#7A8B7E] mt-4 font-light"
         variants={itemVariants}
       >
-        Remember your password?
+        Remember your password?{" "}
         <Link
           to="/login"
           className="font-semibold text-green-800 hover:underline transition"
