@@ -7,6 +7,7 @@ import Login from "./Pages/auth/Login";
 import ForgotPassword from "./Pages/auth/ForgotPassword";
 import VerifyOTP from "./Pages/auth/VerifyOTP";
 import ResetPassword from "./Pages/auth/ResetPassword";
+import Homepage from "./Pages/Homepage";
 
 const App = () => {
   return (
@@ -21,6 +22,8 @@ const App = () => {
           <Route path="/verify-otp" element={<VerifyOTP />} />
           <Route path="/reset-password" element={<ResetPassword />} />
         </Route>
+
+        <Route path="/home-page" element={<Homepage />} />
       </Routes>
 
       <Toaster
