@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Formik, Form } from "formik";
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   TbUser,
   TbMail,
@@ -9,23 +9,49 @@ import {
   TbEye,
   TbEyeOff,
   TbCheck,
+  TbBuildingStore,
+  TbFileText,
+  TbMapPin,
+  TbPhone,
+  TbChevronDown,
+  TbUserCircle,
 } from "react-icons/tb";
 import { FcGoogle } from "react-icons/fc";
 import * as Yup from "yup";
 import toast from "react-hot-toast";
 import API from "../../utils/axios";
 
+// Concise Validation Schema
 const registerSchema = Yup.object({
-  name: Yup.string().trim().min(2, "Too short").required("Name is required"),
-  email: Yup.string()
-    .email("Enter a valid email")
-    .required("Email is required"),
+  name: Yup.string().trim().required("Name is required"),
+  email: Yup.string().email("Invalid email").required("Email is required"),
   password: Yup.string()
-    .min(6, "At least 6 characters")
-    .required("Password is required"),
+    .min(6, "Min 6 characters")
+    .required("Password required"),
   confirmPassword: Yup.string()
     .oneOf([Yup.ref("password")], "Passwords don't match")
-    .required("Please confirm your password"),
+    .required("Confirm password"),
+  role: Yup.string().oneOf(["buyer", "seller"]).required(),
+  shopName: Yup.string().when("role", {
+    is: "seller",
+    then: (s) => s.required("Shop name is required"),
+    otherwise: (s) => s.notRequired(),
+  }),
+  description: Yup.string().when("role", {
+    is: "seller",
+    then: (s) => s.required("Description is required"),
+    otherwise: (s) => s.notRequired(),
+  }),
+  address: Yup.string().when("role", {
+    is: "seller",
+    then: (s) => s.required("Address is required"),
+    otherwise: (s) => s.notRequired(),
+  }),
+  contactNumber: Yup.string().when("role", {
+    is: "seller",
+    then: (s) => s.required("Contact number is required"),
+    otherwise: (s) => s.notRequired(),
+  }),
 });
 
 const Register = () => {
@@ -39,193 +65,213 @@ const Register = () => {
         name: values.name,
         email: values.email,
         password: values.password,
-        role: "buyer",
+        role: values.role,
+        ...(values.role === "seller" && {
+          shopName: values.shopName,
+          description: values.description,
+          address: values.address,
+          contactNumber: values.contactNumber,
+        }),
       };
-
       const res = await API.post("/api/auth/register", payload);
-
       toast.success(res.data.message || "Registration successful! 🎉");
-
-      setTimeout(() => {
-        navigate("/verify-otp", { state: { email: values.email } });
-      }, 1000);
+      setTimeout(
+        () => navigate("/verify-otp", { state: { email: values.email } }),
+        1000,
+      );
     } catch (error) {
-      const message =
-        error.response?.data?.message || "Registration failed. Try again.";
-      toast.error(message);
+      toast.error(error.response?.data?.message || "Registration failed.");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.08,
-        delayChildren: 0.05,
-      },
-    },
-  };
-
   const itemVariants = {
-    hidden: { opacity: 0, y: 12 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+    hidden: { opacity: 0, y: 8 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
   };
 
   return (
     <motion.div
-      className="w-full flex flex-col"
+      className="w-full max-w-2xl mx-auto flex flex-col px-4 md:px-0 max-h-[85vh] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-[#A4B494]/60"
       initial="hidden"
       animate="visible"
-      variants={containerVariants}
+      variants={{ visible: { transition: { staggerChildren: 0.04 } } }}
     >
-      <motion.div className="mb-6" variants={itemVariants}>
+      <motion.div
+        className="mb-5 text-center md:text-left"
+        variants={itemVariants}
+      >
         <p className="uppercase tracking-[0.35em] text-[9px] text-[#A4B494] font-semibold">
           Join Premium
         </p>
-
-        <h1 className="font-serif text-3xl text-[#223026] font-light mt-2 leading-tight">
+        <h1 className="font-serif text-3xl text-[#223026] font-light mt-1.5">
           Create Account
         </h1>
-
-        <p className="text-xs text-[#7A8B7E] mt-2 leading-relaxed font-light">
-          Join thousands, discovering premium products.
+        <p className="text-xs text-[#7A8B7E] mt-1 font-light">
+          Join thousands discovering premium products.
         </p>
       </motion.div>
 
-      <motion.div variants={itemVariants} className="w-full">
+      <motion.div variants={itemVariants}>
         <Formik
           initialValues={{
             name: "",
             email: "",
             password: "",
             confirmPassword: "",
+            role: "buyer",
+            shopName: "",
+            description: "",
+            address: "",
+            contactNumber: "",
           }}
           validationSchema={registerSchema}
           onSubmit={handleSubmit}
         >
           {({ errors, touched, getFieldProps, isSubmitting, values }) => (
-            <Form className="space-y-4">
-              <motion.div variants={itemVariants}>
-                <label className="block mb-1.5 text-[10px] tracking-[0.15em] uppercase text-[#A4B494] font-bold">
-                  Full Name
+            <Form className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Role Selector dropdown */}
+              {/* Role Selector */}
+              <motion.div
+                variants={itemVariants}
+                className="col-span-full w-full"
+              >
+                <label className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.15em] text-[#6B7A63]">
+                  <TbUserCircle size={17} />
+                  Account Type
                 </label>
 
-                <motion.div
-                  className={`flex items-center gap-3 rounded-lg border bg-white/40 px-4 h-10 transition-all duration-300 shadow-sm ${
-                    touched.name && errors.name
-                      ? "border-[#EF5350] bg-[#FFEBEE]/20"
-                      : "border-[#E8E3DB] hover:border-[#D8B98F] focus-within:border-[#D8B98F] focus-within:bg-white/60"
-                  }`}
-                  whileFocus={{ scale: 1.01 }}
+                <div className="relative w-full">
+                  {/* Left Icon */}
+                  <TbUserCircle
+                    size={19}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8A9A82] pointer-events-none"
+                  />
+
+                  <select
+                    {...getFieldProps("role")}
+                    className="
+        w-full
+        h-12
+        rounded-xl
+        border border-[#E7E3DB]
+        bg-white
+        pl-12
+        pr-12
+        text-[15px]
+        font-medium
+        text-[#223026]
+        outline-none
+        appearance-none
+        transition-all
+        duration-300
+        ease-in-out
+        hover:border-[#CBB08A]
+        focus:border-[#CBB08A]
+        focus:ring-4
+        focus:ring-[#E9D8B8]/40
+        shadow-sm
+      "
+                  >
+                    <option value="buyer">🛍 Buyer</option>
+                    <option value="seller">🏪 Seller</option>
+                  </select>
+
+                  <TbChevronDown
+                    size={18}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8A9A82] pointer-events-none transition-transform duration-300"
+                  />
+                </div>
+
+                <p className="mt-2 text-sm text-[#8A9385]">
+                  Select whether you want to shop or sell products.
+                </p>
+              </motion.div>
+
+              <div className="col-span-1">
+                <label className="block mb-1 text-[10px] tracking-[0.15em] uppercase text-[#A4B494] font-bold">
+                  Full Name
+                </label>
+                <div
+                  className={`flex items-center gap-3 rounded-lg border bg-white/40 px-4 h-10 transition duration-300 ${touched.name && errors.name ? "border-[#EF5350] bg-[#FFEBEE]/20" : "border-[#E8E3DB] hover:border-[#D8B98F] focus-within:border-[#D8B98F]"}`}
                 >
-                  <div
-                    className={`flex-shrink-0 ${
+                  <TbUser
+                    size={16}
+                    className={
                       touched.name && errors.name
                         ? "text-[#EF5350]"
                         : "text-[#A4B494]"
-                    }`}
-                  >
-                    <TbUser size={16} />
-                  </div>
-
+                    }
+                  />
                   <input
                     type="text"
                     {...getFieldProps("name")}
-                    className="w-full bg-transparent outline-none text-[#223026] placeholder:text-[#C8D3C3] text-sm leading-tight"
+                    className="w-full bg-transparent outline-none text-[#223026] placeholder:text-[#C8D3C3] text-sm"
                     placeholder="John Doe"
                   />
-                </motion.div>
-
+                </div>
                 {touched.name && errors.name && (
-                  <motion.p
-                    className="text-[#EF5350] text-[9px] mt-1 font-light"
-                    initial={{ opacity: 0, y: -3 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
+                  <p className="text-[#EF5350] text-[9px] mt-0.5">
                     {errors.name}
-                  </motion.p>
+                  </p>
                 )}
-              </motion.div>
+              </div>
 
-              <motion.div variants={itemVariants}>
-                <label className="block mb-1.5 text-[10px] tracking-[0.15em] uppercase text-[#A4B494] font-bold">
+              <div className="col-span-1">
+                <label className="block mb-1 text-[10px] tracking-[0.15em] uppercase text-[#A4B494] font-bold">
                   Email
                 </label>
-
-                <motion.div
-                  className={`flex items-center gap-3 rounded-lg border bg-white/40 px-4 h-10 transition-all duration-300 shadow-sm ${
-                    touched.email && errors.email
-                      ? "border-[#EF5350] bg-[#FFEBEE]/20"
-                      : "border-[#E8E3DB] hover:border-[#D8B98F] focus-within:border-[#D8B98F] focus-within:bg-white/60"
-                  }`}
-                  whileFocus={{ scale: 1.01 }}
+                <div
+                  className={`flex items-center gap-3 rounded-lg border bg-white/40 px-4 h-10 transition duration-300 ${touched.email && errors.email ? "border-[#EF5350] bg-[#FFEBEE]/20" : "border-[#E8E3DB] hover:border-[#D8B98F] focus-within:border-[#D8B98F]"}`}
                 >
-                  <div
-                    className={`flex-shrink-0 ${
+                  <TbMail
+                    size={16}
+                    className={
                       touched.email && errors.email
                         ? "text-[#EF5350]"
                         : "text-[#A4B494]"
-                    }`}
-                  >
-                    <TbMail size={16} />
-                  </div>
-
+                    }
+                  />
                   <input
                     type="email"
                     {...getFieldProps("email")}
-                    className="w-full bg-transparent outline-none text-[#223026] placeholder:text-[#C8D3C3] text-sm leading-tight"
+                    className="w-full bg-transparent outline-none text-[#223026] placeholder:text-[#C8D3C3] text-sm"
                     placeholder="you@example.com"
                   />
-                </motion.div>
-
+                </div>
                 {touched.email && errors.email && (
-                  <motion.p
-                    className="text-[#EF5350] text-[9px] mt-1 font-light"
-                    initial={{ opacity: 0, y: -3 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
+                  <p className="text-[#EF5350] text-[9px] mt-0.5">
                     {errors.email}
-                  </motion.p>
+                  </p>
                 )}
-              </motion.div>
+              </div>
 
-              <motion.div variants={itemVariants}>
-                <label className="block mb-1.5 text-[10px] tracking-[0.15em] uppercase text-[#A4B494] font-bold">
+              <div className="col-span-1">
+                <label className="block mb-1 text-[10px] tracking-[0.15em] uppercase text-[#A4B494] font-bold">
                   Password
                 </label>
-
-                <motion.div
-                  className={`flex items-center gap-3 rounded-lg border bg-white/40 px-4 h-10 transition-all duration-300 shadow-sm ${
-                    touched.password && errors.password
-                      ? "border-[#EF5350] bg-[#FFEBEE]/20"
-                      : "border-[#E8E3DB] hover:border-[#D8B98F] focus-within:border-[#D8B98F] focus-within:bg-white/60"
-                  }`}
-                  whileFocus={{ scale: 1.01 }}
+                <div
+                  className={`flex items-center gap-3 rounded-lg border bg-white/40 px-4 h-10 transition duration-300 relative ${touched.password && errors.password ? "border-[#EF5350] bg-[#FFEBEE]/20" : "border-[#E8E3DB] hover:border-[#D8B98F] focus-within:border-[#D8B98F]"}`}
                 >
-                  <div
-                    className={`flex-shrink-0 ${
+                  <TbLock
+                    size={16}
+                    className={
                       touched.password && errors.password
                         ? "text-[#EF5350]"
                         : "text-[#A4B494]"
-                    }`}
-                  >
-                    <TbLock size={16} />
-                  </div>
-
+                    }
+                  />
                   <input
                     type={showPassword ? "text" : "password"}
                     {...getFieldProps("password")}
-                    className="flex-1 bg-transparent outline-none text-[#223026] placeholder:text-[#C8D3C3] text-sm leading-tight"
+                    className="w-full bg-transparent outline-none text-[#223026] placeholder:text-[#C8D3C3] text-sm pr-8"
                     placeholder="••••••••"
                   />
-
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="flex-shrink-0 text-[#C8D3C3] hover:text-[#A4B494] transition"
+                    className="absolute right-3 text-[#C8D3C3] hover:text-[#A4B494] transition"
                   >
                     {showPassword ? (
                       <TbEyeOff size={16} />
@@ -233,96 +279,190 @@ const Register = () => {
                       <TbEye size={16} />
                     )}
                   </button>
-                </motion.div>
-
+                </div>
                 {touched.password && errors.password ? (
-                  <motion.p
-                    className="text-[#EF5350] text-[9px] mt-1 font-light"
-                    initial={{ opacity: 0, y: -3 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
+                  <p className="text-[#EF5350] text-[9px] mt-0.5">
                     {errors.password}
-                  </motion.p>
+                  </p>
                 ) : (
-                  <p className="text-[10px] text-green-800 mt-1 font-semibold">
-                    At least 6 characters with letters and numbers.
+                  <p className="text-[9px] text-[#7A8B7E] mt-0.5 font-semibold">
+                    At least 6 characters with letters & numbers.
                   </p>
                 )}
-              </motion.div>
+              </div>
 
-              <motion.div variants={itemVariants}>
-                <label className="block mb-1.5 text-[10px] tracking-[0.15em] uppercase text-[#A4B494] font-bold">
+              <div className="col-span-1">
+                <label className="block mb-1 text-[10px] tracking-[0.15em] uppercase text-[#A4B494] font-bold">
                   Confirm Password
                 </label>
-
-                <motion.div
-                  className={`flex items-center gap-3 rounded-lg border bg-white/40 px-4 h-10 transition-all duration-300 shadow-sm ${
-                    touched.confirmPassword && errors.confirmPassword
-                      ? "border-[#EF5350] bg-[#FFEBEE]/20"
-                      : "border-[#E8E3DB] hover:border-[#D8B98F] focus-within:border-[#D8B98F] focus-within:bg-white/60"
-                  }`}
-                  whileFocus={{ scale: 1.01 }}
+                <div
+                  className={`flex items-center gap-3 rounded-lg border bg-white/40 px-4 h-10 transition duration-300 relative ${touched.confirmPassword && errors.confirmPassword ? "border-[#EF5350] bg-[#FFEBEE]/20" : "border-[#E8E3DB] hover:border-[#D8B98F] focus-within:border-[#D8B98F]"}`}
                 >
-                  <div
-                    className={`flex-shrink-0 ${
+                  <TbLock
+                    size={16}
+                    className={
                       touched.confirmPassword && errors.confirmPassword
                         ? "text-[#EF5350]"
                         : "text-[#A4B494]"
-                    }`}
-                  >
-                    <TbLock size={16} />
-                  </div>
-
+                    }
+                  />
                   <input
                     type={showConfirm ? "text" : "password"}
                     {...getFieldProps("confirmPassword")}
-                    className="flex-1 bg-transparent outline-none text-[#223026] placeholder:text-[#C8D3C3] text-sm leading-tight"
+                    className="w-full bg-transparent outline-none text-[#223026] placeholder:text-[#C8D3C3] text-sm pr-8"
                     placeholder="••••••••"
                   />
-
                   <button
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
-                    className="flex-shrink-0 text-[#C8D3C3] hover:text-[#A4B494] transition"
+                    className="absolute right-3 text-[#C8D3C3] hover:text-[#A4B494] transition"
                   >
-                    {showConfirm ? (
-                      <TbEyeOff size={16} />
-                    ) : (
-                      <TbEye size={16} />
-                    )}
+                    {showConfirm ? <TbEyeOff size={16} /> : <TbEye size={16} />}
                   </button>
-                </motion.div>
-
+                </div>
                 {touched.confirmPassword && errors.confirmPassword && (
-                  <motion.p
-                    className="text-[#EF5350] text-[9px] mt-1 font-light"
-                    initial={{ opacity: 0, y: -3 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
+                  <p className="text-[#EF5350] text-[9px] mt-0.5">
                     {errors.confirmPassword}
-                  </motion.p>
+                  </p>
                 )}
-
                 {values.password &&
                   values.confirmPassword &&
                   values.password === values.confirmPassword && (
-                    <motion.p
-                      className="text-[9px] text-[#7CB342] mt-1 flex items-center gap-1 font-light"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                    >
+                    <p className="text-[9px] text-[#7CB342] mt-0.5 flex items-center gap-1">
                       <TbCheck size={12} /> Passwords match
-                    </motion.p>
+                    </p>
                   )}
-              </motion.div>
+              </div>
 
-              <motion.button
+              <AnimatePresence mode="wait">
+                {values.role === "seller" && (
+                  <motion.div
+                    key="seller-fields"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4 overflow-hidden pt-1"
+                  >
+                    <div>
+                      <label className="block mb-1 text-[10px] tracking-[0.15em] uppercase text-[#A4B494] font-bold">
+                        Shop Name
+                      </label>
+                      <div
+                        className={`flex items-center gap-3 rounded-lg border bg-white/40 px-4 h-10 transition duration-300 ${touched.shopName && errors.shopName ? "border-[#EF5350] bg-[#FFEBEE]/20" : "border-[#E8E3DB] hover:border-[#D8B98F] focus-within:border-[#D8B98F]"}`}
+                      >
+                        <TbBuildingStore
+                          size={16}
+                          className={
+                            touched.shopName && errors.shopName
+                              ? "text-[#EF5350]"
+                              : "text-[#A4B494]"
+                          }
+                        />
+                        <input
+                          type="text"
+                          {...getFieldProps("shopName")}
+                          className="w-full bg-transparent outline-none text-[#223026] placeholder:text-[#C8D3C3] text-sm"
+                          placeholder="Your Shop Name"
+                        />
+                      </div>
+                      {touched.shopName && errors.shopName && (
+                        <p className="text-[#EF5350] text-[9px] mt-0.5">
+                          {errors.shopName}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block mb-1 text-[10px] tracking-[0.15em] uppercase text-[#A4B494] font-bold">
+                        Contact Number
+                      </label>
+                      <div
+                        className={`flex items-center gap-3 rounded-lg border bg-white/40 px-4 h-10 transition duration-300 ${touched.contactNumber && errors.contactNumber ? "border-[#EF5350] bg-[#FFEBEE]/20" : "border-[#E8E3DB] hover:border-[#D8B98F] focus-within:border-[#D8B98F]"}`}
+                      >
+                        <TbPhone
+                          size={16}
+                          className={
+                            touched.contactNumber && errors.contactNumber
+                              ? "text-[#EF5350]"
+                              : "text-[#A4B494]"
+                          }
+                        />
+                        <input
+                          type="text"
+                          {...getFieldProps("contactNumber")}
+                          className="w-full bg-transparent outline-none text-[#223026] placeholder:text-[#C8D3C3] text-sm"
+                          placeholder="+1 234 567 8900"
+                        />
+                      </div>
+                      {touched.contactNumber && errors.contactNumber && (
+                        <p className="text-[#EF5350] text-[9px] mt-0.5">
+                          {errors.contactNumber}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="col-span-full">
+                      <label className="block mb-1 text-[10px] tracking-[0.15em] uppercase text-[#A4B494] font-bold">
+                        Shop Address
+                      </label>
+                      <div
+                        className={`flex items-center gap-3 rounded-lg border bg-white/40 px-4 h-10 transition duration-300 ${touched.address && errors.address ? "border-[#EF5350] bg-[#FFEBEE]/20" : "border-[#E8E3DB] hover:border-[#D8B98F] focus-within:border-[#D8B98F]"}`}
+                      >
+                        <TbMapPin
+                          size={16}
+                          className={
+                            touched.address && errors.address
+                              ? "text-[#EF5350]"
+                              : "text-[#A4B494]"
+                          }
+                        />
+                        <input
+                          type="text"
+                          {...getFieldProps("address")}
+                          className="w-full bg-transparent outline-none text-[#223026] placeholder:text-[#C8D3C3] text-sm"
+                          placeholder="123 Premium Way, Suite A"
+                        />
+                      </div>
+                      {touched.address && errors.address && (
+                        <p className="text-[#EF5350] text-[9px] mt-0.5">
+                          {errors.address}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="col-span-full">
+                      <label className="block mb-1 text-[10px] tracking-[0.15em] uppercase text-[#A4B494] font-bold">
+                        Shop Description
+                      </label>
+                      <div
+                        className={`flex items-start gap-3 rounded-lg border bg-white/40 px-4 py-2 transition duration-300 ${touched.description && errors.description ? "border-[#EF5350] bg-[#FFEBEE]/20" : "border-[#E8E3DB] hover:border-[#D8B98F] focus-within:border-[#D8B98F]"}`}
+                      >
+                        <TbFileText
+                          size={16}
+                          className="mt-1 flex-shrink-0 text-[#A4B494]"
+                        />
+                        <textarea
+                          {...getFieldProps("description")}
+                          rows={2}
+                          className="w-full bg-transparent outline-none text-[#223026] placeholder:text-[#C8D3C3] text-sm resize-none"
+                          placeholder="Describe your brand..."
+                        />
+                      </div>
+                      {touched.description && errors.description && (
+                        <p className="text-[#EF5350] text-[9px] mt-0.5">
+                          {errors.description}
+                        </p>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full h-10 rounded-lg bg-gradient-to-r from-[#D8B98F] via-[#E9D3AE] to-[#D8B98F] text-[#223026] font-semibold tracking-widest uppercase text-xs shadow-lg hover:shadow-xl active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:translate-y-0 disabled:cursor-not-allowed flex justify-center items-center gap-2 mt-4"
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                variants={itemVariants}
+                className="col-span-full h-10 rounded-lg bg-gradient-to-r from-[#D8B98F] via-[#E9D3AE] to-[#D8B98F] text-[#223026] font-semibold tracking-widest uppercase text-xs shadow-lg hover:shadow-xl active:scale-95 transition duration-300 disabled:opacity-50 disabled:translate-y-0 disabled:cursor-not-allowed flex justify-center items-center gap-2 mt-2"
               >
                 {isSubmitting && (
                   <motion.div
@@ -335,29 +475,23 @@ const Register = () => {
                     }}
                   />
                 )}
-                {isSubmitting ? "Registering..." : "Create Account"}
-              </motion.button>
+                {isSubmitting ? "Creating Account..." : "Create Account"}
+              </button>
 
-              <motion.div
-                variants={itemVariants}
-                className="relative flex items-center justify-center py-1.5 mt-2.5"
-              >
+              <div className="col-span-full relative flex items-center justify-center py-1 mt-1">
                 <div className="absolute inset-x-0 top-1/2 h-px bg-gradient-to-r from-transparent via-[#E8E3DB] to-transparent"></div>
-                <span className="relative bg-white px-2 text-[9px] text-[#A4B494] uppercase tracking-widest font-semibold">
+                <span className="relative bg-[#FAFAF9] px-2 text-[9px] text-[#A4B494] uppercase tracking-widest font-semibold">
                   or signup with
                 </span>
-              </motion.div>
+              </div>
 
-              <motion.button
+              <button
                 type="button"
-                className="w-full h-10 rounded-lg bg-white border border-[#E8E3DB] text-[#223026] font-semibold tracking-widest uppercase text-xs shadow-sm hover:shadow-md hover:bg-[#f3f2d2] transition-all duration-300 flex justify-center items-center gap-1.5"
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                variants={itemVariants}
+                className="col-span-full h-10 rounded-lg bg-white border border-[#E8E3DB] text-[#223026] font-semibold tracking-widest uppercase text-xs shadow-sm hover:shadow-md hover:bg-[#F9F6F0] transition duration-300 flex justify-center items-center gap-1.5"
               >
                 <FcGoogle size={18} />
                 Google
-              </motion.button>
+              </button>
             </Form>
           )}
         </Formik>
