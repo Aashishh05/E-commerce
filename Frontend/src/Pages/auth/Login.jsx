@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Formik, Form } from "formik";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { TbMail, TbLock, TbEye, TbEyeOff } from "react-icons/tb";
 import { FcGoogle } from "react-icons/fc";
 import * as Yup from "yup";
+import toast, { Toaster } from "react-hot-toast"; // Imported toast and Toaster component
+import API from "../../utils/axios";
 
 const loginSchema = Yup.object({
   email: Yup.string()
@@ -17,12 +19,57 @@ const loginSchema = Yup.object({
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState(null);
+  
+  const navigate = useNavigate();
 
-  const handleSubmit = (values, { setSubmitting }) => {
-    console.log(values);
-    setTimeout(() => {
+  const handleSubmit = async (values, { setSubmitting }) => {
+    setError(null);
+    try {
+      const response = await API.post(
+        "http://localhost:5000/api/auth/login",
+        values,
+      );
+
+      console.log("Login successful:", response.data);
+
+      toast.success("Welcome back! Login successful.", {
+        duration: 3000,
+        style: {
+          background: "#223026",
+          color: "#FAFAF8",
+          fontSize: "13px",
+          fontFamily: "sans-serif",
+          borderRadius: "8px",
+        },
+        iconTheme: {
+          primary: "#A4B494",
+          secondary: "#223026",
+        },
+      });
+
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1200);
+    } catch (err) {
+      const message =
+        err.response?.data?.message || err.message || "Invalid credentials.";
+      setError(message);
+
+      // 3. Trigger Error Toast Notification
+      toast.error(message, {
+        duration: 4000,
+        style: {
+          background: "#FFEBEE",
+          color: "#EF5350",
+          border: "1px solid #EF5350",
+          fontSize: "13px",
+          borderRadius: "8px",
+        },
+      });
+    } finally {
       setSubmitting(false);
-    }, 1500);
+    }
   };
 
   const containerVariants = {
@@ -48,6 +95,9 @@ const Login = () => {
       animate="visible"
       variants={containerVariants}
     >
+      {/* 4. Toaster Container (displays the active toasts) */}
+      <Toaster position="top-center" reverseOrder={false} />
+
       <motion.div className="mb-6" variants={itemVariants}>
         <p className="uppercase tracking-[0.35em] text-[9px] text-[#A4B494] font-semibold">
           Welcome Back
@@ -57,6 +107,16 @@ const Login = () => {
           Sign In
         </h1>
       </motion.div>
+
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4 p-3 rounded-lg border border-[#EF5350] bg-[#FFEBEE]/20 text-[#EF5350] text-xs font-light text-center"
+        >
+          {error}
+        </motion.div>
+      )}
 
       <motion.div variants={itemVariants} className="w-full">
         <Formik
@@ -183,7 +243,11 @@ const Login = () => {
                   <motion.div
                     className="w-3.5 h-3.5 border-2 border-[#223026] border-t-transparent rounded-full"
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, linear: true }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
                   />
                 )}
 
@@ -219,7 +283,7 @@ const Login = () => {
         className="text-center text-xs text-[#7A8B7E] mt-4 font-light"
         variants={itemVariants}
       >
-        Don't have an account?
+        Don't have an account?{" "}
         <Link
           to="/register"
           className="font-semibold text-green-800 hover:underline transition duration-300"
