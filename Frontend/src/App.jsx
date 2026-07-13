@@ -13,8 +13,10 @@ const App = () => {
   return (
     <>
       <Routes>
+        <Route index element={<Homepage />} />
+
         <Route element={<AuthLayout />}>
-          <Route index element={<Register />} />
+          <Route path="/register" element={<Register />} />
 
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -22,8 +24,6 @@ const App = () => {
           <Route path="/verify-otp" element={<VerifyOTP />} />
           <Route path="/reset-password" element={<ResetPassword />} />
         </Route>
-
-        <Route path="/home-page" element={<Homepage />} />
       </Routes>
 
       <Toaster
