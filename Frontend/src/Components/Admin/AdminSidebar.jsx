@@ -48,7 +48,7 @@ const AdminSidebar = ({ open, setOpen }) => {
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 h-16 border-b border-white/5 shrink-0">
         <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shrink-0 shadow-lg shadow-amber-900/30">
-          <Leaf size={15} className="text-amber-950 fill-amber-950" />
+          <Leaf size={15} className="text-amber-950 fill-amber-950" onClick={() => navigate("/admin-dashboard")}/>
         </div>
         <AnimatePresence>
           {open && (
@@ -159,7 +159,7 @@ const AdminSidebar = ({ open, setOpen }) => {
           </motion.div>
         )}
         <button
-          onClick={() => navigate("/login")}
+          onClick={() => navigate("/")}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-all text-sm font-medium"
         >
           <LogOut size={15} className="shrink-0" />
