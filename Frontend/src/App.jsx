@@ -15,12 +15,17 @@ import CategoryList from "./Pages/Seller/CategoryList";
 import ProductForm from "./Pages/Seller/Productform";
 import ProductList from "./Pages/Seller/Productlist";
 import OrderList from "./Pages/Seller/OrderList";
+import AdminLayout from "./Components/Admin/AdminLayout";
 
 const App = () => {
   return (
     <>
       <Routes>
         <Route index element={<Homepage />} />
+
+        <Route element={<AdminLayout />} >
+        
+        </Route>
 
         <Route element={<SellerLayout />}>
           <Route path="/category-form" element={<CategoryForm />} />
