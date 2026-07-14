@@ -17,14 +17,14 @@ const NAV = [
   {
     group: "Overview",
     items: [
-      { label: "Dashboard", icon: LayoutDashboard, to: "/admin" },
+      { label: "Dashboard", icon: LayoutDashboard, to: "/admin-dashboard" },
     ],
   },
   {
     group: "People",
     items: [
-      { label: "Sellers", icon: Store, to: "/admin/sellers" },
-      { label: "Users", icon: Users, to: "/admin/users" },
+      { label: "Sellers", icon: Store, to: "/admin/seller" },
+      { label: "Users", icon: Users, to: "/admin/user" },
     ],
   },
   {
