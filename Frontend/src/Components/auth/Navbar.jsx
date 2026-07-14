@@ -18,7 +18,7 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const nav = useNavigate()
+  const nav = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -69,9 +69,7 @@ const Navbar = () => {
           </motion.p>
           <p className="mx-auto md:mx-0 flex items-center gap-2">
             <Zap size={12} className="animate-pulse" />
-            <span>
-              Explore 500+ independent global sellers
-            </span>
+            <span>Explore 500+ independent global sellers</span>
           </p>
           <motion.a
             href="#sell"
@@ -123,7 +121,10 @@ const Navbar = () => {
           transition={{ duration: 0.4, delay: 0.1 }}
         >
           <div className="w-full flex items-center bg-stone-100 border border-stone-200 rounded-full focus-within:ring-2 focus-within:ring-green-800/20 focus-within:border-green-800 transition-all shadow-sm hover:shadow-md overflow-hidden group">
-            <Search className="absolute left-5 text-stone-400 group-focus-within:text-green-800 transition-colors" size={18} />
+            <Search
+              className="absolute left-5 text-stone-400 group-focus-within:text-green-800 transition-colors"
+              size={18}
+            />
             <input
               type="text"
               placeholder="Search products, brands, or vendors..."
@@ -181,11 +182,14 @@ const Navbar = () => {
           </motion.a>
 
           <motion.a
-          onClick={()=> nav('/login')}
+            onClick={() => nav("/login")}
             className="flex items-center gap-2 py-2 px-5 bg-gradient-to-r from-green-50 to-green-100/80 border border-green-200/50 hover:from-green-100 hover:to-green-200 text-green-900 font-semibold rounded-full text-sm transition-all shadow-sm hover:shadow-md group"
             whileHover={{ x: 2 }}
           >
-            <User size={16} className="group-hover:scale-110 transition-transform" />
+            <User
+              size={16}
+              className="group-hover:scale-110 transition-transform"
+            />
             <span>Sign In</span>
           </motion.a>
         </motion.div>
@@ -215,11 +219,21 @@ const Navbar = () => {
           >
             <AnimatePresence mode="wait">
               {isMobileMenuOpen ? (
-                <motion.div key="close" initial={{ rotate: -90 }} animate={{ rotate: 0 }} exit={{ rotate: 90 }}>
+                <motion.div
+                  key="close"
+                  initial={{ rotate: -90 }}
+                  animate={{ rotate: 0 }}
+                  exit={{ rotate: 90 }}
+                >
                   <X size={22} />
                 </motion.div>
               ) : (
-                <motion.div key="open" initial={{ rotate: 90 }} animate={{ rotate: 0 }} exit={{ rotate: -90 }}>
+                <motion.div
+                  key="open"
+                  initial={{ rotate: 90 }}
+                  animate={{ rotate: 0 }}
+                  exit={{ rotate: -90 }}
+                >
                   <Menu size={22} />
                 </motion.div>
               )}
@@ -277,7 +291,10 @@ const Navbar = () => {
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: idx * 0.05 }}
-                          whileHover={{ x: 8, backgroundColor: "rgba(6, 78, 59, 0.05)" }}
+                          whileHover={{
+                            x: 8,
+                            backgroundColor: "rgba(6, 78, 59, 0.05)",
+                          }}
                           className="block px-5 py-3 text-sm text-stone-700 hover:text-green-900 transition-colors font-medium"
                         >
                           {cat}
@@ -360,7 +377,11 @@ const Navbar = () => {
                 <Search size={16} className="text-stone-400" />
               </motion.div>
 
-              <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
+              <motion.div
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.1 }}
+              >
                 <h3 className="text-xs font-bold uppercase text-stone-400 tracking-widest mb-4">
                   Shop Categories
                 </h3>
@@ -373,7 +394,10 @@ const Navbar = () => {
                       initial={{ opacity: 0, y: 5 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.15 + idx * 0.05 }}
-                      whileHover={{ backgroundColor: "rgba(6, 78, 59, 0.08)", y: -2 }}
+                      whileHover={{
+                        backgroundColor: "rgba(6, 78, 59, 0.08)",
+                        y: -2,
+                      }}
                       className="px-3 py-2.5 text-sm bg-stone-50 rounded-lg text-stone-700 hover:text-green-950 transition-all font-medium"
                     >
                       {cat}
@@ -388,7 +412,13 @@ const Navbar = () => {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                {["Featured Vendors", "Flash Deals", "Sell on Aura", "Voucher Center", "Customer Care"].map((item, idx) => (
+                {[
+                  "Featured Vendors",
+                  "Flash Deals",
+                  "Sell on Aura",
+                  "Voucher Center",
+                  "Customer Care",
+                ].map((item, idx) => (
                   <motion.a
                     key={item}
                     href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}

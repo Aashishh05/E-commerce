@@ -8,6 +8,11 @@ import ForgotPassword from "./Pages/auth/ForgotPassword";
 import VerifyOTP from "./Pages/auth/VerifyOTP";
 import ResetPassword from "./Pages/auth/ResetPassword";
 import Homepage from "./Pages/Homepage";
+import SellerDashboard from "./Pages/Seller/Sellerdashboard";
+import SellerLayout from "./Components/Seller/SellerLayout";
+import CategoryForm from "./Pages/Seller/Categoryform";
+import CategoryList from "./Pages/Seller/CategoryList";
+import ProductForm from "./Pages/Seller/Productform";
 
 const App = () => {
   return (
@@ -15,6 +20,12 @@ const App = () => {
       <Routes>
         <Route index element={<Homepage />} />
 
+        <Route element={<SellerLayout />}>
+          <Route path="/category-form" element={<CategoryForm />} />
+          <Route path="/category-list" element={<CategoryList />} />
+          <Route path="/product-form" element={<ProductForm />} />
+          <Route path="/seller-dashboard" element={<SellerDashboard />} />
+        </Route>
         <Route element={<AuthLayout />}>
           <Route path="/register" element={<Register />} />
 
