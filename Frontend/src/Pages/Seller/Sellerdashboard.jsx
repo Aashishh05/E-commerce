@@ -290,7 +290,7 @@ const SellerDashboard = () => {
             boxShadow: "0 12px 32px rgba(22, 101, 52, 0.25)",
           }}
           whileTap={{ scale: 0.96 }}
-          onClick={() => navigate("/seller/products/new")}
+          onClick={() => navigate("/product-form")}
           className="flex items-center gap-2.5 px-6 py-3 bg-gradient-to-r from-green-700 to-green-800 text-white text-sm font-semibold rounded-2xl shadow-lg hover:shadow-2xl transition-all cursor-pointer h-fit"
         >
           <Plus size={16} />
@@ -499,19 +499,19 @@ const SellerDashboard = () => {
           {
             label: "Add Product",
             icon: <Plus size={18} />,
-            path: "/seller/products/new",
+            path: "/product-form",
             color: "from-green-600 to-green-700",
           },
           {
             label: "Add Category",
             icon: <Tag size={18} />,
-            path: "/seller/categories/new",
+            path: "/category-form",
             color: "from-blue-600 to-blue-700",
           },
           {
             label: "View Orders",
             icon: <ShoppingCart size={18} />,
-            path: "/seller/orders",
+            path: "/orders",
             color: "from-amber-600 to-amber-700",
           },
           {

@@ -37,7 +37,7 @@ const navItems = [
     label: "Products",
     icon: <Package size={16} />,
     children: [
-      { label: "All Products", icon: <List size={14} />, path: "/seller/products" },
+      { label: "All Products", icon: <List size={14} />, path: "/product-list" },
       { label: "Add Product", icon: <Plus size={14} />, path: "/product-form" },
     ],
   },
@@ -47,12 +47,7 @@ const navItems = [
     icon: <ShoppingCart size={16} />,
     path: "/seller/orders",
   },
-  {
-    key: "analytics",
-    label: "Analytics",
-    icon: <BarChart2 size={16} />,
-    path: "/seller/analytics",
-  },
+ 
 ];
 
 const SellerSidebar = () => {

@@ -13,6 +13,7 @@ import SellerLayout from "./Components/Seller/SellerLayout";
 import CategoryForm from "./Pages/Seller/Categoryform";
 import CategoryList from "./Pages/Seller/CategoryList";
 import ProductForm from "./Pages/Seller/Productform";
+import ProductList from "./Pages/Seller/Productlist";
 
 const App = () => {
   return (
@@ -24,6 +25,7 @@ const App = () => {
           <Route path="/category-form" element={<CategoryForm />} />
           <Route path="/category-list" element={<CategoryList />} />
           <Route path="/product-form" element={<ProductForm />} />
+          <Route path="/product-list" element={<ProductList />} />
           <Route path="/seller-dashboard" element={<SellerDashboard />} />
         </Route>
         <Route element={<AuthLayout />}>
