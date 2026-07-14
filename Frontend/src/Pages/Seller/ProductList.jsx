@@ -132,7 +132,7 @@ const ProductList = () => {
             boxShadow: "0 12px 32px rgba(22, 101, 52, 0.25)",
           }}
           whileTap={{ scale: 0.96 }}
-          onClick={() => navigate("/seller/products/new")}
+          onClick={() => navigate("/product-form")}
           className="flex items-center gap-2.5 px-6 py-3 bg-gradient-to-r from-green-700 to-green-800 text-white text-sm font-semibold rounded-2xl shadow-md hover:shadow-lg transition-all cursor-pointer h-fit"
         >
           <Plus size={16} />

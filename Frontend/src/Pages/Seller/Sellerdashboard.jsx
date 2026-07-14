@@ -511,7 +511,7 @@ const SellerDashboard = () => {
           {
             label: "View Orders",
             icon: <ShoppingCart size={18} />,
-            path: "/orders",
+            path: "/order-list",
             color: "from-amber-600 to-amber-700",
           },
           {
