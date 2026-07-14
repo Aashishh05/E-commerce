@@ -16,6 +16,9 @@ import ProductForm from "./Pages/Seller/Productform";
 import ProductList from "./Pages/Seller/Productlist";
 import OrderList from "./Pages/Seller/OrderList";
 import AdminLayout from "./Components/Admin/AdminLayout";
+import AdminSellers from "./Pages/Admin/Adminsellers";
+import AdminUsers from "./Pages/Admin/Adminusers";
+import AdminDashboard from "./Pages/Admin/AdminDashboard";
 
 const App = () => {
   return (
@@ -24,7 +27,9 @@ const App = () => {
         <Route index element={<Homepage />} />
 
         <Route element={<AdminLayout />} >
-        
+        <Route path="/admin/seller" element={<AdminSellers />} />
+        <Route path="/admin/user" element={<AdminUsers />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
         </Route>
 
         <Route element={<SellerLayout />}>
