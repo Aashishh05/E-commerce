@@ -45,7 +45,7 @@ const navItems = [
     key: "order",
     label: "Orders",
     icon: <ShoppingCart size={16} />,
-    path: "/seller/orders",
+    path: "/order-list",
   },
  
 ];
