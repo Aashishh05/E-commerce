@@ -11,14 +11,28 @@ import {
   X,
   Store,
   Zap,
+  LogOut,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { logout } from "../../Redux/authSlice";
+import { clearStorage } from "../../Localstorage/storage";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [open, setOpen] = useState(false);
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
   const nav = useNavigate();
+  const dispatch = useDispatch();
+
+  const handleLogout = () => {
+    dispatch(logout());
+    clearStorage();
+    setIsMobileMenuOpen(false);
+    Navigate("/");
+  };
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -142,6 +156,7 @@ const Navbar = () => {
 
         {/* Desktop Controls */}
         <motion.div
+          key={isAuthenticated ? "auth" : "guest"}
           className="hidden lg:flex items-center gap-5"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -181,17 +196,127 @@ const Navbar = () => {
             </div>
           </motion.a>
 
-          <motion.a
-            onClick={() => nav("/login")}
-            className="flex items-center gap-2 py-2 px-5 bg-gradient-to-r from-green-50 to-green-100/80 border border-green-200/50 hover:from-green-100 hover:to-green-200 text-green-900 font-semibold rounded-full text-sm transition-all shadow-sm hover:shadow-md group"
-            whileHover={{ x: 2 }}
-          >
-            <User
-              size={16}
-              className="group-hover:scale-110 transition-transform"
-            />
-            <span>Sign In</span>
-          </motion.a>
+          {!isAuthenticated ? (
+            <motion.a
+              onClick={() => nav("/login")}
+              className="flex items-center gap-2 py-2 px-5 bg-gradient-to-r from-green-50 to-green-100/80 border border-green-200/50 hover:from-green-100 hover:to-green-200 text-green-900 font-semibold rounded-full text-sm transition-all shadow-sm hover:shadow-md group cursor-pointer"
+              whileHover={{ x: 2 }}
+            >
+              <User
+                size={16}
+                className="group-hover:scale-110 transition-transform"
+              />
+              <span>Sign In</span>
+            </motion.a>
+          ) : (
+            <div className="relative">
+              {/* User Avatar */}
+              <motion.button
+                onClick={() => setOpen(!open)}
+                className="w-10 h-10 rounded-full bg-green-900 text-white font-bold flex items-center justify-center shadow-md hover:bg-green-800 transition"
+                whileHover={{ scale: 1.05 }}
+              >
+                {user?.name?.charAt(0).toUpperCase()}
+              </motion.button>
+
+              {/* Dropdown */}
+              <AnimatePresence>
+                {open && (
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="fixed inset-0 z-40"
+                      onClick={() => setOpen(false)}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 mt-3 w-52 bg-white border border-stone-100 rounded-2xl shadow-2xl overflow-hidden z-50"
+                    >
+                      {/* User Info Header */}
+                      <div className="px-4 py-3 bg-gradient-to-br from-green-900 to-green-800">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-white/20 text-white font-bold flex items-center justify-center text-sm shrink-0">
+                            {user?.name?.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-white truncate">
+                              {user?.name}
+                            </p>
+                            <p className="text-[10px] text-green-300 capitalize tracking-wide">
+                              {user?.role}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Menu Items */}
+                      <div className="p-2">
+                        <motion.button
+                          whileHover={{ x: 3 }}
+                          onClick={() => {
+                            nav("/profile");
+                            setOpen(false);
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 hover:text-green-900 rounded-xl transition-all"
+                        >
+                          <User size={15} className="text-stone-400" />
+                          My Profile
+                        </motion.button>
+
+                        {user?.role === "seller" && (
+                          <motion.button
+                            whileHover={{ x: 3 }}
+                            onClick={() => {
+                              nav("/seller-dashboard");
+                              setOpen(false);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 hover:text-green-900 rounded-xl transition-all"
+                          >
+                            <Store size={15} className="text-stone-400" />
+                            Seller Dashboard
+                          </motion.button>
+                        )}
+
+                        {user?.role === "admin" && (
+                          <motion.button
+                            whileHover={{ x: 3 }}
+                            onClick={() => {
+                              nav("/admin-dashboard");
+                              setOpen(false);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 hover:text-green-900 rounded-xl transition-all"
+                          >
+                            <Zap size={15} className="text-stone-400" />
+                            Admin Dashboard
+                          </motion.button>
+                        )}
+
+                        <div className="my-1.5 border-t border-stone-100" />
+
+                        <motion.button
+                          whileHover={{ x: 3 }}
+                          onClick={() => {
+                            dispatch(logout());
+                            setOpen(false);
+                            nav("/");
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                        >
+                          <LogOut size={15} />
+                          Logout
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
         </motion.div>
 
         {/* Mobile Actions */}
@@ -342,7 +467,7 @@ const Navbar = () => {
               transition={{ duration: 2, repeat: Infinity }}
             />
             <span className="text-xs font-bold text-stone-500 uppercase tracking-widest">
-              AURA OFFICIAL STORE
+              MARKETPLACE
             </span>
           </motion.div>
         </div>
@@ -435,20 +560,63 @@ const Navbar = () => {
               </motion.div>
 
               <motion.div
+                key={isAuthenticated ? "auth" : "guest"}
                 initial={{ y: 10, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.35 }}
               >
-                <motion.a
-                  href="#account"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full py-3 bg-gradient-to-r from-green-800 to-green-900 hover:from-green-900 hover:to-green-950 text-white rounded-xl text-center font-semibold text-sm flex items-center justify-center gap-2 shadow-lg transition-all"
-                >
-                  <User size={18} />
-                  <span>My Account / Sign In</span>
-                </motion.a>
+                {!isAuthenticated ? (
+                  <motion.button
+                    onClick={() => {
+                      nav("/login");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full py-3 bg-gradient-to-r from-green-800 to-green-900 hover:from-green-900 hover:to-green-950 text-white rounded-xl text-center font-semibold text-sm flex items-center justify-center gap-2 shadow-lg transition-all"
+                  >
+                    <User size={18} />
+                    <span>Sign In</span>
+                  </motion.button>
+                ) : (
+                  <div className="rounded-xl overflow-hidden border border-stone-100 shadow-sm">
+                    <div className="px-4 py-3 bg-gradient-to-br from-green-900 to-green-800 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-white/20 text-white font-bold flex items-center justify-center text-sm shrink-0">
+                        {user?.name?.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-white">
+                          {user?.name}
+                        </p>
+                        <p className="text-[10px] text-green-300 capitalize">
+                          {user?.role}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="p-2 bg-white">
+                      <motion.button
+                        whileHover={{ x: 3 }}
+                        onClick={() => {
+                          nav("/profile");
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-stone-700 hover:bg-stone-900 hover:text-green-900 rounded-xl transition-all"
+                      >
+                        <User size={15} className="text-stone-400" />
+                        My Profile
+                      </motion.button>
+                      <div className="my-1.5 border-t border-stone-100" />
+                      <motion.button
+                        whileHover={{ x: 3 }}
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                      >
+                        <LogOut size={15} />
+                        Logout
+                      </motion.button>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             </motion.div>
           </motion.div>
