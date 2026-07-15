@@ -20,6 +20,7 @@ import AdminSellers from "./Pages/Admin/Adminsellers";
 import AdminUsers from "./Pages/Admin/Adminusers";
 import AdminDashboard from "./Pages/Admin/AdminDashboard";
 import AdminProducts from "./Pages/Admin/AdminProducts";
+import AdminCategories from "./Pages/Admin/AdminCategories";
 
 const App = () => {
   return (
@@ -31,6 +32,7 @@ const App = () => {
         <Route path="/admin/sellers" element={<AdminSellers />} />
         <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="/admin/products" element={<AdminProducts />} />
+        <Route path="/admin/categories" element={<AdminCategories />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         </Route>
 
