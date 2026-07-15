@@ -28,12 +28,12 @@ const App = () => {
       <Routes>
         <Route index element={<Homepage />} />
 
-        <Route element={<AdminLayout />} >
-        <Route path="/admin/sellers" element={<AdminSellers />} />
-        <Route path="/admin/users" element={<AdminUsers />} />
-        <Route path="/admin/products" element={<AdminProducts />} />
-        <Route path="/admin/categories" element={<AdminCategories />} />
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route element={<AdminLayout />}>
+          <Route path="/admin/sellers" element={<AdminSellers />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/products" element={<AdminProducts />} />
+          <Route path="/admin/categories" element={<AdminCategories />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
         </Route>
 
         <Route element={<SellerLayout />}>
@@ -58,26 +58,16 @@ const App = () => {
       <Toaster
         position="top-right"
         reverseOrder={false}
-        gutter={8}
+        gutter={10}
+        containerStyle={{
+          top: 20,
+          right: 20,
+        }}
         toastOptions={{
           duration: 3000,
           style: {
-            borderRadius: "12px",
-            background: "#ffffff",
-            color: "#111827",
-            boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
-          },
-          success: {
-            iconTheme: {
-              primary: "#16a34a",
-              secondary: "#ffffff",
-            },
-          },
-          error: {
-            iconTheme: {
-              primary: "#dc2626",
-              secondary: "#ffffff",
-            },
+            borderRadius: "10px",
+            fontSize: "14px",
           },
         }}
       />

@@ -7,6 +7,9 @@ import { FcGoogle } from "react-icons/fc";
 import * as Yup from "yup";
 import toast, { Toaster } from "react-hot-toast"; // Imported toast and Toaster component
 import API from "../../utils/axios";
+import { useDispatch } from "react-redux";
+import { login } from "../../Redux/authSlice";
+import { setToken, setUser } from "../../Localstorage/storage";
 
 const loginSchema = Yup.object({
   email: Yup.string()
@@ -20,43 +23,54 @@ const loginSchema = Yup.object({
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
-  
+  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const handleSubmit = async (values, { setSubmitting }) => {
     setError(null);
+    setLoading(true);
     try {
       const response = await API.post(
         "http://localhost:5000/api/auth/login",
         values,
       );
+      const { user, token } = response.data.data;
 
-      console.log("Login successful:", response.data);
+      dispatch(login({ user, token }));
+
+      setUser(user);
+      setToken(token);
+
+      if (user.role === "admin") {
+        setTimeout(() => {
+          navigate("/admin-dashboard");
+        }, 1000);
+      } else if (user.role === "seller") {
+        setTimeout(() => {
+          navigate("/seller-dashboard");
+        }, 1000);
+      } else {
+        setTimeout(() => {
+          navigate("/");
+        }, 1000);
+      }
 
       toast.success("Welcome back! Login successful.", {
-        duration: 3000,
         style: {
           background: "#223026",
           color: "#FAFAF8",
-          fontSize: "13px",
-          fontFamily: "sans-serif",
-          borderRadius: "8px",
         },
         iconTheme: {
           primary: "#A4B494",
           secondary: "#223026",
         },
       });
-
-      setTimeout(() => {
-        navigate("/");
-      }, 1100);
     } catch (err) {
       const message =
         err.response?.data?.message || err.message || "Invalid credentials.";
       setError(message);
 
-      // 3. Trigger Error Toast Notification
       toast.error(message, {
         duration: 4000,
         style: {
@@ -68,6 +82,7 @@ const Login = () => {
         },
       });
     } finally {
+      setLoading(false);
       setSubmitting(false);
     }
   };
@@ -87,6 +102,36 @@ const Login = () => {
     hidden: { opacity: 0, y: 12 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
   };
+  {
+    loading && (
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-4 p-3 rounded-lg border border-[#A4B494] bg-[#223026]/10 flex items-center justify-center gap-2"
+      >
+        <motion.div
+          className="w-3.5 h-3.5 border-2 border-[#223026] border-t-transparent rounded-full"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        />
+        <span className="text-[#223026] text-xs font-medium tracking-wide">
+          Signing you in...
+        </span>
+      </motion.div>
+    );
+  }
+
+  {
+    !loading && error && (
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-4 p-3 rounded-lg border border-[#EF5350] bg-[#FFEBEE]/20 text-[#EF5350] text-xs font-light text-center"
+      >
+        {error}
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -95,8 +140,7 @@ const Login = () => {
       animate="visible"
       variants={containerVariants}
     >
-      {/* 4. Toaster Container (displays the active toasts) */}
-      <Toaster position="top-center" reverseOrder={false} />
+      <Toaster position="top-right" reverseOrder={false} />
 
       <motion.div className="mb-6" variants={itemVariants}>
         <p className="uppercase tracking-[0.35em] text-[9px] text-[#A4B494] font-semibold">
