@@ -1,11 +1,15 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Heart, Star, ShoppingCart, Eye, Store } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
+import { useSelector } from "react-redux";
+import toast from "react-hot-toast";
 
 const ProductCard = ({ product }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [showAddedMessage, setShowAddedMessage] = useState(false);
+  const { isAuthenticated } = useSelector((state) => state.auth);
 
   const {
     name,
@@ -26,6 +30,9 @@ const ProductCard = ({ product }) => {
 
   const handleAddToCart = () => {
     setShowAddedMessage(true);
+    if (!isAuthenticated) {
+      toast.error("Please login first");
+    }
     setTimeout(() => setShowAddedMessage(false), 2000);
   };
 
@@ -54,7 +61,6 @@ const ProductCard = ({ product }) => {
       variants={containerVariants}
       className="relative flex flex-col h-full bg-gradient-to-br from-[#fbfbfa] to-stone-50 border border-stone-200/80 rounded-2xl overflow-hidden hover:shadow-2xl hover:border-green-800/30 transition-all duration-300 group"
     >
-      {/* Background Gradient Overlay on Hover */}
       <motion.div
         className="absolute inset-0 bg-gradient-to-br from-green-900/0 to-green-800/0 pointer-events-none z-0"
         animate={{
@@ -65,7 +71,6 @@ const ProductCard = ({ product }) => {
         transition={{ duration: 0.3 }}
       />
 
-      {/* Badges */}
       <div className="absolute top-4 left-4 z-20 flex flex-col gap-2.5 pointer-events-auto">
         {badgeText && (
           <motion.span
@@ -90,7 +95,6 @@ const ProductCard = ({ product }) => {
         )}
       </div>
 
-      {/* Wishlist Button */}
       <motion.button
         onClick={() => setIsWishlisted(!isWishlisted)}
         className="absolute top-4 right-4 z-20 w-11 h-11 rounded-full bg-white/90 backdrop-blur-md border border-stone-200/80 flex items-center justify-center text-stone-600 hover:text-red-500 hover:bg-white shadow-lg transition-all duration-300 cursor-pointer group/wish"
@@ -112,7 +116,6 @@ const ProductCard = ({ product }) => {
         </motion.div>
       </motion.button>
 
-      {/* Image Container */}
       <div className="relative pt-[100%] overflow-hidden bg-gradient-to-br from-stone-100 to-stone-200">
         <motion.img
           animate={{ scale: isHovered ? 1.08 : 1 }}
@@ -122,7 +125,6 @@ const ProductCard = ({ product }) => {
           className="absolute inset-0 w-full h-full object-cover"
         />
 
-        {/* Gradient Overlay */}
         <motion.div
           className="absolute inset-0 bg-gradient-to-t from-black/0 via-transparent to-black/0"
           animate={{
@@ -133,7 +135,6 @@ const ProductCard = ({ product }) => {
           transition={{ duration: 0.3 }}
         />
 
-        {/* Action Overlay */}
         <motion.div
           className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3 backdrop-blur-sm"
           animate={{ opacity: isHovered ? 1 : 0 }}
@@ -161,7 +162,6 @@ const ProductCard = ({ product }) => {
           </motion.button>
         </motion.div>
 
-        {/* Quick Add Toast */}
         <AnimatePresence>
           {showAddedMessage && (
             <motion.div
@@ -176,9 +176,7 @@ const ProductCard = ({ product }) => {
         </AnimatePresence>
       </div>
 
-      {/* Details */}
       <motion.div className="p-5 flex flex-col flex-grow relative z-10">
-        {/* Category & Vendor */}
         <motion.div
           className="flex items-center justify-between gap-2 mb-3"
           initial={{ opacity: 0 }}
@@ -202,7 +200,6 @@ const ProductCard = ({ product }) => {
           </motion.div>
         </motion.div>
 
-        {/* Title */}
         <motion.h3
           className="font-serif text-[15px] font-semibold text-stone-900 mb-2.5 leading-tight tracking-tight line-clamp-2 hover:text-green-800 transition-colors cursor-pointer relative"
           whileHover={{ x: 2 }}
@@ -216,7 +213,6 @@ const ProductCard = ({ product }) => {
           />
         </motion.h3>
 
-        {/* Rating */}
         <motion.div
           className="flex items-center gap-2 mb-4"
           initial={{ opacity: 0 }}
@@ -256,7 +252,6 @@ const ProductCard = ({ product }) => {
           </motion.span>
         </motion.div>
 
-        {/* Price Section */}
         <motion.div
           className="mt-auto pt-4 border-t border-stone-200/80 flex items-center justify-between"
           initial={{ opacity: 0 }}
@@ -299,7 +294,6 @@ const ProductCard = ({ product }) => {
           </motion.button>
         </motion.div>
 
-        {/* Free Shipping Badge */}
         {discount && discount > 20 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -314,8 +308,5 @@ const ProductCard = ({ product }) => {
     </motion.div>
   );
 };
-
-// Add missing import
-import { AnimatePresence } from "framer-motion";
 
 export default ProductCard;
