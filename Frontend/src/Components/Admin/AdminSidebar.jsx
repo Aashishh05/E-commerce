@@ -23,8 +23,8 @@ const NAV = [
   {
     group: "People",
     items: [
-      { label: "Sellers", icon: Store, to: "/admin/seller" },
-      { label: "Users", icon: Users, to: "/admin/user" },
+      { label: "Sellers", icon: Store, to: "/admin/sellers" },
+      { label: "Users", icon: Users, to: "/admin/users" },
     ],
   },
   {

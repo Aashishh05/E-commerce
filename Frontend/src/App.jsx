@@ -19,6 +19,7 @@ import AdminLayout from "./Components/Admin/AdminLayout";
 import AdminSellers from "./Pages/Admin/Adminsellers";
 import AdminUsers from "./Pages/Admin/Adminusers";
 import AdminDashboard from "./Pages/Admin/AdminDashboard";
+import AdminProducts from "./Pages/Admin/AdminProducts";
 
 const App = () => {
   return (
@@ -27,8 +28,9 @@ const App = () => {
         <Route index element={<Homepage />} />
 
         <Route element={<AdminLayout />} >
-        <Route path="/admin/seller" element={<AdminSellers />} />
-        <Route path="/admin/user" element={<AdminUsers />} />
+        <Route path="/admin/sellers" element={<AdminSellers />} />
+        <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/admin/products" element={<AdminProducts />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         </Route>
 
