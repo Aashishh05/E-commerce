@@ -30,9 +30,8 @@ export const createCategory = async (req, res) => {
     }
 
     let image = {};
-
     if (req.file) {
-      const uploadImage = await UploadToCloudinary(req.file.path, "E-commerce");
+      const uploadImage = await UploadToCloudinary(req.file.buffer, "E-commerce");
 
       image = {
         url: uploadImage.url,
@@ -40,8 +39,8 @@ export const createCategory = async (req, res) => {
         path: uploadImage.path,
       };
 
-      if (fs.existsSync(req.file.path)) {
-        fs.unlink(req.file.path, () => {});
+      if (fs.existsSync(req.file.buffer)) {
+        fs.unlink(req.file.buffer, () => {});
       }
     }
 
@@ -160,7 +159,7 @@ export const updateCategory = async (req, res) => {
         await deleteCloudinaryImage(category.image.public_id);
       }
 
-      const uploadImage = await UploadToCloudinary(req.file.path, "E-commerce");
+      const uploadImage = await UploadToCloudinary(req.file.buffer, "E-commerce");
 
       category.image = {
         url: uploadImage.url,
@@ -168,8 +167,8 @@ export const updateCategory = async (req, res) => {
         path: uploadImage.path,
       };
 
-      if (fs.existsSync(req.file.path)) {
-        fs.unlink(req.file.path, () => {});
+      if (fs.existsSync(req.file.buffer)) {
+        fs.unlink(req.file.buffer, () => {});
       }
     }
 

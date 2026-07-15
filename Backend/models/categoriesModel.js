@@ -39,7 +39,7 @@ const categorySchema = new mongoose.Schema(
   },
 );
 
-categorySchema.pre("save", function (next) {
+categorySchema.pre("save", function () {
   if (this.isModified("name")) {
     this.slug = slugify(this.name, {
       lower: true,
@@ -47,7 +47,6 @@ categorySchema.pre("save", function (next) {
       trim: true,
     });
   }
-  next()
 });
 
 const Category = mongoose.model("Category", categorySchema);
