@@ -205,7 +205,7 @@ const ProductForm = () => {
         <motion.button
           type="button"
           whileTap={{ scale: 0.9 }}
-          onClick={() => navigate("/seller/products")}
+          onClick={() => navigate(-1)}
           className="p-2.5 rounded-2xl hover:bg-stone-100/70 text-stone-400 hover:text-stone-700 transition-all cursor-pointer"
         >
           <ArrowLeft size={18} />
