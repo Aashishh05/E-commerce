@@ -7,6 +7,7 @@ import {
   updateProduct,
 } from "../controller/productController.js";
 import { authorize, protect } from "../middleware/authMiddleware.js";
+import upload from "../middleware/uploadMiddleware.js"
 
 const router = express.Router();
 
@@ -15,8 +16,8 @@ router.get("/getall", getAllProducts);
 router.get("/get/:id", getProductById);
 
 //Seller routes
-router.post("/create", protect, authorize("seller"), createProduct);
-router.put("/update/:id", protect, authorize("seller"), updateProduct);
+router.post("/create", protect, authorize("seller"),upload.single("image"), createProduct);
+router.put("/update/:id", protect, authorize("seller"),upload.single("image"), updateProduct);
 router.delete("/delete/:id", protect, authorize("seller"), deleteProduct);
 
 export default router;

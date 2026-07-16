@@ -330,24 +330,7 @@ const ProductForm = () => {
             )}
           </motion.div>
           {/* SKU */}
-          <motion.div variants={fadeUp}>
-            <label className="text-xs font-bold uppercase tracking-widest text-stone-600 mb-2.5 block flex items-center gap-1.5">
-              SKU
-              <span className="text-stone-400">(Auto-generated)</span>
-            </label>
-            <div className="flex items-center border border-stone-200/60 rounded-2xl overflow-hidden bg-white/50 focus-within:border-green-800 focus-within:ring-2 focus-within:ring-green-800/20 transition-all">
-              <span className="px-5 py-3 bg-stone-100/60 text-stone-500 text-sm font-mono border-r border-stone-200/60 select-none shrink-0">
-                SKU-
-              </span>
-              <motion.input
-                value={form.sku}
-                onChange={(e) => handleChange("sku", toSlug(e.target.value))}
-                placeholder="auto-generated"
-                whileFocus={{ scale: 1.01 }}
-                className="flex-1 px-5 py-3 text-sm font-mono outline-none bg-transparent text-stone-800 placeholder-stone-400"
-              />
-            </div>
-          </motion.div>
+         
           {/* Description */}
           <motion.div variants={fadeUp}>
             <label className="text-xs font-bold uppercase tracking-widest text-stone-600 mb-2.5 block flex items-center gap-1.5">

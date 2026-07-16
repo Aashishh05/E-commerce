@@ -32,7 +32,7 @@ export const createProduct = async (req, res) => {
     let images = {};
 
     if (req.file) {
-      const imageUplaod = await UploadToCloudinary(req.file.path, "E-commerce");
+      const imageUplaod = await UploadToCloudinary(req.file.buffer, "E-commerce");
 
       images = {
         url: imageUplaod.url,
@@ -209,11 +209,11 @@ export const updateProduct = async (req, res) => {
         await deleteCloudinaryImage(product.images.public_id);
       }
 
-      if (product.images?.path && fs.existsSync(product.images.path)) {
-        fs.unlink(product.images.path);
+      if (product.images?.buffer && fs.existsSync(product.images.buffer)) {
+        fs.unlink(product.images.buffer);
       }
 
-      const imageUplaod = await UploadToCloudinary(req.file.path, "E-commerce");
+      const imageUplaod = await UploadToCloudinary(req.file.buffer, "E-commerce");
 
       product.images = {
         url: imageUplaod.url,
