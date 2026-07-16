@@ -38,6 +38,7 @@ const App = () => {
 
         <Route element={<SellerLayout />}>
           <Route path="/category-form" element={<CategoryForm />} />
+          <Route path="/category-form/:id" element={<CategoryForm />} />
           <Route path="/category-list" element={<CategoryList />} />
           <Route path="/product-form" element={<ProductForm />} />
           <Route path="/product-list" element={<ProductList />} />

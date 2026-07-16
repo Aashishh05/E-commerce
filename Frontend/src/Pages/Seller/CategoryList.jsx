@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Plus, Search, Edit2, Trash2, Tag, AlertCircle } from "lucide-react";
-import API from "../../utils/axios";
+import API from "../../utils/axios.js";
+import toast from "react-hot-toast";
 
 const stagger = {
   hidden: {},
@@ -23,6 +24,7 @@ const CategoryList = () => {
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [Isdeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -44,17 +46,78 @@ const CategoryList = () => {
   const filtered = categories.filter(
     (c) =>
       c.name.toLowerCase().includes(search.toLowerCase()) &&
-      (statusFilter === "all" || c.status === statusFilter),
+      (statusFilter === "all" ||
+        (statusFilter === "active" ? c.isActive : !c.isActive)),
   );
 
-  const handleDelete = (id) => {
-    setCategories((prev) => prev.filter((c) => c._id !== id));
-    setDeleteId(null);
+  const handleDelete = async (id) => {
+    try {
+      setIsDeleting(true);
+      const res = await API.delete(`/api/category/delete/${id}`);
+      if (res.status === 200) {
+        setCategories((prev) => prev.filter((c) => c._id !== id));
+        toast.success("Category deleted");
+
+        setDeleteId(null);
+      }
+    } catch (error) {
+      setError("Cannot delete Category", error);
+      console.log(error);
+      toast.success("Failed to delete category");
+    } finally {
+      Isdeleting(false);
+    }
   };
 
   useEffect(() => {
     fetchCategory();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{
+            repeat: Infinity,
+            duration: 1,
+            ease: "linear",
+          }}
+          className="w-12 h-12 rounded-full border-4 border-green-200 border-t-green-700"
+        />
+        <p className="mt-4 text-sm font-semibold text-stone-600">
+          Loading categories...
+        </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 px-4">
+        <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
+          <AlertCircle size={32} className="text-red-600" />
+        </div>
+
+        <h2 className="mt-5 text-2xl font-bold text-stone-900">
+          Something went wrong
+        </h2>
+
+        <p className="mt-2 text-sm text-stone-500 text-center max-w-md">
+          {error}
+        </p>
+
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={fetchCategory}
+          className="mt-6 px-6 py-3 rounded-2xl bg-green-700 text-white font-semibold shadow-md"
+        >
+          Try Again
+        </motion.button>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -63,7 +126,6 @@ const CategoryList = () => {
       animate="visible"
       className="space-y-6"
     >
-      {/* ── Header Section ── */}
       <motion.div
         variants={fadeUp}
         className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4"
@@ -97,9 +159,7 @@ const CategoryList = () => {
         </motion.button>
       </motion.div>
 
-      {/* ── Search & Filter Section ── */}
       <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4">
-        {/* Search Input */}
         <div className="flex-1 relative">
           <motion.div
             className="flex items-center gap-3 bg-white/70 backdrop-blur-sm border border-stone-200/60 rounded-2xl px-5 py-3 focus-within:border-green-800/50 focus-within:ring-2 focus-within:ring-green-800/10 transition-all"
@@ -115,7 +175,6 @@ const CategoryList = () => {
           </motion.div>
         </div>
 
-        {/* Status Filter */}
         <div className="flex gap-2">
           {["all", "active", "inactive"].map((status) => (
             <motion.button
@@ -125,7 +184,7 @@ const CategoryList = () => {
               className={`px-4 py-2.5 rounded-xl text-xs font-semibold uppercase tracking-wider border-2 transition-all cursor-pointer ${
                 statusFilter === status
                   ? "border-green-800 bg-green-50 text-green-800 shadow-sm"
-                  : "border-stone-200/60 bg-white/50 text-stone-600 hover:border-green-300 hover:text-stone-800"
+                  : "border-stone-200/50 bg-white/50 text-stone-600 hover:border-green-100 hover:text-stone-800"
               }`}
             >
               {status}
@@ -134,7 +193,6 @@ const CategoryList = () => {
         </div>
       </motion.div>
 
-      {/* ── Categories Grid ── */}
       <motion.div
         variants={stagger}
         className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5"
@@ -154,10 +212,12 @@ const CategoryList = () => {
                 }}
                 className="bg-white/70 backdrop-blur-sm border border-stone-200/60 rounded-3xl overflow-hidden group shadow-sm transition-all"
               >
-                {/* Image Banner */}
                 <div className="relative h-36 bg-stone-200 overflow-hidden">
                   <motion.img
-                    src={cat.image?.url || "https://placehold.co/300x150?text=No+Image"}
+                    src={
+                      cat.image?.url ||
+                      "https://placehold.co/300x150?text=No+Image"
+                    }
                     alt={cat.name}
                     className="w-full h-full object-cover opacity-75 group-hover:opacity-100"
                     whileHover={{ scale: 1.08 }}
@@ -165,20 +225,18 @@ const CategoryList = () => {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-stone-900/70 via-transparent to-transparent" />
 
-                  {/* Status Badge */}
                   <motion.span
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     className={`absolute top-4 right-4 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border-2 shadow-lg ${
-                      cat.isActive === "active"
+                      cat.isActive
                         ? "text-green-800 bg-green-50/95 border-green-300/60"
-                        : "text-stone-600 bg-stone-100/95 border-stone-300/60"
+                        : "text-red-600 bg-red-100/95 border-red-300/60"
                     }`}
                   >
-                    {cat.isActive ? "active" :"inactive"}
+                    {cat.isActive ? "active" : "inactive"}
                   </motion.span>
 
-                  {/* Product Count Badge */}
                   <motion.div
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -189,7 +247,6 @@ const CategoryList = () => {
                   </motion.div>
                 </div>
 
-                {/* Content */}
                 <div className="p-6">
                   <motion.div
                     initial={{ opacity: 0 }}
@@ -215,9 +272,7 @@ const CategoryList = () => {
                   >
                     <motion.button
                       whileTap={{ scale: 0.93 }}
-                      onClick={() =>
-                        navigate(`/seller/categories/${cat._id}/edit`)
-                      }
+                      onClick={() => navigate(`/category-form/${cat._id}`)}
                       className="flex-1 flex items-center justify-center gap-2 py-2.5 text-xs bg-gradient-to-r from-green-700 to-green-800 text-white text-sm font-semibold rounded-2xl transition-all"
                     >
                       <Edit2 size={13} />
@@ -273,7 +328,6 @@ const CategoryList = () => {
         </AnimatePresence>
       </motion.div>
 
-      {/* ── Delete Confirmation Modal ── */}
       <AnimatePresence>
         {deleteId && (
           <>
@@ -313,11 +367,16 @@ const CategoryList = () => {
               <div className="flex gap-3">
                 <motion.button
                   whileTap={{ scale: 0.95 }}
-                  whileHover={{ backgroundColor: "#dc2626" }}
+                  whileHover={!Isdeleting ? { backgroundColor: "#dc2626" } : {}}
                   onClick={() => handleDelete(deleteId)}
-                  className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white text-sm font-bold rounded-xl cursor-pointer transition-all shadow-md"
+                  disabled={Isdeleting}
+                  className={`flex-1 py-3 bg-red-500 hover:bg-red-600 text-white text-sm font-bold rounded-xl cursor-pointer transition-all shadow-md ${
+                    Isdeleting
+                      ? "bg-red-400 cursor-not-allowed"
+                      : "bg-red-500 hover:bg-red-600 cursor-pointer"
+                  }`}
                 >
-                  Delete
+                  {Isdeleting ? "Deleting..." : "Delete"}
                 </motion.button>
                 <motion.button
                   whileTap={{ scale: 0.95 }}
