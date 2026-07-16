@@ -1,55 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import {
-  Plus,
-  Search,
-  Edit2,
-  Trash2,
-  Tag,
-  ChevronRight,
-  AlertCircle,
-  Filter,
-} from "lucide-react";
-
-const mockCategories = [
-  {
-    id: 1,
-    name: "Beauty & Skincare",
-    slug: "beauty-skincare",
-    description: "Natural botanical skincare, serums, and self-care products.",
-    productsCount: 28,
-    image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=80&h=80&fit=crop",
-    status: "active",
-  },
-  {
-    id: 2,
-    name: "Home & Living",
-    slug: "home-living",
-    description: "Earthy ceramics, candles, and artisan home décor.",
-    productsCount: 15,
-    image: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=80&h=80&fit=crop",
-    status: "active",
-  },
-  {
-    id: 3,
-    name: "Wellness Tech",
-    slug: "wellness-tech",
-    description: "Smart devices and eco gadgets for holistic living.",
-    productsCount: 9,
-    image: "https://images.unsplash.com/photo-1602928321679-560bb453f190?w=80&h=80&fit=crop",
-    status: "active",
-  },
-  {
-    id: 4,
-    name: "Sustainable Fashion",
-    slug: "sustainable-fashion",
-    description: "Slow-fashion garments from biodegradable natural fibers.",
-    productsCount: 6,
-    image: "https://images.unsplash.com/photo-1544441893-675973e31985?w=80&h=80&fit=crop",
-    status: "inactive",
-  },
-];
+import { Plus, Search, Edit2, Trash2, Tag, AlertCircle } from "lucide-react";
+import API from "../../utils/axios";
 
 const stagger = {
   hidden: {},
@@ -68,20 +21,40 @@ const fadeUp = {
 const CategoryList = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const [categories, setCategories] = useState(mockCategories);
   const [deleteId, setDeleteId] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
+
+  const fetchCategory = async () => {
+    setLoading(true);
+    try {
+      const res = await API.get(`/api/category/getall`);
+      console.log(res.data.data);
+      setCategories(res.data.data);
+    } catch (error) {
+      setError("Error fetching categories", error);
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filtered = categories.filter(
     (c) =>
       c.name.toLowerCase().includes(search.toLowerCase()) &&
-      (statusFilter === "all" || c.status === statusFilter)
+      (statusFilter === "all" || c.status === statusFilter),
   );
 
   const handleDelete = (id) => {
-    setCategories((prev) => prev.filter((c) => c.id !== id));
+    setCategories((prev) => prev.filter((c) => c._id !== id));
     setDeleteId(null);
   };
+
+  useEffect(() => {
+    fetchCategory();
+  }, []);
 
   return (
     <motion.div
@@ -168,9 +141,9 @@ const CategoryList = () => {
       >
         <AnimatePresence mode="popLayout">
           {filtered.length > 0 ? (
-            filtered.map((cat, i) => (
+            filtered.map((cat) => (
               <motion.div
-                key={cat.id}
+                key={cat._id}
                 variants={fadeUp}
                 layout
                 exit={{ opacity: 0, scale: 0.93, y: 10 }}
@@ -184,7 +157,7 @@ const CategoryList = () => {
                 {/* Image Banner */}
                 <div className="relative h-36 bg-stone-200 overflow-hidden">
                   <motion.img
-                    src={cat.image}
+                    src={cat.image?.url || "https://placehold.co/300x150?text=No+Image"}
                     alt={cat.name}
                     className="w-full h-full object-cover opacity-75 group-hover:opacity-100"
                     whileHover={{ scale: 1.08 }}
@@ -197,12 +170,12 @@ const CategoryList = () => {
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     className={`absolute top-4 right-4 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border-2 shadow-lg ${
-                      cat.status === "active"
+                      cat.isActive === "active"
                         ? "text-green-800 bg-green-50/95 border-green-300/60"
                         : "text-stone-600 bg-stone-100/95 border-stone-300/60"
                     }`}
                   >
-                    {cat.status}
+                    {cat.isActive ? "active" :"inactive"}
                   </motion.span>
 
                   {/* Product Count Badge */}
@@ -212,7 +185,7 @@ const CategoryList = () => {
                     transition={{ delay: 0.1 }}
                     className="absolute top-4 left-4 px-3 py-1.5 bg-white/95 backdrop-blur-sm border border-white/60 text-[10px] font-bold text-stone-700 rounded-full shadow-lg"
                   >
-                    {cat.productsCount} items
+                    {cat.productsCount || 0} items
                   </motion.div>
                 </div>
 
@@ -236,29 +209,28 @@ const CategoryList = () => {
                     </p>
                   </motion.div>
 
-                  {/* Action Buttons - appears on hover */}
                   <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    whileHover={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex items-center gap-2 pt-4 border-t border-stone-100/60 opacity-0 group-hover:opacity-100 transition-opacity"
+                    initial={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2 pt-4 border-t border-stone-100/60"
                   >
                     <motion.button
                       whileTap={{ scale: 0.93 }}
-                      whileHover={{ backgroundColor: "rgba(22, 101, 52, 0.08)" }}
-                      onClick={() => navigate(`/seller/categories/${cat.id}/edit`)}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold text-green-700 hover:text-green-800 border-2 border-green-200/60 hover:border-green-700 rounded-xl transition-all cursor-pointer bg-green-50/40"
+                      onClick={() =>
+                        navigate(`/seller/categories/${cat._id}/edit`)
+                      }
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 text-xs bg-gradient-to-r from-green-700 to-green-800 text-white text-sm font-semibold rounded-2xl transition-all"
                     >
                       <Edit2 size={13} />
                       Edit
                     </motion.button>
+
                     <motion.button
                       whileTap={{ scale: 0.93 }}
-                      whileHover={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
-                      onClick={() => setDeleteId(cat.id)}
-                      className="flex items-center justify-center p-2.5 text-xs font-bold text-red-500 hover:text-red-600 border-2 border-red-200/60 hover:border-red-500 rounded-xl transition-all cursor-pointer bg-red-50/40"
+                      onClick={() => setDeleteId(cat._id)}
+                      className="flex-1 flex items-center justify-center gap-2 p-2.5 bg-gradient-to-r from-red-700 to-red-800 text-white text-sm rounded-2xl font-semibold  transition-all"
                     >
                       <Trash2 size={13} />
+                      Delete
                     </motion.button>
                   </motion.div>
                 </div>
@@ -290,7 +262,7 @@ const CategoryList = () => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => navigate("/seller/categories/new")}
+                onClick={() => navigate("/category-form")}
                 className="text-sm text-green-700 font-bold flex items-center gap-2 hover:text-green-900 cursor-pointer bg-green-50/60 px-4 py-2 rounded-xl border border-green-200/60 transition-all"
               >
                 <Plus size={14} />
