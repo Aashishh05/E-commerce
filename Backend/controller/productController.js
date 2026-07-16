@@ -18,6 +18,8 @@ export const createProduct = async (req, res) => {
       subCategory,
       brand,
       stock,
+      originalPrice,
+      status,
       specifications,
       tags,
     } = req.body;
@@ -29,16 +31,25 @@ export const createProduct = async (req, res) => {
       });
     }
 
-    let images = {};
+    // Handle multiple images
+    let images = [];
 
-    if (req.file) {
-      const imageUplaod = await UploadToCloudinary(req.file.buffer, "E-commerce");
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const imageUpload = await UploadToCloudinary(file.buffer, "E-commerce");
+        images.push({
+          url: imageUpload.url,
+          public_id: imageUpload.public_id,
+          path: imageUpload.path,
+        });
+      }
+    }
 
-      images = {
-        url: imageUplaod.url,
-        public_id: imageUplaod.public_id,
-        path: imageUplaod.path,
-      };
+    if (images.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one image is required",
+      });
     }
 
     const product = await Product.create({
@@ -50,9 +61,11 @@ export const createProduct = async (req, res) => {
       brand,
       images,
       price,
+      originalPrice: originalPrice || null,
       stock,
+      status: status || "active",
       specifications: specifications || {},
-      tags: tags || [],
+      tags: tags ? tags.split(",").map((tag) => tag.trim()) : [],
     });
 
     res.status(201).json({
@@ -61,6 +74,9 @@ export const createProduct = async (req, res) => {
       data: product,
     });
   } catch (error) {
+
+      console.error("Create Product Error:", error);
+
     res.status(500).json({
       success: false,
       message: "Failed to create product",
@@ -182,6 +198,7 @@ export const updateProduct = async (req, res) => {
       brand,
       stock,
       status,
+      originalPrice,
       specifications,
       tags,
     } = req.body;
@@ -193,33 +210,40 @@ export const updateProduct = async (req, res) => {
     if (subCategory) product.subCategory = subCategory;
     if (brand != null) product.brand = brand;
     if (stock != null) product.stock = stock;
+    if (originalPrice != null) product.originalPrice = originalPrice;
 
     if (status) {
-      const allowed = ["Active", "Inactive", "Out of Stock"];
+      const allowed = ["active", "draft", "archived"];
       if (allowed.includes(status)) {
         product.status = status;
       }
     }
 
     if (specifications) product.specifications = specifications;
-    if (tags) product.tags = tags;
+    if (tags) product.tags = tags.split(",").map((tag) => tag.trim());
 
-    if (req.file) {
-      if (product.images?.public_id) {
-        await deleteCloudinaryImage(product.images.public_id);
+    // Handle new images if uploaded
+    if (req.files && req.files.length > 0) {
+      // Delete old images from Cloudinary
+      if (product.images && product.images.length > 0) {
+        for (const img of product.images) {
+          if (img.public_id) {
+            await deleteCloudinaryImage(img.public_id);
+          }
+        }
       }
 
-      if (product.images?.buffer && fs.existsSync(product.images.buffer)) {
-        fs.unlink(product.images.buffer);
+      // Upload new images
+      let newImages = [];
+      for (const file of req.files) {
+        const imageUpload = await UploadToCloudinary(file.buffer, "E-commerce");
+        newImages.push({
+          url: imageUpload.url,
+          public_id: imageUpload.public_id,
+          path: imageUpload.path,
+        });
       }
-
-      const imageUplaod = await UploadToCloudinary(req.file.buffer, "E-commerce");
-
-      product.images = {
-        url: imageUplaod.url,
-        public_id: imageUplaod.public_id,
-        path: imageUplaod.path,
-      };
+      product.images = newImages;
     }
 
     await product.save();
@@ -236,6 +260,7 @@ export const updateProduct = async (req, res) => {
     });
   }
 };
+
 export const deleteProduct = async (req, res) => {
   try {
     if (req.user.role !== "seller") {
@@ -257,12 +282,13 @@ export const deleteProduct = async (req, res) => {
       });
     }
 
-    if (product.images?.public_id) {
-      await deleteCloudinaryImage(product.images.public_id);
-    }
-
-    if (product.images?.path && fs.existsSync(product.images.path)) {
-      fs.unlink(product.images.path);
+    // Delete images from Cloudinary
+    if (product.images && product.images.length > 0) {
+      for (const img of product.images) {
+        if (img.public_id) {
+          await deleteCloudinaryImage(img.public_id);
+        }
+      }
     }
 
     await product.deleteOne();

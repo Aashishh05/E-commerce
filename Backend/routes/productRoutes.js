@@ -16,8 +16,8 @@ router.get("/getall", getAllProducts);
 router.get("/get/:id", getProductById);
 
 //Seller routes
-router.post("/create", protect, authorize("seller"),upload.single("image"), createProduct);
-router.put("/update/:id", protect, authorize("seller"),upload.single("image"), updateProduct);
+router.post("/create", protect, authorize("seller"),upload.array("images",5), createProduct);
+router.put("/update/:id", protect, authorize("seller"),upload.array("images",5), updateProduct);
 router.delete("/delete/:id", protect, authorize("seller"), deleteProduct);
 
 export default router;
