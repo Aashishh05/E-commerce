@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import { Upload, ArrowLeft, Check, ImageIcon } from "lucide-react";
+import { Upload, ArrowLeft, Check, ImageIcon, AlertCircle } from "lucide-react";
 import API from "../../utils/axios.js";
+import toast from "react-hot-toast";
 
 const stagger = {
   hidden: {},
@@ -27,35 +28,121 @@ const schema = Yup.object({
 
 const CategoryForm = () => {
   const navigate = useNavigate();
-  const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(null);
-  const [category, setCategory] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [initialValues, setInitialValues] = useState({
+    name: "",
+    description: "",
+    image: null,
+  });
+
+  const { id } = useParams();
+  const isEditMode = Boolean(id);
+
+  const fetchCategoryById = async () => {
+    setLoading(true);
+    try {
+      const res = await API.get(`/api/category/get/${id}`);
+
+      const cat = res.data.data;
+
+      setInitialValues({
+        name: cat.name || "",
+        description: cat.description || "",
+        image: null,
+      });
+      setImagePreview(cat.image?.url || null);
+    } catch (err) {
+      console.log("Fetch Error:", err);
+
+      const msg = err.response?.data?.message || "Failed to fetch category";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (id) {
+      fetchCategoryById();
+    }
+  }, [id]);
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
       const formdata = new FormData();
-
       formdata.append("name", values.name);
       formdata.append("description", values.description);
       if (values.image) {
         formdata.append("image", values.image);
       }
 
-      const res = await API.post(`/api/category/create`, formdata);
-      console.log(res.data);
-
-      setCategory((prev) => [...prev, res.data.data]);
-      setSubmitted(true);
-      setTimeout(() => navigate("/category-list"), 1600);
-    } catch (error) {
-      setError("Error creating category", error);
+      if (isEditMode) {
+        const res = await API.put(`/api/category/update/${id}`, formdata);
+        if (res.status === 200) {
+          toast.success("Category updated successfully");
+          navigate("/category-list");
+        }
+      } else {
+        await API.post(`/api/category/create`, formdata);
+        setSubmitted(true);
+        toast.success("Category created successfully");
+        setTimeout(() => navigate("/category-list"), 1600);
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || "Something went wrong";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+          className="w-12 h-12 rounded-full border-4 border-green-200 border-t-green-700"
+        />
+        <p className="mt-4 text-sm font-semibold text-stone-600">
+          Loading category...
+        </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 px-4">
+        <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
+          <AlertCircle size={32} className="text-red-600" />
+        </div>
+        <h2 className="mt-5 text-2xl font-bold text-stone-900">
+          Something went wrong
+        </h2>
+        <p className="mt-2 text-sm text-stone-500 text-center max-w-md">
+          {error}
+        </p>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => {
+            setError(null);
+            if (id) fetchCategoryById();
+          }}
+          className="mt-6 px-6 py-3 rounded-2xl bg-green-700 text-white font-semibold shadow-md cursor-pointer"
+        >
+          Try Again
+        </motion.button>
+      </div>
+    );
+  }
 
   if (submitted) {
     return (
@@ -101,11 +188,10 @@ const CategoryForm = () => {
       animate="visible"
       className="max-w-xl space-y-8"
     >
-      {/* Header */}
       <motion.div variants={fadeUp} className="flex items-center gap-4">
         <motion.button
           whileTap={{ scale: 0.9 }}
-          onClick={() => navigate("/seller/categories")}
+          onClick={() => navigate("/category-list")}
           className="p-2.5 rounded-2xl hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition-all cursor-pointer"
         >
           <ArrowLeft size={18} />
@@ -115,19 +201,19 @@ const CategoryForm = () => {
             Category Management
           </span>
           <h1 className="font-serif text-3xl font-bold text-stone-900">
-            New Category
+            {isEditMode ? "Update Category" : "New Category"}
           </h1>
         </div>
       </motion.div>
 
       <Formik
-        initialValues={{ name: "", description: "", image: null }}
+        initialValues={initialValues}
+        enableReinitialize
         validationSchema={schema}
         onSubmit={handleSubmit}
       >
         {({ errors, touched, isSubmitting, setFieldValue }) => (
           <Form className="space-y-5">
-            {/* Image Upload */}
             <motion.div
               variants={fadeUp}
               className="bg-white border border-stone-200/60 rounded-3xl p-6 shadow-sm"
@@ -145,9 +231,7 @@ const CategoryForm = () => {
                 onDrop={(e) => {
                   e.preventDefault();
                   setDragOver(false);
-
                   const file = e.dataTransfer.files[0];
-
                   if (file) {
                     setFieldValue("image", file);
                     setImagePreview(URL.createObjectURL(file));
@@ -169,7 +253,6 @@ const CategoryForm = () => {
                       alt="Category Preview"
                       className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-80"
                     />
-
                     <div className="relative z-10 bg-white/95 px-4 py-1.5 rounded-full text-xs font-semibold text-stone-700 flex items-center gap-1.5 shadow border border-stone-200">
                       <ImageIcon size={13} />
                       Change Image
@@ -179,20 +262,15 @@ const CategoryForm = () => {
                   <>
                     <motion.div
                       animate={{ y: [0, -6, 0] }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                      }}
+                      transition={{ duration: 2, repeat: Infinity }}
                       className="text-stone-300"
                     >
                       <Upload size={28} />
                     </motion.div>
-
                     <div className="text-center">
                       <p className="text-sm font-semibold text-stone-500">
                         Drag & drop or click to upload
                       </p>
-
                       <p className="text-xs text-stone-400 mt-0.5">
                         PNG, JPG, WEBP — max 5MB
                       </p>
@@ -207,12 +285,8 @@ const CategoryForm = () => {
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files[0];
-
                     if (file) {
-                      // Store file in Formik
                       setFieldValue("image", file);
-
-                      // Preview image
                       setImagePreview(URL.createObjectURL(file));
                     }
                   }}
@@ -220,12 +294,10 @@ const CategoryForm = () => {
               </div>
             </motion.div>
 
-            {/* Name + Description */}
             <motion.div
               variants={fadeUp}
               className="bg-white border border-stone-200/60 rounded-3xl p-6 shadow-sm space-y-5"
             >
-              {/* Name */}
               <div>
                 <label className="text-xs font-bold uppercase tracking-widest text-stone-600 mb-2 block">
                   Category Name <span className="text-red-500">*</span>
@@ -257,7 +329,6 @@ const CategoryForm = () => {
                 </ErrorMessage>
               </div>
 
-              {/* Description */}
               <div>
                 <label className="text-xs font-bold uppercase tracking-widest text-stone-600 mb-2 block">
                   Description <span className="text-red-500">*</span>
@@ -291,7 +362,6 @@ const CategoryForm = () => {
               </div>
             </motion.div>
 
-            {/* Actions */}
             <motion.div
               variants={fadeUp}
               className="flex items-center gap-3 pt-2"
@@ -314,11 +384,17 @@ const CategoryForm = () => {
                     }}
                   />
                 )}
-                {isSubmitting ? "Adding Category..." : "Add Category"}
+                {isSubmitting
+                  ? isEditMode
+                    ? "Saving..."
+                    : "Adding Category..."
+                  : isEditMode
+                    ? "Save Changes"
+                    : "Add Category"}
               </motion.button>
               <motion.button
                 type="button"
-                onClick={() => navigate("/seller/categories")}
+                onClick={() => navigate("/category-list")}
                 whileHover={{ backgroundColor: "rgba(120,113,108,0.08)" }}
                 className="px-6 py-3 border border-stone-200 text-stone-600 font-semibold rounded-2xl cursor-pointer transition-all text-sm"
               >

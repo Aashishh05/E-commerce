@@ -33,7 +33,6 @@ const CategoryList = () => {
     setLoading(true);
     try {
       const res = await API.get(`/api/category/getall`);
-      console.log(res.data.data);
       setCategories(res.data.data);
     } catch (error) {
       setError("Error fetching categories", error);
@@ -63,7 +62,7 @@ const CategoryList = () => {
     } catch (error) {
       setError("Cannot delete Category", error);
       console.log(error);
-      toast.success("Failed to delete category");
+      toast.error("Failed to delete category");
     } finally {
       Isdeleting(false);
     }
