@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -12,6 +12,7 @@ import {
   Package,
   Tag,
 } from "lucide-react";
+import API from "../../utils/axios";
 
 const stagger = {
   hidden: {},
@@ -41,7 +42,7 @@ const ProductForm = () => {
     name: "",
     sku: "",
     description: "",
-    category: "beauty",
+    category: "",
     price: "",
     originalPrice: "",
     stock: "",
@@ -54,6 +55,25 @@ const ProductForm = () => {
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [category, setCategory] = useState([]);
+
+  const fetchCategory = async () => {
+    setLoading(true);
+    try {
+      const res = await API.get(`/api/category/getall`);
+      console.log(res.data.data);
+      setCategory(res.data.data);
+    } catch (error) {
+      console.log(error);
+    }finally{
+      setLoading(false)
+    }
+  };
+
+  useEffect(() => {
+    fetchCategory();
+  }, []);
 
   const handleChange = (field, value) => {
     setForm((prev) => ({
@@ -91,7 +111,8 @@ const ProductForm = () => {
       e.price = "Valid price is required.";
     if (!form.stock || parseInt(form.stock) < 0)
       e.stock = "Stock quantity is required.";
-    if (form.imagePreviews.length === 0) e.images = "At least one image required.";
+    if (form.imagePreviews.length === 0)
+      e.images = "At least one image required.";
     return e;
   };
 
@@ -281,7 +302,6 @@ const ProductForm = () => {
               Product Details
             </h2>
           </div>
-
           {/* Product Name */}
           <motion.div variants={fadeUp}>
             <label className="text-xs font-bold uppercase tracking-widest text-stone-600 mb-2.5 block flex items-center gap-1.5">
@@ -309,7 +329,6 @@ const ProductForm = () => {
               </motion.p>
             )}
           </motion.div>
-
           {/* SKU */}
           <motion.div variants={fadeUp}>
             <label className="text-xs font-bold uppercase tracking-widest text-stone-600 mb-2.5 block flex items-center gap-1.5">
@@ -329,7 +348,6 @@ const ProductForm = () => {
               />
             </div>
           </motion.div>
-
           {/* Description */}
           <motion.div variants={fadeUp}>
             <label className="text-xs font-bold uppercase tracking-widest text-stone-600 mb-2.5 block flex items-center gap-1.5">
@@ -358,21 +376,28 @@ const ProductForm = () => {
               </motion.p>
             )}
           </motion.div>
-
-          {/* Category */}
           <motion.div variants={fadeUp}>
             <label className="text-xs font-bold uppercase tracking-widest text-stone-600 mb-2.5 block flex items-center gap-1.5">
               Category
             </label>
+
             <select
+              name="category"
               value={form.category}
               onChange={(e) => handleChange("category", e.target.value)}
               className="w-full px-5 py-3 border border-stone-200/60 rounded-2xl text-sm font-medium bg-white/50 focus:outline-none focus:ring-2 focus:ring-green-800/20 focus:border-green-800 transition-all cursor-pointer"
             >
-              <option value="beauty">Beauty & Skincare</option>
-              <option value="home">Home & Living</option>
-              <option value="fashion">Sustainable Fashion</option>
-              <option value="wellness">Wellness Tech</option>
+              <option value="">Select Category</option>
+
+              {category.length > 0 ? (
+                category.map((item) => (
+                  <option key={item._id} value={item._id}>
+                    {item.name}
+                  </option>
+                ))
+              ) : (
+                <option disabled>No Categories Found</option>
+              )}
             </select>
           </motion.div>
         </motion.div>
@@ -437,7 +462,9 @@ const ProductForm = () => {
                   type="number"
                   step="0.01"
                   value={form.originalPrice}
-                  onChange={(e) => handleChange("originalPrice", e.target.value)}
+                  onChange={(e) =>
+                    handleChange("originalPrice", e.target.value)
+                  }
                   placeholder="0.00"
                   whileFocus={{ scale: 1.01 }}
                   className="flex-1 px-5 py-3 text-sm font-semibold outline-none bg-transparent text-stone-800 placeholder-stone-400"
@@ -534,10 +561,7 @@ const ProductForm = () => {
         </motion.div>
 
         {/* ── Action Buttons ── */}
-        <motion.div
-          variants={fadeUp}
-          className="flex items-center gap-3 pt-4"
-        >
+        <motion.div variants={fadeUp} className="flex items-center gap-3 pt-4">
           <motion.button
             type="submit"
             whileHover={{
