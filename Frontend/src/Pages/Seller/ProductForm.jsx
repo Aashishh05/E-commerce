@@ -583,7 +583,7 @@ const ProductForm = () => {
                         }`}
                       >
                         <span className="px-5 py-3 bg-stone-100/60 text-stone-500 text-sm border-r border-stone-200/60 select-none">
-                          $
+                          Rs.
                         </span>
                         <motion.input
                           {...field}
@@ -625,7 +625,7 @@ const ProductForm = () => {
                         }`}
                       >
                         <span className="px-5 py-3 bg-stone-100/60 text-stone-500 text-sm border-r border-stone-200/60 select-none">
-                          $
+                          Rs.
                         </span>
                         <motion.input
                           {...field}

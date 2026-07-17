@@ -137,7 +137,6 @@ const ProductList = () => {
       animate="visible"
       className="space-y-6"
     >
-      {/* ── Header Section ── */}
       <motion.div
         variants={fadeUp}
         className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4"
@@ -171,7 +170,6 @@ const ProductList = () => {
         </motion.button>
       </motion.div>
 
-      {/* ── Search & Filter Section ── */}
       <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1 relative">
           <motion.div
@@ -206,7 +204,6 @@ const ProductList = () => {
         </div>
       </motion.div>
 
-      {/* ── Products Grid ── */}
       <motion.div
         variants={stagger}
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
@@ -226,13 +223,15 @@ const ProductList = () => {
                 }}
                 className="bg-white/70 backdrop-blur-sm border border-stone-200/60 rounded-3xl overflow-hidden group shadow-sm transition-all flex flex-col"
               >
-                {/* Image Banner */}
                 <div className="relative h-48 bg-stone-100 overflow-hidden shrink-0">
                   <motion.img
                     src={
                       (Array.isArray(prod.images)
                         ? prod.images[0]?.url || prod.images[0]
-                        : prod.images?.url || (typeof prod.images === "string" ? prod.images : null)) ||
+                        : prod.images?.url ||
+                          (typeof prod.images === "string"
+                            ? prod.images
+                            : null)) ||
                       "https://placehold.co/300x150?text=No+Image"
                     }
                     alt={prod.name}
@@ -244,7 +243,6 @@ const ProductList = () => {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-stone-900/60 via-transparent to-transparent opacity-80" />
 
-                  {/* Status Badge */}
                   <motion.span
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -257,7 +255,6 @@ const ProductList = () => {
                     {prod.status || "Active"}
                   </motion.span>
 
-                  {/* Stock Indicator */}
                   <motion.div
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -277,7 +274,6 @@ const ProductList = () => {
                   </motion.div>
                 </div>
 
-                {/* Content */}
                 <div className="p-5 flex flex-col flex-1">
                   <motion.div
                     initial={{ opacity: 0 }}
@@ -294,17 +290,11 @@ const ProductList = () => {
                       {prod.name}
                     </h3>
 
-                    <p className="text-[10px] font-mono text-stone-400 mb-4 truncate">
-                      {prod.sku || "NO-SKU"}
-                    </p>
-
                     <div className="flex items-center text-lg font-bold text-stone-800 mb-2">
-                      <DollarSign size={16} className="text-stone-400 mr-0.5" />
-                      {prod.price?.toFixed(2) || "0.00"}
+                     Rs. {prod.price?.toFixed(2) || "0.00"}
                     </div>
                   </motion.div>
 
-                  {/* Action Buttons */}
                   <motion.div
                     initial={{ opacity: 1, y: 0 }}
                     className="flex items-center gap-2 pt-4 border-t border-stone-100/60"
@@ -367,7 +357,6 @@ const ProductList = () => {
         </AnimatePresence>
       </motion.div>
 
-      {/* ── Delete Confirmation Modal ── */}
       <AnimatePresence>
         {deleteId && (
           <>
