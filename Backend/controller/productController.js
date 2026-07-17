@@ -1,5 +1,6 @@
 import Product from "../models/productModel.js";
 import UploadToCloudinary from "../utils/uploadCloudinaryImage.js";
+import deleteCloudinaryImage from "../utils/deleteCloudinaryImage.js";
 
 export const createProduct = async (req, res) => {
   try {
@@ -140,11 +141,10 @@ export const getAllProducts = async (req, res) => {
 
 export const getProductById = async (req, res) => {
   try {
-    const { idOrSlug } = req.params;
+    const { id } = req.params;
 
-    const product = await Product.findOne({
-      $or: [{ _id: idOrSlug }, { slug: idOrSlug }],
-    })
+    const product = await Product.findById(
+    id)
       .populate("seller", "name email")
       .populate("category", "name")
       .populate("subCategory", "name");

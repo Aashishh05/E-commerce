@@ -41,6 +41,7 @@ const App = () => {
           <Route path="/category-form/:id" element={<CategoryForm key="edit"/>} />
           <Route path="/category-list" element={<CategoryList />} />
           <Route path="/product-form" element={<ProductForm />} />
+          <Route path="/product-form/:id" element={<ProductForm />} />
           <Route path="/product-list" element={<ProductList />} />
           <Route path="/order-list" element={<OrderList />} />
           <Route path="/seller-dashboard" element={<SellerDashboard />} />
