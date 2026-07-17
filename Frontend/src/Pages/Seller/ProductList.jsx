@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -10,62 +10,10 @@ import {
   AlertCircle,
   Tag,
   DollarSign,
-  Layers
+  Layers,
 } from "lucide-react";
-
-// Mock data reflecting the established wellness/sustainable theme
-const mockProducts = [
-  {
-    id: 1,
-    name: "Handcrafted Herbal Oils Set",
-    sku: "sku-herbal-oils-set",
-    category: "Beauty & Skincare",
-    price: 45.00,
-    stock: 12,
-    image: "https://images.unsplash.com/photo-1608248593842-83b6cb46e7f2?w=400&h=400&fit=crop",
-    status: "active",
-  },
-  {
-    id: 2,
-    name: "Artisan Ceramic Mug",
-    sku: "sku-artisan-ceramic-mug",
-    category: "Home & Living",
-    price: 24.50,
-    stock: 0,
-    image: "https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=400&h=400&fit=crop",
-    status: "inactive",
-  },
-  {
-    id: 3,
-    name: "Bamboo Sonic Toothbrush",
-    sku: "sku-bamboo-toothbrush",
-    category: "Wellness Tech",
-    price: 55.00,
-    stock: 45,
-    image: "https://images.unsplash.com/photo-1605235555476-eb347c6ce2da?w=400&h=400&fit=crop",
-    status: "active",
-  },
-  {
-    id: 4,
-    name: "Organic Linen Throw Blanket",
-    sku: "sku-linen-throw",
-    category: "Home & Living",
-    price: 89.00,
-    stock: 8,
-    image: "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=400&h=400&fit=crop",
-    status: "active",
-  },
-  {
-    id: 5,
-    name: "Botanical Facial Serum",
-    sku: "sku-botanical-serum",
-    category: "Beauty & Skincare",
-    price: 68.00,
-    stock: 23,
-    image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&h=400&fit=crop",
-    status: "active",
-  },
-];
+import API from "../../utils/axios";
+import toast from "react-hot-toast";
 
 const stagger = {
   hidden: {},
@@ -84,20 +32,103 @@ const fadeUp = {
 const ProductList = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const [products, setProducts] = useState(mockProducts);
+  const [products, setProducts] = useState([]);
   const [deleteId, setDeleteId] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [Isdeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const filtered = products.filter(
-    (p) =>
-      p.name.toLowerCase().includes(search.toLowerCase()) &&
-      (statusFilter === "all" || p.status === statusFilter)
-  );
-
-  const handleDelete = (id) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
-    setDeleteId(null);
+  const fetchProducts = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await API.get(`/api/product/getall`);
+      console.log("Products from API:", res.data);
+      setProducts(res.data.data);
+    } catch (error) {
+      setError("Error fetching products");
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const filtered = Array.isArray(products)
+    ? products.filter(
+        (p) =>
+          p.name?.toLowerCase().includes(search.toLowerCase()) &&
+          (statusFilter === "all" || p.status === statusFilter),
+      )
+    : [];
+
+  const handleDelete = async (id) => {
+    try {
+      setIsDeleting(true);
+      const res = await API.delete(`/api/product/delete/${id}`);
+      if (res.status === 200) {
+        setProducts((prev) => prev.filter((p) => p._id !== id));
+        toast.success("Product deleted");
+        setDeleteId(null);
+      }
+    } catch (error) {
+      setError("Cannot delete product");
+      console.log(error);
+      toast.error("Failed to delete product");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{
+            repeat: Infinity,
+            duration: 1,
+            ease: "linear",
+          }}
+          className="w-12 h-12 rounded-full border-4 border-green-200 border-t-green-700"
+        />
+        <p className="mt-4 text-sm font-semibold text-stone-600">
+          Loading products...
+        </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 px-4">
+        <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
+          <AlertCircle size={32} className="text-red-600" />
+        </div>
+
+        <h2 className="mt-5 text-2xl font-bold text-stone-900">
+          Something went wrong
+        </h2>
+
+        <p className="mt-2 text-sm text-stone-500 text-center max-w-md">
+          {error}
+        </p>
+
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={fetchProducts}
+          className="mt-6 px-6 py-3 rounded-2xl bg-green-700 text-white font-semibold shadow-md"
+        >
+          Try Again
+        </motion.button>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -142,7 +173,6 @@ const ProductList = () => {
 
       {/* ── Search & Filter Section ── */}
       <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4">
-        {/* Search Input */}
         <div className="flex-1 relative">
           <motion.div
             className="flex items-center gap-3 bg-white/70 backdrop-blur-sm border border-stone-200/60 rounded-2xl px-5 py-3 focus-within:border-green-800/50 focus-within:ring-2 focus-within:ring-green-800/10 transition-all"
@@ -158,7 +188,6 @@ const ProductList = () => {
           </motion.div>
         </div>
 
-        {/* Status Filter */}
         <div className="flex gap-2">
           {["all", "active", "inactive"].map((status) => (
             <motion.button
@@ -168,7 +197,7 @@ const ProductList = () => {
               className={`px-4 py-2.5 rounded-xl text-xs font-semibold uppercase tracking-wider border-2 transition-all cursor-pointer ${
                 statusFilter === status
                   ? "border-green-800 bg-green-50 text-green-800 shadow-sm"
-                  : "border-stone-200/60 bg-white/50 text-stone-600 hover:border-green-300 hover:text-stone-800"
+                  : "border-stone-200/50 bg-white/50 text-stone-600 hover:border-green-100 hover:text-stone-800"
               }`}
             >
               {status}
@@ -186,7 +215,7 @@ const ProductList = () => {
           {filtered.length > 0 ? (
             filtered.map((prod) => (
               <motion.div
-                key={prod.id}
+                key={prod._id}
                 variants={fadeUp}
                 layout
                 exit={{ opacity: 0, scale: 0.93, y: 10 }}
@@ -200,10 +229,17 @@ const ProductList = () => {
                 {/* Image Banner */}
                 <div className="relative h-48 bg-stone-100 overflow-hidden shrink-0">
                   <motion.img
-                    src={prod.image}
+                    src={
+                      (Array.isArray(prod.images)
+                        ? prod.images[0]?.url || prod.images[0]
+                        : prod.images?.url || (typeof prod.images === "string" ? prod.images : null)) ||
+                      "https://placehold.co/300x150?text=No+Image"
+                    }
                     alt={prod.name}
                     className={`w-full h-full object-cover transition-all duration-500 ${
-                      prod.stock === 0 ? "grayscale opacity-50" : "group-hover:scale-105"
+                      prod.stock === 0
+                        ? "grayscale opacity-50"
+                        : "group-hover:scale-105"
                     }`}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-stone-900/60 via-transparent to-transparent opacity-80" />
@@ -218,7 +254,7 @@ const ProductList = () => {
                         : "text-stone-600 bg-stone-100/95 border-stone-300/60"
                     }`}
                   >
-                    {prod.status}
+                    {prod.status || "Active"}
                   </motion.span>
 
                   {/* Stock Indicator */}
@@ -230,12 +266,14 @@ const ProductList = () => {
                       prod.stock > 10
                         ? "bg-white/95 border-white/60 text-stone-700"
                         : prod.stock > 0
-                        ? "bg-amber-50/95 border-amber-200/60 text-amber-700"
-                        : "bg-red-50/95 border-red-200/60 text-red-700"
+                          ? "bg-amber-50/95 border-amber-200/60 text-amber-700"
+                          : "bg-red-50/95 border-red-200/60 text-red-700"
                     }`}
                   >
                     <Layers size={12} />
-                    {prod.stock === 0 ? "Out of Stock" : `${prod.stock} in stock`}
+                    {prod.stock === 0
+                      ? "Out of Stock"
+                      : `${prod.stock || 0} in stock`}
                   </motion.div>
                 </div>
 
@@ -249,46 +287,44 @@ const ProductList = () => {
                   >
                     <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-green-700 mb-2">
                       <Tag size={12} />
-                      {prod.category}
+                      {prod.category?.name || "Uncategorized"}
                     </div>
-                    
+
                     <h3 className="font-serif text-lg font-bold text-stone-900 line-clamp-2 leading-snug mb-1">
                       {prod.name}
                     </h3>
-                    
+
                     <p className="text-[10px] font-mono text-stone-400 mb-4 truncate">
-                      {prod.sku}
+                      {prod.sku || "NO-SKU"}
                     </p>
 
                     <div className="flex items-center text-lg font-bold text-stone-800 mb-2">
                       <DollarSign size={16} className="text-stone-400 mr-0.5" />
-                      {prod.price.toFixed(2)}
+                      {prod.price?.toFixed(2) || "0.00"}
                     </div>
                   </motion.div>
 
-                  {/* Action Buttons - appear on hover */}
+                  {/* Action Buttons */}
                   <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    whileHover={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex items-center gap-2 pt-4 border-t border-stone-100/80 opacity-0 group-hover:opacity-100 transition-opacity mt-auto"
+                    initial={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2 pt-4 border-t border-stone-100/60"
                   >
                     <motion.button
                       whileTap={{ scale: 0.93 }}
-                      whileHover={{ backgroundColor: "rgba(22, 101, 52, 0.08)" }}
-                      onClick={() => navigate(`/seller/products/${prod.id}/edit`)}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold text-green-700 hover:text-green-800 border-2 border-green-200/60 hover:border-green-700 rounded-xl transition-all cursor-pointer bg-green-50/40"
+                      onClick={() => navigate(`/product-form/${prod._id}`)}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 text-xs bg-gradient-to-r from-green-700 to-green-800 text-white font-semibold rounded-2xl transition-all"
                     >
                       <Edit2 size={13} />
                       Edit
                     </motion.button>
+
                     <motion.button
                       whileTap={{ scale: 0.93 }}
-                      whileHover={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
-                      onClick={() => setDeleteId(prod.id)}
-                      className="flex items-center justify-center p-2.5 text-xs font-bold text-red-500 hover:text-red-600 border-2 border-red-200/60 hover:border-red-500 rounded-xl transition-all cursor-pointer bg-red-50/40"
+                      onClick={() => setDeleteId(prod._id)}
+                      className="flex-1 flex items-center justify-center gap-2 p-2.5 bg-gradient-to-r from-red-700 to-red-800 text-white text-xs rounded-2xl font-semibold transition-all"
                     >
                       <Trash2 size={13} />
+                      Delete
                     </motion.button>
                   </motion.div>
                 </div>
@@ -320,7 +356,7 @@ const ProductList = () => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => navigate("/seller/products/new")}
+                onClick={() => navigate("/product-form")}
                 className="text-sm text-green-700 font-bold flex items-center gap-2 hover:text-green-900 cursor-pointer bg-green-50/60 px-5 py-2.5 rounded-xl border border-green-200/60 transition-all"
               >
                 <Plus size={16} />
@@ -365,16 +401,22 @@ const ProductList = () => {
                 </div>
               </motion.div>
               <p className="text-sm text-stone-600 mb-6 leading-relaxed">
-                This action cannot be undone. The product will be permanently removed from your catalog and storefront.
+                This action cannot be undone. The product will be permanently
+                removed from your catalog and storefront.
               </p>
               <div className="flex gap-3">
                 <motion.button
                   whileTap={{ scale: 0.95 }}
-                  whileHover={{ backgroundColor: "#dc2626" }}
+                  whileHover={!Isdeleting ? { backgroundColor: "#dc2626" } : {}}
                   onClick={() => handleDelete(deleteId)}
-                  className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white text-sm font-bold rounded-xl cursor-pointer transition-all shadow-md"
+                  disabled={Isdeleting}
+                  className={`flex-1 py-3 text-white text-sm font-bold rounded-xl transition-all shadow-md ${
+                    Isdeleting
+                      ? "bg-red-400 cursor-not-allowed"
+                      : "bg-red-500 hover:bg-red-600 cursor-pointer"
+                  }`}
                 >
-                  Delete
+                  {Isdeleting ? "Deleting..." : "Delete"}
                 </motion.button>
                 <motion.button
                   whileTap={{ scale: 0.95 }}
