@@ -10,13 +10,11 @@ import {
   TrendingDown,
   ChevronRight,
   Plus,
-  Package,
   Tag,
   ArrowUpRight,
   Zap,
 } from "lucide-react";
 
-/* ─── CountUp Animation ─── */
 const CountUp = ({ end, prefix = "", suffix = "", duration = 1.4 }) => {
   const ref = useRef(null);
   const [count, setCount] = useState(0);
@@ -27,7 +25,7 @@ const CountUp = ({ end, prefix = "", suffix = "", duration = 1.4 }) => {
       ([e]) => {
         if (e.isIntersecting) setStarted(true);
       },
-      { threshold: 0.3 }
+      { threshold: 0.3 },
     );
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
@@ -58,7 +56,6 @@ const CountUp = ({ end, prefix = "", suffix = "", duration = 1.4 }) => {
   );
 };
 
-/* ─── Sparkline Chart ─── */
 const Sparkline = ({ data, color = "#166534" }) => {
   const max = Math.max(...data),
     min = Math.min(...data);
@@ -78,7 +75,10 @@ const Sparkline = ({ data, color = "#166534" }) => {
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
-      <polygon points={`0,${h} ${pts.join(" ")} ${w},${h}`} fill={`url(#${id})`} />
+      <polygon
+        points={`0,${h} ${pts.join(" ")} ${w},${h}`}
+        fill={`url(#${id})`}
+      />
       <polyline
         points={pts.join(" ")}
         fill="none"
@@ -97,7 +97,6 @@ const Sparkline = ({ data, color = "#166534" }) => {
   );
 };
 
-/* ─── Status Badge ─── */
 const StatusBadge = ({ status }) => {
   const map = {
     shipped: "text-green-800 bg-green-50/80 border-green-200/60",
@@ -177,27 +176,32 @@ const topProducts = [
   {
     name: "Soy Wax Candles (Set of 3)",
     sales: 198,
-    image: "https://images.unsplash.com/photo-1603006905003-be475563bc59?w=80&h=80&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1603006905003-be475563bc59?w=80&h=80&fit=crop",
   },
   {
     name: "Botanical Face Serum & Jade Set",
     sales: 120,
-    image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=80&h=80&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=80&h=80&fit=crop",
   },
   {
     name: "Handcrafted Herbal Oils",
     sales: 88,
-    image: "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=80&h=80&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=80&h=80&fit=crop",
   },
   {
     name: "Lavender Facial Mist",
     sales: 54,
-    image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=80&h=80&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=80&h=80&fit=crop",
   },
   {
     name: "Rose Hip Night Cream",
     sales: 31,
-    image: "https://images.unsplash.com/photo-1570194065650-d99fb4bedf0a?w=80&h=80&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1570194065650-d99fb4bedf0a?w=80&h=80&fit=crop",
   },
 ];
 
@@ -254,7 +258,6 @@ const SellerDashboard = () => {
       animate="visible"
       className="space-y-8"
     >
-      {/* ── Header Section ── */}
       <motion.div
         variants={fadeUp}
         className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6"
@@ -299,7 +302,6 @@ const SellerDashboard = () => {
         </motion.button>
       </motion.div>
 
-      {/* ── Stat Cards Grid ── */}
       <motion.div
         variants={stagger}
         className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5"
@@ -321,11 +323,7 @@ const SellerDashboard = () => {
                   {s.label}
                 </p>
                 <p className="font-serif text-3xl font-bold text-stone-900 mt-2 font-mono">
-                  <CountUp
-                    end={s.value}
-                    prefix={s.prefix}
-                    suffix={s.suffix}
-                  />
+                  <CountUp end={s.value} prefix={s.prefix} suffix={s.suffix} />
                 </p>
               </div>
               <motion.div
@@ -356,9 +354,7 @@ const SellerDashboard = () => {
         ))}
       </motion.div>
 
-      {/* ── Orders + Products Section ── */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Recent Orders */}
         <motion.div
           variants={fadeUp}
           whileHover={{
@@ -377,7 +373,7 @@ const SellerDashboard = () => {
             </div>
             <motion.button
               whileHover={{ x: 4 }}
-              onClick={() => navigate("/seller/orders")}
+              onClick={() => navigate("/order-list")}
               className="text-xs text-green-700 font-bold flex items-center gap-1.5 hover:text-green-900 cursor-pointer"
             >
               View all
@@ -420,7 +416,6 @@ const SellerDashboard = () => {
           </div>
         </motion.div>
 
-        {/* Top Products */}
         <motion.div
           variants={fadeUp}
           whileHover={{
@@ -437,7 +432,7 @@ const SellerDashboard = () => {
             </div>
             <motion.button
               whileHover={{ x: 4 }}
-              onClick={() => navigate("/seller/products")}
+              onClick={() => navigate("/product-list")}
               className="text-xs text-green-700 font-bold flex items-center gap-1.5 hover:text-green-900 cursor-pointer"
             >
               Manage
@@ -490,7 +485,6 @@ const SellerDashboard = () => {
         </motion.div>
       </div>
 
-      {/* ── Quick Actions ── */}
       <motion.div
         variants={fadeUp}
         className="grid grid-cols-2 md:grid-cols-4 gap-4"
