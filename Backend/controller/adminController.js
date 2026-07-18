@@ -4,7 +4,15 @@ import User from "../models/userModel.js";
 import Cart from "../models/cartModel.js";
 import Order from "../models/orderModel.js";
 import Seller from "../models/sellerModel.js";
+import Category from "../models/categoriesModel.js";
 import mongoose from "mongoose";
+import UploadToCloudinary from "../utils/uploadCloudinaryImage.js";
+import deleteCloudinaryImage from "../utils/deleteCloudinaryImage.js";
+import fs from "fs";
+
+/* ═══════════════════════════════════════════════════════════════
+   USER MANAGEMENT
+   ═══════════════════════════════════════════════════════════════ */
 
 // get all users
 export const getAllUsers = async (req, res) => {
@@ -91,7 +99,7 @@ export const getUserById = async (req, res) => {
   }
 };
 
-// togele user
+// toggle user status
 export const toggleUserStatus = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -117,7 +125,6 @@ export const toggleUserStatus = async (req, res) => {
     res.status(200).json({
       success: true,
       message: `User ${user.isActive ? "activated" : "deactivated"} successfully`,
-
       data: user,
     });
   } catch (error) {
@@ -128,7 +135,7 @@ export const toggleUserStatus = async (req, res) => {
   }
 };
 
-//Delete user
+// delete user
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -204,8 +211,11 @@ export const deleteUser = async (req, res) => {
   }
 };
 
-// get all seller
+/* ═══════════════════════════════════════════════════════════════
+   SELLER MANAGEMENT
+   ═══════════════════════════════════════════════════════════════ */
 
+// get all sellers
 export const getAllSellers = async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page) || 1, 1);
@@ -242,7 +252,7 @@ export const getSellerById = async (req, res) => {
   try {
     const seller = await Seller.findById(req.params.id).populate(
       "user",
-      "name email role",
+      "name email role"
     );
 
     if (!seller) {
@@ -264,8 +274,7 @@ export const getSellerById = async (req, res) => {
   }
 };
 
-//verify seller
-
+// verify seller
 export const verifySeller = async (req, res) => {
   try {
     if (!req.body) {
@@ -329,8 +338,7 @@ export const verifySeller = async (req, res) => {
   }
 };
 
-// Block / unBlock seller
-
+// block / unblock seller
 export const blockSeller = async (req, res) => {
   try {
     const seller = await Seller.findById(req.params.id);
@@ -367,15 +375,267 @@ export const blockSeller = async (req, res) => {
     });
   }
 };
+
+/* ═══════════════════════════════════════════════════════════════
+   CATEGORY MANAGEMENT
+   ═══════════════════════════════════════════════════════════════ */
+
+// Create category
+export const createCategory = async (req, res) => {
+  try {
+    const { name, description } = req.body;
+
+    if (!name?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Category name is required",
+      });
+    }
+
+    const trimmedName = name.trim();
+
+    const existingCategory = await Category.findOne({
+      name: {
+        $regex: new RegExp(`^${trimmedName}$`, "i"),
+      },
+    });
+
+    if (existingCategory) {
+      return res.status(400).json({
+        success: false,
+        message: "Category with this name already exists",
+      });
+    }
+
+    let image = {};
+    if (req.file) {
+      const uploadImage = await UploadToCloudinary(req.file.buffer, "E-commerce/Categories");
+
+      image = {
+        url: uploadImage.url,
+        public_id: uploadImage.public_id,
+        path: uploadImage.path,
+      };
+
+      if (fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+    }
+
+    const category = await Category.create({
+      name: trimmedName,
+      description: description?.trim(),
+      image,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Category created successfully",
+      data: category,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to create category",
+      error: error.message,
+    });
+  }
+};
+
+// Get all categories
+export const getAllCategories = async (req, res) => {
+  try {
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.min(Number(req.query.limit) || 10, 100);
+    const skip = (page - 1) * limit;
+    const search = req.query.search || "";
+
+    const filter = {};
+
+    if (search) {
+      filter.$or = [
+        {
+          name: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+        {
+          description: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+      ];
+    }
+
+    const totalCategories = await Category.countDocuments(filter);
+
+    const categories = await Category.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.status(200).json({
+      success: true,
+      message: "Categories fetched successfully",
+      count: categories.length,
+      totalCategories,
+      currentPage: page,
+      totalPages: Math.ceil(totalCategories / limit),
+      data: categories,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch categories",
+      error: error.message,
+    });
+  }
+};
+
+// Get category by ID
+export const getCategoryById = async (req, res) => {
+  try {
+    const category = await Category.findById(req.params.id);
+
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: category,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch category",
+      error: error.message,
+    });
+  }
+};
+
+// Update category
+export const updateCategory = async (req, res) => {
+  try {
+    const { name, description } = req.body;
+
+    if (!name && !description && !req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Provide at least one field to update",
+      });
+    }
+
+    const category = await Category.findById(req.params.id);
+
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found",
+      });
+    }
+
+    if (name) {
+      const trimmedName = name.trim();
+
+      const existingCategory = await Category.findOne({
+        name: {
+          $regex: new RegExp(`^${trimmedName}$`, "i"),
+        },
+        _id: {
+          $ne: req.params.id,
+        },
+      });
+
+      if (existingCategory) {
+        return res.status(400).json({
+          success: false,
+          message: "Another category with this name already exists",
+        });
+      }
+
+      category.name = trimmedName;
+    }
+
+    if (description) {
+      category.description = description.trim();
+    }
+
+    if (req.file) {
+      if (category.image?.public_id) {
+        await deleteCloudinaryImage(category.image.public_id);
+      }
+
+      const uploadImage = await UploadToCloudinary(req.file.buffer, "E-commerce/Categories");
+
+      category.image = {
+        url: uploadImage.url,
+        public_id: uploadImage.public_id,
+        path: uploadImage.path,
+      };
+
+      if (fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+    }
+
+    await category.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Category updated successfully",
+      data: category,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to update category",
+      error: error.message,
+    });
+  }
+};
+
+// Delete category
+export const deleteCategory = async (req, res) => {
+  try {
+    const category = await Category.findById(req.params.id);
+
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found",
+      });
+    }
+
+    if (category.image?.public_id) {
+      await deleteCloudinaryImage(category.image.public_id);
+    }
+
+    await category.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: "Category deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete category",
+      error: error.message,
+    });
+  }
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   PRODUCT MANAGEMENT
+   ═══════════════════════════════════════════════════════════════ */
+
 // get all products
-
-/*
-========================================
-ADMIN - GET ALL PRODUCTS
-GET /api/admin/products
-========================================
-*/
-
 export const getAllProducts = async (req, res) => {
   try {
     const page = Number(req.query.page) || 1;
@@ -439,7 +699,6 @@ export const getAllProducts = async (req, res) => {
 };
 
 // delete product
-
 export const deleteProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.productId);
@@ -465,7 +724,7 @@ export const deleteProduct = async (req, res) => {
             product: product._id,
           },
         },
-      },
+      }
     );
 
     // Delete the product
@@ -483,8 +742,11 @@ export const deleteProduct = async (req, res) => {
   }
 };
 
-// get all orders
+/* ═══════════════════════════════════════════════════════════════
+   ORDER MANAGEMENT
+   ═══════════════════════════════════════════════════════════════ */
 
+// get all orders
 export const getAllOrders = async (req, res) => {
   try {
     const page = Number(req.query.page) || 1;
@@ -559,7 +821,6 @@ export const getOrderById = async (req, res) => {
         path: "orderItems.sellerId",
         select: "shopName",
       });
-    
 
     if (!order) {
       return res.status(404).json({
@@ -580,8 +841,11 @@ export const getOrderById = async (req, res) => {
   }
 };
 
-// dashboard stats
+/* ═══════════════════════════════════════════════════════════════
+   DASHBOARD STATS
+   ═══════════════════════════════════════════════════════════════ */
 
+// dashboard stats
 export const getDashboardStats = async (req, res) => {
   try {
     // USERS
@@ -595,6 +859,9 @@ export const getDashboardStats = async (req, res) => {
 
     // PRODUCTS
     const totalProducts = await Product.countDocuments();
+
+    // CATEGORIES
+    const totalCategories = await Category.countDocuments();
 
     // ORDERS
     const totalOrders = await Order.countDocuments();
@@ -638,6 +905,7 @@ export const getDashboardStats = async (req, res) => {
         totalSellers,
         pendingSellers,
         totalProducts,
+        totalCategories,
         totalOrders,
         totalRevenue,
         orderStatus: statusSummary,
