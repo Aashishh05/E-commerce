@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Trash2,
@@ -7,24 +7,45 @@ import {
   ImageIcon,
   AlertCircle,
   RefreshCw,
+  Search,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import API from "../../utils/axios.js";
 
+const LIMIT = 1;
+
 const AdminCategories = () => {
   const [categories, setCategories] = useState([]);
+  const [pagination, setPagination] = useState({ total: 0, pages: 1 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const debounce = useRef(null);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [search, page]);
 
   const fetchCategories = async () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await API.get(`/api/admin/categories/getall`);
+
+      const params = new URLSearchParams({ page, limit: LIMIT });
+      if (search) params.set("search", search);
+
+      const res = await API.get(`/api/admin/categories/getall?${params}`);
       setCategories(res.data.data || []);
+      setPagination({
+        total: res.data.totalCategories ?? 0,
+        pages: res.data.totalPages ?? 1,
+      });
     } catch (err) {
       setError(err.message || "Failed to fetch categories");
     } finally {
@@ -32,35 +53,34 @@ const AdminCategories = () => {
     }
   };
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
+  const handleSearch = (e) => {
+    clearTimeout(debounce.current);
+    debounce.current = setTimeout(() => {
+      setSearch(e.target.value);
+      setPage(1);
+    }, 400);
+  };
 
   const handleDelete = async (id) => {
     try {
       setIsDeleting(true);
       await API.delete(`/api/admin/categories/delete/${id}`);
       setCategories((prev) => prev.filter((c) => c._id !== id));
+      setPagination((prev) => ({ ...prev, total: prev.total - 1 }));
       toast.success("Category deleted");
       setDeleteId(null);
-    } catch (err) {
+    } catch {
       toast.error("Failed to delete category");
-      console.log(err);
     } finally {
       setIsDeleting(false);
     }
   };
 
-  const filtered = categories.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase()),
-  );
-
-  if (loading) {
+  if (loading && categories.length === 0) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
         className="flex flex-col items-center justify-center min-h-[400px]"
       >
         <motion.div
@@ -90,7 +110,7 @@ const AdminCategories = () => {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={fetchCategories}
-          className="flex items-center gap-2 px-6 py-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl hover:bg-emerald-500/20 transition-all font-semibold"
+          className="flex items-center gap-2 px-6 py-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl hover:bg-emerald-500/20 font-semibold"
         >
           <RefreshCw size={16} /> Try Again
         </motion.button>
@@ -110,27 +130,36 @@ const AdminCategories = () => {
             <Tag size={20} className="text-emerald-400" /> Categories
           </h1>
           <p className="text-white/30 text-sm mt-1">
-            Manage product categories
+            Manage product categories — {pagination.total} total
           </p>
         </div>
       </motion.div>
 
-      <input
-        type="text"
-        placeholder="Search categories..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="w-full bg-white/5 border border-white/10 text-white/80 text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500/50"
-      />
+      <div className="relative">
+        <Search
+          size={14}
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-white/25 pointer-events-none"
+        />
+        <input
+          type="text"
+          placeholder="Search categories..."
+          onChange={handleSearch}
+          className="w-full bg-white/5 border border-white/10 text-white/80 text-sm rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-emerald-500/50 placeholder-white/20"
+        />
+      </div>
 
       <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {loading ? (
           <div className="col-span-full flex justify-center py-12">
             <Loader className="animate-spin text-emerald-400" />
           </div>
+        ) : categories.length === 0 ? (
+          <div className="col-span-full py-16 text-center text-white/20 text-sm">
+            No categories found.
+          </div>
         ) : (
           <AnimatePresence mode="popLayout">
-            {filtered.map((cat, i) => (
+            {categories.map((cat) => (
               <motion.div
                 key={cat._id}
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -169,12 +198,65 @@ const AdminCategories = () => {
         )}
       </motion.div>
 
+      {pagination.pages > 1 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.25 }}
+          className="flex items-center justify-between text-xs text-white/30"
+        >
+          <span>
+            Page {page} of {pagination.pages} — {pagination.total} categories
+          </span>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setPage((p) => p - 1)}
+              disabled={page <= 1 || loading}
+              className="w-7 h-7 rounded-lg border border-white/10 bg-white/5 flex items-center justify-center hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed text-white/50"
+            >
+              <ChevronLeft size={14} />
+            </button>
+
+            {Array.from({ length: Math.min(pagination.pages, 5) }, (_, i) => {
+              const num =
+                pagination.pages <= 5
+                  ? i + 1
+                  : page <= 3
+                    ? i + 1
+                    : page >= pagination.pages - 2
+                      ? pagination.pages - 4 + i
+                      : page - 2 + i;
+              return (
+                <button
+                  key={num}
+                  onClick={() => setPage(num)}
+                  disabled={loading}
+                  className={`w-7 h-7 rounded-lg border text-xs font-semibold transition-all ${num === page ? "border-emerald-500/30 bg-emerald-500/20 text-emerald-400" : "border-white/10 bg-white/5 text-white/40 hover:bg-white/10"}`}
+                >
+                  {num}
+                </button>
+              );
+            })}
+
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={page >= pagination.pages || loading}
+              className="w-7 h-7 rounded-lg border border-white/10 bg-white/5 flex items-center justify-center hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed text-white/50"
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        </motion.div>
+      )}
+
       <AnimatePresence>
         {deleteId && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
               className="bg-[#161B27] border border-white/10 p-6 rounded-2xl max-w-sm w-full"
             >
               <h3 className="text-white font-bold mb-2">Delete Category?</h3>
@@ -191,7 +273,7 @@ const AdminCategories = () => {
                 <button
                   onClick={() => handleDelete(deleteId)}
                   disabled={isDeleting}
-                  className="flex-1 py-2 bg-red-500 text-white rounded-lg text-sm font-bold"
+                  className="flex-1 py-2 bg-red-500 text-white rounded-lg text-sm font-bold disabled:opacity-60"
                 >
                   {isDeleting ? "Deleting..." : "Delete"}
                 </button>
