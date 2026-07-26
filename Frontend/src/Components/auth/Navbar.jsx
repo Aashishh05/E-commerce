@@ -76,18 +76,21 @@ const Navbar = () => {
   ];
 
   return (
+    // FIX #1: Add proper z-index and will-change to prevent stacking context issues
     <header
       className={`w-full z-50 sticky top-0 transition-all duration-300 ${
         scrolled
           ? "bg-stone-50/95 backdrop-blur-md shadow-lg border-b border-stone-200/80"
           : "bg-stone-50/95 backdrop-blur-md border-b border-stone-200/40"
       }`}
+      style={{ willChange: "auto", position: "sticky" }} // Explicit positioning
     >
       <motion.div
         initial={{ opacity: 0, height: 0 }}
         animate={{ opacity: 1, height: "auto" }}
         transition={{ duration: 0.6, delay: 0.1 }}
         className="w-full bg-gradient-to-r from-green-900 via-green-800 to-green-900 text-stone-100 py-2.5 px-6 text-xs font-medium tracking-wide"
+        style={{ zIndex: 1 }} // Explicit z-index for promo bar
       >
         <div className="max-w-7xl mx-auto flex justify-between items-center gap-4">
           <motion.p
@@ -117,7 +120,7 @@ const Navbar = () => {
         </div>
       </motion.div>
 
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-6">
+      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-6" style={{ zIndex: 2 }}>
         <motion.a
           href="/"
           className="flex items-center gap-2.5 shrink-0 group"
@@ -254,6 +257,7 @@ const Navbar = () => {
                       exit={{ opacity: 0, y: -10, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
                       className="absolute right-0 mt-3 w-52 bg-white border border-stone-100 rounded-2xl shadow-2xl overflow-hidden z-50"
+                      style={{ zIndex: 51 }} // Ensure dropdown is above navbar
                     >
                       <div className="px-4 py-3 bg-gradient-to-br from-green-900 to-green-800">
                         <div className="flex items-center gap-3">
@@ -389,6 +393,7 @@ const Navbar = () => {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
         className="hidden lg:block border-t border-stone-200/60 bg-gradient-to-r from-stone-50/80 via-stone-50/60 to-stone-50/80 backdrop-blur-sm"
+        style={{ zIndex: 2 }} // Ensure sub-nav stays on top
       >
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-8">
@@ -423,6 +428,7 @@ const Navbar = () => {
                       exit={{ opacity: 0, y: -10, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
                       className="absolute left-0 mt-3 w-72 bg-white rounded-2xl shadow-2xl border border-stone-100 overflow-hidden z-20 py-2 backdrop-blur-xl"
+                      style={{ zIndex: 51 }} // Ensure categories dropdown is above navbar
                     >
                       {categories.map((cat, idx) => (
                         <motion.a
@@ -510,6 +516,7 @@ const Navbar = () => {
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
             className="lg:hidden w-full bg-white border-t border-stone-200 overflow-hidden shadow-xl"
+            style={{ zIndex: 49 }} // Below navbar but above page content
           >
             <motion.div
               initial={{ opacity: 0 }}

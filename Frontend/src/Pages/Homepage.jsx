@@ -249,6 +249,7 @@ const Homepage = () => {
       </motion.div>
     );
   }
+
   const featuredVendors = [
     {
       name: "Aura Botanicals",
@@ -380,12 +381,16 @@ const Homepage = () => {
   ];
 
   return (
-    <div className="bg-stone-50 font-sans overflow-x-hidden min-h-screen text-stone-800">
+    <div 
+      className="bg-stone-50 font-sans overflow-x-hidden min-h-screen text-stone-800"
+      style={{ position: "relative", zIndex: 0 }}
+    >
       <Navbar />
 
       <section
         ref={heroRef}
         className="relative h-[92vh] flex items-center overflow-hidden"
+        style={{ zIndex: 1, position: "relative" }}
       >
         <motion.div
           className="absolute inset-0"
@@ -588,7 +593,7 @@ const Homepage = () => {
         </motion.div>
       </section>
 
-      <section className="py-10 bg-green-900 overflow-hidden relative">
+      <section className="py-10 bg-green-900 overflow-hidden relative" style={{ zIndex: 2, position: "relative" }}>
         <motion.div
           className="absolute inset-0 opacity-20"
           style={{
@@ -631,7 +636,7 @@ const Homepage = () => {
         </div>
       </section>
 
-      <section className="py-16 bg-white overflow-hidden">
+      <section className="py-16 bg-white overflow-hidden" style={{ zIndex: 2, position: "relative" }}>
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
             <RevealText>
@@ -727,7 +732,7 @@ const Homepage = () => {
         </div>
       </section>
 
-      <section className="py-16 bg-stone-50">
+      <section className="py-16 bg-stone-50" style={{ zIndex: 2, position: "relative" }}>
         <div className="max-w-7xl mx-auto px-6">
           <RevealText className="text-center max-w-xl mx-auto mb-12">
             <h2 className="font-serif text-3xl md:text-4xl font-bold text-stone-900 mb-3">
@@ -799,7 +804,7 @@ const Homepage = () => {
         </div>
       </section>
 
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-white" style={{ zIndex: 2, position: "relative" }}>
         <div className="max-w-7xl mx-auto px-6">
           <RevealText className="text-center max-w-xl mx-auto mb-10">
             <span className="text-xs font-extrabold uppercase tracking-widest text-green-800">
@@ -870,7 +875,7 @@ const Homepage = () => {
         </div>
       </section>
 
-      <section className="py-16 bg-stone-50 border-t border-b border-stone-200/50">
+      <section className="py-16 bg-stone-50 border-t border-b border-stone-200/50" style={{ zIndex: 2, position: "relative" }}>
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-10 gap-4">
             <RevealText>
@@ -988,6 +993,7 @@ const Homepage = () => {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
             className="py-20 bg-gradient-to-br from-green-900 via-green-800 to-green-900 relative overflow-hidden"
+            style={{ zIndex: 2, position: "relative" }}
           >
             <motion.div
               className="absolute top-20 right-20 w-96 h-96 bg-green-400/10 rounded-full blur-3xl"
@@ -1124,6 +1130,7 @@ const Homepage = () => {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
             className="py-20 bg-gradient-to-br from-green-900 via-green-800 to-green-900 relative overflow-hidden"
+            style={{ zIndex: 2, position: "relative" }}
           >
             <motion.div
               className="absolute top-20 right-20 w-96 h-96 bg-green-400/10 rounded-full blur-3xl"
@@ -1248,7 +1255,7 @@ const Homepage = () => {
         )}
       </AnimatePresence>
 
-      <section className="py-20 bg-white relative overflow-hidden">
+      <section className="py-20 bg-white relative overflow-hidden" style={{ zIndex: 2, position: "relative" }}>
         <div
           className="absolute inset-0 opacity-30"
           style={{
