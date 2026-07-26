@@ -12,8 +12,11 @@ import {
   Store,
   Zap,
   LogOut,
+  Crown,
+  Truck,
+  Shield,
 } from "lucide-react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../Redux/authSlice";
 import { clearStorage } from "../../Localstorage/storage";
@@ -23,15 +26,37 @@ const Navbar = () => {
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [promoIndex, setPromoIndex] = useState(0);
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   const nav = useNavigate();
   const dispatch = useDispatch();
+
+  const promotions = [
+    { icon: "🎁", text: "Free shipping on orders over $75. Code: AURA20" },
+    {
+      icon: "⚡",
+      text: "Flash Sale: Up to 50% off curated collections today!",
+    },
+    { icon: "🌿", text: "Handcrafted with love from 500+ independent sellers" },
+    { icon: "🏆", text: "Join 100K+ happy customers worldwide" },
+    {
+      icon: "💚",
+      text: "Sustainable & ethical shopping - Support global artisans",
+    },
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setPromoIndex((prev) => (prev + 1) % promotions.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleLogout = () => {
     dispatch(logout());
     clearStorage();
     setIsMobileMenuOpen(false);
-    Navigate("/");
+    nav("/");
   };
 
   useEffect(() => {
@@ -50,14 +75,6 @@ const Navbar = () => {
     "Gifts & Sets",
   ];
 
-  const navItems = [
-    "New Arrivals",
-    "Featured Vendors",
-    "Flash Deals",
-    "Top Rated",
-    "Voucher Center",
-  ];
-
   return (
     <header
       className={`w-full z-50 sticky top-0 transition-all duration-300 ${
@@ -66,7 +83,6 @@ const Navbar = () => {
           : "bg-stone-50/95 backdrop-blur-md border-b border-stone-200/40"
       }`}
     >
-      {/* Top Announcement Bar */}
       <motion.div
         initial={{ opacity: 0, height: 0 }}
         animate={{ opacity: 1, height: "auto" }}
@@ -76,10 +92,14 @@ const Navbar = () => {
         <div className="max-w-7xl mx-auto flex justify-between items-center gap-4">
           <motion.p
             className="hidden md:block flex-1 text-center"
+            key={promoIndex}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.5 }}
             whileHover={{ letterSpacing: "0.05em" }}
-            transition={{ duration: 0.3 }}
           >
-            🎁 Free shipping on orders over $75. Code: AURA20
+            {promotions[promoIndex].icon} {promotions[promoIndex].text}
           </motion.p>
           <p className="mx-auto md:mx-0 flex items-center gap-2">
             <Zap size={12} className="animate-pulse" />
@@ -92,14 +112,12 @@ const Navbar = () => {
             className="hidden md:flex items-center gap-1.5 text-green-300 hover:text-white transition-colors font-semibold"
           >
             <Store size={12} />
-            <span>Sell on Aura</span>
+            <span onClick={() => nav(`/register`)}>Sell on Aura</span>
           </motion.a>
         </div>
       </motion.div>
 
-      {/* Main Navbar */}
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-6">
-        {/* Logo */}
         <motion.a
           href="/"
           className="flex items-center gap-2.5 shrink-0 group"
@@ -127,7 +145,6 @@ const Navbar = () => {
           </div>
         </motion.a>
 
-        {/* Search Bar */}
         <motion.div
           className="hidden md:flex flex-1 max-w-xl relative"
           initial={{ opacity: 0, scale: 0.95 }}
@@ -154,7 +171,6 @@ const Navbar = () => {
           </div>
         </motion.div>
 
-        {/* Desktop Controls */}
         <motion.div
           key={isAuthenticated ? "auth" : "guest"}
           className="hidden lg:flex items-center gap-5"
@@ -162,39 +178,43 @@ const Navbar = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4, delay: 0.2 }}
         >
-          <motion.a
-            href="#wishlist"
-            className="relative p-2.5 text-stone-700 hover:text-green-800 transition-colors group"
-            whileHover={{ y: -2 }}
-          >
-            <div className="relative">
-              <Heart size={20} className="group-hover:fill-red-400" />
-              <motion.span
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="absolute -top-1 -right-1 w-4.5 h-4.5 bg-gradient-to-br from-red-500 to-red-600 text-[10px] text-white font-bold rounded-full flex items-center justify-center shadow-md"
-              >
-                3
-              </motion.span>
-            </div>
-          </motion.a>
+          {isAuthenticated && (
+            <motion.a
+              href="#wishlist"
+              className="relative p-2.5 text-stone-700 hover:text-green-800 transition-colors group"
+              whileHover={{ y: -2 }}
+            >
+              <div className="relative">
+                <Heart size={20} className="group-hover:fill-red-400" />
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-1 -right-1 w-4.5 h-4.5 bg-gradient-to-br from-red-500 to-red-600 text-[10px] text-white font-bold rounded-full flex items-center justify-center shadow-md"
+                >
+                  3
+                </motion.span>
+              </div>
+            </motion.a>
+          )}
 
-          <motion.a
-            href="#cart"
-            className="relative p-2.5 text-stone-700 hover:text-amber-600 transition-colors group"
-            whileHover={{ y: -2 }}
-          >
-            <div className="relative">
-              <ShoppingCart size={20} />
-              <motion.span
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="absolute -top-1 -right-1 w-4.5 h-4.5 bg-gradient-to-br from-amber-500 to-amber-600 text-[10px] text-white font-bold rounded-full flex items-center justify-center shadow-md"
-              >
-                2
-              </motion.span>
-            </div>
-          </motion.a>
+          {isAuthenticated && (
+            <motion.a
+              href="#cart"
+              className="relative p-2.5 text-stone-700 hover:text-amber-600 transition-colors group"
+              whileHover={{ y: -2 }}
+            >
+              <div className="relative">
+                <ShoppingCart size={20} />
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-1 -right-1 w-4.5 h-4.5 bg-gradient-to-br from-amber-500 to-amber-600 text-[10px] text-white font-bold rounded-full flex items-center justify-center shadow-md"
+                >
+                  2
+                </motion.span>
+              </div>
+            </motion.a>
+          )}
 
           {!isAuthenticated ? (
             <motion.a
@@ -210,7 +230,6 @@ const Navbar = () => {
             </motion.a>
           ) : (
             <div className="relative">
-              {/* User Avatar */}
               <motion.button
                 onClick={() => setOpen(!open)}
                 className="w-10 h-10 rounded-full bg-green-900 text-white font-bold flex items-center justify-center shadow-md hover:bg-green-800 transition"
@@ -219,7 +238,6 @@ const Navbar = () => {
                 {user?.name?.charAt(0).toUpperCase()}
               </motion.button>
 
-              {/* Dropdown */}
               <AnimatePresence>
                 {open && (
                   <>
@@ -237,7 +255,6 @@ const Navbar = () => {
                       transition={{ duration: 0.2 }}
                       className="absolute right-0 mt-3 w-52 bg-white border border-stone-100 rounded-2xl shadow-2xl overflow-hidden z-50"
                     >
-                      {/* User Info Header */}
                       <div className="px-4 py-3 bg-gradient-to-br from-green-900 to-green-800">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-white/20 text-white font-bold flex items-center justify-center text-sm shrink-0">
@@ -254,7 +271,6 @@ const Navbar = () => {
                         </div>
                       </div>
 
-                      {/* Menu Items */}
                       <div className="p-2">
                         <motion.button
                           whileHover={{ x: 3 }}
@@ -319,7 +335,6 @@ const Navbar = () => {
           )}
         </motion.div>
 
-        {/* Mobile Actions */}
         <div className="flex lg:hidden items-center gap-2">
           <motion.button
             whileHover={{ scale: 1.1 }}
@@ -327,16 +342,18 @@ const Navbar = () => {
           >
             <Search size={20} />
           </motion.button>
-          <motion.a
-            href="#cart"
-            className="relative p-2 text-stone-700 hover:text-amber-600 transition-colors"
-            whileHover={{ y: -2 }}
-          >
-            <ShoppingCart size={20} />
-            <motion.span className="absolute top-0 right-0 w-4 h-4 bg-amber-600 text-[9px] text-white font-bold rounded-full flex items-center justify-center">
-              2
-            </motion.span>
-          </motion.a>
+          {isAuthenticated && (
+            <motion.a
+              href="#cart"
+              className="relative p-2 text-stone-700 hover:text-amber-600 transition-colors"
+              whileHover={{ y: -2 }}
+            >
+              <ShoppingCart size={20} />
+              <motion.span className="absolute top-0 right-0 w-4 h-4 bg-amber-600 text-[9px] text-white font-bold rounded-full flex items-center justify-center">
+                2
+              </motion.span>
+            </motion.a>
+          )}
           <motion.button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             whileHover={{ scale: 1.1 }}
@@ -367,12 +384,11 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Sub Navigation Bar */}
       <motion.nav
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="hidden lg:block border-t border-stone-200/60 bg-stone-50/80 backdrop-blur-sm"
+        className="hidden lg:block border-t border-stone-200/60 bg-gradient-to-r from-stone-50/80 via-stone-50/60 to-stone-50/80 backdrop-blur-sm"
       >
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-8">
@@ -430,50 +446,62 @@ const Navbar = () => {
                 )}
               </AnimatePresence>
             </div>
-
-            <div className="flex gap-8 border-l border-stone-200/50 pl-8">
-              {navItems.map((item, idx) => (
-                <motion.a
-                  key={item}
-                  href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 + idx * 0.05 }}
-                  whileHover={{ color: "#166534", y: -1 }}
-                  className="text-sm font-medium text-stone-600 hover:text-green-800 transition-colors relative group"
-                >
-                  {item}
-                  <motion.div
-                    className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-green-800 to-green-600 rounded-full"
-                    initial={{ width: 0 }}
-                    whileHover={{ width: "100%" }}
-                    transition={{ duration: 0.3 }}
-                  />
-                </motion.a>
-              ))}
-            </div>
           </div>
 
-          <motion.div
-            className="flex items-center gap-2"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            whileHover={{ scale: 1.05 }}
-          >
-            <motion.span
-              className="w-2.5 h-2.5 rounded-full bg-amber-500"
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
-            <span className="text-xs font-bold text-stone-500 uppercase tracking-widest">
-              MARKETPLACE
-            </span>
-          </motion.div>
+          <div className="flex items-center gap-6">
+            <motion.div
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200/50"
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <Crown size={14} className="text-amber-600" />
+              <span className="text-xs font-semibold text-amber-900">
+                Premium
+              </span>
+            </motion.div>
+
+            <motion.div
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200/50"
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <Truck size={14} className="text-blue-600" />
+              <span className="text-xs font-semibold text-blue-900">
+                Fast Shipping
+              </span>
+            </motion.div>
+
+            <motion.div
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-50 border border-green-200/50"
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <Shield size={14} className="text-green-700" />
+              <span className="text-xs font-semibold text-green-900">
+                100% Safe
+              </span>
+            </motion.div>
+
+            <motion.div
+              className="flex items-center gap-2"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              whileHover={{ scale: 1.05 }}
+            >
+              <motion.span
+                className="w-2.5 h-2.5 rounded-full bg-amber-500"
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+              <span className="text-xs font-bold text-stone-500 uppercase tracking-widest">
+                LIVE
+              </span>
+            </motion.div>
+          </div>
         </div>
       </motion.nav>
 
-      {/* Mobile Drawer */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
