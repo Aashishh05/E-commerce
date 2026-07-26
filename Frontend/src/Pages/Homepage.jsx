@@ -148,7 +148,8 @@ const Homepage = () => {
   const nav = useNavigate();
   const dispatch = useDispatch();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const [data, setData] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [category, setCategory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -168,7 +169,7 @@ const Homepage = () => {
     setLoading(true);
     try {
       const res = await API.get(`/api/product/getall`);
-      setData(res.data.data);
+      setProducts(res.data.data);
     } catch (error) {
       console.log(error);
       setError("Error fetching products");
@@ -177,8 +178,23 @@ const Homepage = () => {
     }
   };
 
+  const fetchCategory = async () => {
+    setLoading(true);
+    try {
+      const res = await API.get(`/api/category/getall`);
+      setCategory(res.data.data);
+      console.log(res.data.data);
+    } catch (error) {
+      console.log(error);
+      setError("Error fetching category");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
+    fetchCategory();
   }, []);
 
   if (loading) {
@@ -326,34 +342,6 @@ const Homepage = () => {
     },
   };
 
-  const campaigns = [
-    {
-      img: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=600&h=600&fit=crop",
-      label: "AURA ORIGINAL BEAUTY",
-      labelColor: "text-green-300",
-      title: "Botanical Wellness",
-      desc: "Naturally formulated skincare products made from hand-harvested wild herbs.",
-      linkColor: "hover:text-green-300",
-    },
-    {
-      img: "https://images.unsplash.com/photo-1544441893-675973e31985?w=600&h=600&fit=crop",
-      label: "SLOW APPAREL",
-      labelColor: "text-amber-300",
-      title: "Sustainable Garments",
-      desc: "Bespoke robes, caps, and garments made from 100% natural, biodegradable fabrics.",
-      linkColor: "hover:text-amber-300",
-    },
-    {
-      img: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&h=600&fit=crop",
-      label: "WOOD & CERAMICS",
-      labelColor: "text-green-300",
-      title: "Earthy Living",
-      desc: "Stoneware coffee sets and hand-turned oak wood servers for organic kitchen layouts.",
-      span: "md:col-span-2 lg:col-span-1",
-      linkColor: "hover:text-green-300",
-    },
-  ];
-
   const features = [
     {
       icon: "🌿",
@@ -381,7 +369,7 @@ const Homepage = () => {
   ];
 
   return (
-    <div 
+    <div
       className="bg-stone-50 font-sans overflow-x-hidden min-h-screen text-stone-800"
       style={{ position: "relative", zIndex: 0 }}
     >
@@ -593,7 +581,10 @@ const Homepage = () => {
         </motion.div>
       </section>
 
-      <section className="py-10 bg-green-900 overflow-hidden relative" style={{ zIndex: 2, position: "relative" }}>
+      <section
+        className="py-10 bg-green-900 overflow-hidden relative"
+        style={{ zIndex: 2, position: "relative" }}
+      >
         <motion.div
           className="absolute inset-0 opacity-20"
           style={{
@@ -636,7 +627,10 @@ const Homepage = () => {
         </div>
       </section>
 
-      <section className="py-16 bg-white overflow-hidden" style={{ zIndex: 2, position: "relative" }}>
+      <section
+        className="py-16 bg-white overflow-hidden"
+        style={{ zIndex: 2, position: "relative" }}
+      >
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
             <RevealText>
@@ -701,7 +695,7 @@ const Homepage = () => {
             viewport={{ once: true, margin: "-80px" }}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
           >
-            {data.slice(0, 4).map((product, i) => (
+            {products.slice(0, 4).map((product, i) => (
               <motion.div
                 key={product._id}
                 variants={{
@@ -732,7 +726,10 @@ const Homepage = () => {
         </div>
       </section>
 
-      <section className="py-16 bg-stone-50" style={{ zIndex: 2, position: "relative" }}>
+      <section
+        className="py-16 bg-stone-50"
+        style={{ zIndex: 2, position: "relative" }}
+      >
         <div className="max-w-7xl mx-auto px-6">
           <RevealText className="text-center max-w-xl mx-auto mb-12">
             <h2 className="font-serif text-3xl md:text-4xl font-bold text-stone-900 mb-3">
@@ -745,7 +742,7 @@ const Homepage = () => {
           </RevealText>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {campaigns.map((card, i) => (
+            {category.map((cat, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 60 }}
@@ -757,7 +754,7 @@ const Homepage = () => {
                   ease: [0.25, 0.46, 0.45, 0.94],
                 }}
                 whileHover={{ y: -6, transition: { duration: 0.15 } }}
-                className={`relative rounded-3xl overflow-hidden shadow-md h-96 group border border-stone-200/60 cursor-pointer ${card.span || ""}`}
+                className="relative rounded-3xl overflow-hidden shadow-md h-96 group border border-stone-200/60 cursor-pointer"
               >
                 <motion.div
                   className="absolute inset-0 bg-stone-900/40 z-10"
@@ -765,8 +762,8 @@ const Homepage = () => {
                   transition={{ duration: 0.15 }}
                 />
                 <motion.img
-                  src={card.img}
-                  alt={card.title}
+                  src={cat.image?.url}
+                  alt={cat.name}
                   className="w-full h-full object-cover"
                   whileHover={{ scale: 1.07 }}
                   transition={{ duration: 0.7, ease: "easeOut" }}
@@ -777,20 +774,18 @@ const Homepage = () => {
                   whileHover={{ y: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <span
-                    className={`text-[10px] font-extrabold uppercase tracking-widest ${card.labelColor} mb-1`}
-                  >
-                    {card.label}
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-green-300 mb-1">
+                    {cat.isActive ? "Active Category" : "Inactive"}
                   </span>
                   <h3 className="font-serif text-2xl font-bold mb-2">
-                    {card.title}
+                    {cat.name}
                   </h3>
                   <p className="text-xs text-stone-200 mb-4 font-medium">
-                    {card.desc}
+                    {cat.description}
                   </p>
                   <a
                     href="#"
-                    className={`inline-flex items-center gap-1.5 text-sm font-bold text-white ${card.linkColor} transition-colors group/link`}
+                    className="inline-flex items-center gap-1.5 text-sm font-bold text-white hover:text-green-300"
                   >
                     Shop Collection
                     <motion.span className="group-hover/link:translate-x-1 transition-transform inline-block">
@@ -804,7 +799,10 @@ const Homepage = () => {
         </div>
       </section>
 
-      <section className="py-16 bg-white" style={{ zIndex: 2, position: "relative" }}>
+      <section
+        className="py-16 bg-white"
+        style={{ zIndex: 2, position: "relative" }}
+      >
         <div className="max-w-7xl mx-auto px-6">
           <RevealText className="text-center max-w-xl mx-auto mb-10">
             <span className="text-xs font-extrabold uppercase tracking-widest text-green-800">
@@ -852,7 +850,7 @@ const Homepage = () => {
               transition={{ duration: 0.3 }}
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
             >
-              {data.map((product, i) => (
+              {products.map((product, i) => (
                 <motion.div
                   key={product._id}
                   initial={{ opacity: 0, scale: 0.95, y: 30 }}
@@ -875,7 +873,10 @@ const Homepage = () => {
         </div>
       </section>
 
-      <section className="py-16 bg-stone-50 border-t border-b border-stone-200/50" style={{ zIndex: 2, position: "relative" }}>
+      <section
+        className="py-16 bg-stone-50 border-t border-b border-stone-200/50"
+        style={{ zIndex: 2, position: "relative" }}
+      >
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-10 gap-4">
             <RevealText>
@@ -1255,7 +1256,10 @@ const Homepage = () => {
         )}
       </AnimatePresence>
 
-      <section className="py-20 bg-white relative overflow-hidden" style={{ zIndex: 2, position: "relative" }}>
+      <section
+        className="py-20 bg-white relative overflow-hidden"
+        style={{ zIndex: 2, position: "relative" }}
+      >
         <div
           className="absolute inset-0 opacity-30"
           style={{
