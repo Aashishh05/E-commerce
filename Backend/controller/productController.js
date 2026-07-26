@@ -113,7 +113,7 @@ export const getAllProducts = async (req, res) => {
     }
 
     const products = await Product.find(query)
-      .populate("seller", "name email")
+      .populate("seller", "name email shopName")
       .populate("category", "name")
       .populate("subCategory", "name")
       .sort({ createdAt: -1 })

@@ -11,18 +11,18 @@ const ProductCard = ({ product }) => {
   const [showAddedMessage, setShowAddedMessage] = useState(false);
   const { isAuthenticated } = useSelector((state) => state.auth);
 
-  const {
-    name,
-    price,
-    originalPrice,
-    rating,
-    reviewsCount,
-    image,
-    category,
-    vendorName,
-    badgeText,
-    badgeColor,
-  } = product;
+const {
+  name,
+  price,
+  originalPrice,
+  averageRating,
+  numReviews,
+  images,
+  category,
+  seller,
+  badgeText,
+  badgeColor,
+} = product;
 
   const discount = originalPrice
     ? Math.round(((originalPrice - price) / originalPrice) * 100)
@@ -120,7 +120,7 @@ const ProductCard = ({ product }) => {
         <motion.img
           animate={{ scale: isHovered ? 1.08 : 1 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          src={image}
+          src={images?.[0]?.url}
           alt={name}
           className="absolute inset-0 w-full h-full object-cover"
         />
@@ -132,7 +132,7 @@ const ProductCard = ({ product }) => {
               ? "linear-gradient(to top, rgba(0,0,0,0.3), transparent, rgba(0,0,0,0))"
               : "linear-gradient(to top, rgba(0,0,0,0), transparent, rgba(0,0,0,0))",
           }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration:0.3 }}
         />
 
         <motion.div
@@ -183,11 +183,12 @@ const ProductCard = ({ product }) => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.1 }}
         >
+          
           <motion.span
             className="text-[10px] font-bold text-amber-800 tracking-wider uppercase bg-gradient-to-r from-amber-100 to-amber-50 px-2.5 py-1 rounded-full border border-amber-200/50"
             whileHover={{ scale: 1.05 }}
           >
-            {category}
+            {category?.name}
           </motion.span>
           <motion.div
             className="flex items-center gap-1.5 text-[10px] font-semibold text-stone-600 hover:text-green-800 transition-colors group/vendor cursor-pointer"
@@ -195,7 +196,7 @@ const ProductCard = ({ product }) => {
           >
             <Store size={11} className="shrink-0" />
             <span className="truncate max-w-[90px] group-hover/vendor:underline">
-              {vendorName}
+              {seller}
             </span>
           </motion.div>
         </motion.div>
@@ -230,7 +231,7 @@ const ProductCard = ({ product }) => {
                 <Star
                   size={12}
                   className={`transition-all ${
-                    i < Math.floor(rating)
+                    i < Math.floor(averageRating || 0)
                       ? "fill-amber-500 text-amber-500"
                       : "text-stone-300"
                   }`}
@@ -242,13 +243,13 @@ const ProductCard = ({ product }) => {
             className="text-[11px] font-bold text-stone-600"
             whileHover={{ color: "#16a34a" }}
           >
-            {rating}
+            {averageRating || 0}
           </motion.span>
           <motion.span
             className="text-[11px] text-stone-500"
             whileHover={{ color: "#16a34a" }}
           >
-            ({reviewsCount})
+            ({numReviews || 0})
           </motion.span>
         </motion.div>
 
@@ -265,7 +266,7 @@ const ProductCard = ({ product }) => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
               >
-                ${originalPrice.toFixed(2)}
+                Rs.{originalPrice.toFixed(2)}
               </motion.span>
             )}
             <motion.span
@@ -274,7 +275,7 @@ const ProductCard = ({ product }) => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
             >
-              ${price.toFixed(2)}
+              Rs.{price.toFixed(2)}
             </motion.span>
           </motion.div>
 
