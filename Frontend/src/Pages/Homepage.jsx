@@ -10,8 +10,6 @@ import {
 } from "framer-motion";
 import {
   ChevronRight,
-  Eye,
-  EyeOff,
   ShoppingBag,
   ArrowRight,
   Sparkles,
@@ -25,6 +23,8 @@ import {
   LogOut,
   Store,
   User,
+  AlertCircle,
+  LoaderCircle,
 } from "lucide-react";
 import Navbar from "../Components/auth/Navbar";
 import Footer from "../Components/auth/Footer";
@@ -143,10 +143,6 @@ const useCountdown = (h = 4, m = 32, s = 15) => {
 };
 
 const Homepage = () => {
-  const [activeTab, setActiveTab] = useState("login");
-  const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [formEmail, setFormEmail] = useState("");
   const [productCategoryTab, setProductCategoryTab] = useState("all");
   const nav = useNavigate();
@@ -154,6 +150,7 @@ const Homepage = () => {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const heroRef = useRef(null);
   const { scrollYProgress } = useScroll({
@@ -167,21 +164,91 @@ const Homepage = () => {
   const countdown = useCountdown();
   const pad = (n) => String(n).padStart(2, "0");
 
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const res = await API.get(`/api/product/getall`);
+      setData(res.data.data);
+    } catch (error) {
+      console.log(error);
+      setError("Error fetching products");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      try {
-        const res = await API.get(`/api/product/getall`);
-        setData(res.data.data);
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchProducts();
   }, []);
 
+  if (loading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="min-h-[400px] flex flex-col items-center justify-center gap-4"
+      >
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{
+            duration: 1,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        >
+          <LoaderCircle size={45} className="text-blue-600" />
+        </motion.div>
+
+        <p className="text-gray-500 text-lg">Loading products...</p>
+      </motion.div>
+    );
+  }
+
+  if (error) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
+        className="min-h-[400px] flex items-center justify-center"
+      >
+        <motion.div
+          initial={{ y: -20 }}
+          animate={{ y: 0 }}
+          className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center shadow-md max-w-md"
+        >
+          <motion.div
+            animate={{
+              rotate: [0, -10, 10, -10, 0],
+            }}
+            transition={{
+              duration: 0.6,
+              repeat: Infinity,
+              repeatDelay: 2,
+            }}
+          >
+            <AlertCircle size={45} className="mx-auto text-red-500 mb-4" />
+          </motion.div>
+
+          <h2 className="text-xl font-semibold text-red-600">
+            Something went wrong
+          </h2>
+
+          <p className="text-gray-600 mt-2">{error}</p>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={fetchProducts}
+            className="mt-5 px-6 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
+          >
+            Try Again
+          </motion.button>
+        </motion.div>
+      </motion.div>
+    );
+  }
   const featuredVendors = [
     {
       name: "Aura Botanicals",
@@ -311,13 +378,6 @@ const Homepage = () => {
     { key: "home", label: "Home & Living" },
     { key: "electronics", label: "Eco Electronics" },
   ];
-
-  const signupFields = [
-    { label: "First Name", placeholder: "John" },
-    { label: "Last Name", placeholder: "Doe" },
-  ];
-
-  const roleOptions = ["Shopper", "Vendor / Shop"];
 
   return (
     <div className="bg-stone-50 font-sans overflow-x-hidden min-h-screen text-stone-800">
