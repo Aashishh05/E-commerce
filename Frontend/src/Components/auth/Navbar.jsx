@@ -15,11 +15,14 @@ import {
   Crown,
   Truck,
   Shield,
+  AlertCircle,
+  LoaderCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../Redux/authSlice";
 import { clearStorage } from "../../Localstorage/storage";
+import API from "../../utils/axios";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -27,6 +30,9 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [promoIndex, setPromoIndex] = useState(0);
+  const [category, setCategory] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   const nav = useNavigate();
   const dispatch = useDispatch();
@@ -65,32 +71,38 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const categories = [
-    "Fashion & Apparel",
-    "Beauty & Personal Care",
-    "Home & Living Decor",
-    "Electronics & Gadgets",
-    "Wellness & Fitness",
-    "Handcrafted Artisanal",
-    "Gifts & Sets",
-  ];
+  const fetchCategory = async () => {
+    setLoading(true);
+    try {
+      const res = await API.get(`/api/category/getall`);
+      setCategory(res.data.data);
+    } catch (error) {
+      console.log(error);
+      setError("Error fetching category");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategory();
+  }, []);
 
   return (
-    // FIX #1: Add proper z-index and will-change to prevent stacking context issues
     <header
       className={`w-full z-50 sticky top-0 transition-all duration-300 ${
         scrolled
           ? "bg-stone-50/95 backdrop-blur-md shadow-lg border-b border-stone-200/80"
           : "bg-stone-50/95 backdrop-blur-md border-b border-stone-200/40"
       }`}
-      style={{ willChange: "auto", position: "sticky" }} // Explicit positioning
+      style={{ willChange: "auto", position: "sticky" }}
     >
       <motion.div
         initial={{ opacity: 0, height: 0 }}
         animate={{ opacity: 1, height: "auto" }}
         transition={{ duration: 0.6, delay: 0.1 }}
         className="w-full bg-gradient-to-r from-green-900 via-green-800 to-green-900 text-stone-100 py-2.5 px-6 text-xs font-medium tracking-wide"
-        style={{ zIndex: 1 }} // Explicit z-index for promo bar
+        style={{ zIndex: 1 }}
       >
         <div className="max-w-7xl mx-auto flex justify-between items-center gap-4">
           <motion.p
@@ -120,7 +132,10 @@ const Navbar = () => {
         </div>
       </motion.div>
 
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-6" style={{ zIndex: 2 }}>
+      <div
+        className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-6"
+        style={{ zIndex: 2 }}
+      >
         <motion.a
           href="/"
           className="flex items-center gap-2.5 shrink-0 group"
@@ -422,31 +437,91 @@ const Navbar = () => {
                       className="fixed inset-0 z-10"
                       onClick={() => setIsCategoriesOpen(false)}
                     />
+
                     <motion.div
                       initial={{ opacity: 0, y: -10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -10, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute left-0 mt-3 w-72 bg-white rounded-2xl shadow-2xl border border-stone-100 overflow-hidden z-20 py-2 backdrop-blur-xl"
-                      style={{ zIndex: 51 }} // Ensure categories dropdown is above navbar
+                      className="absolute left-0 mt-3 w-72 bg-white rounded-2xl shadow-2xl border border-stone-100 overflow-hidden z-20 py-2"
                     >
-                      {categories.map((cat, idx) => (
-                        <motion.a
-                          key={cat}
-                          href={`#category-${cat.toLowerCase().replace(/\s+/g, "-")}`}
-                          onClick={() => setIsCategoriesOpen(false)}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: idx * 0.05 }}
-                          whileHover={{
-                            x: 8,
-                            backgroundColor: "rgba(6, 78, 59, 0.05)",
-                          }}
-                          className="block px-5 py-3 text-sm text-stone-700 hover:text-green-900 transition-colors font-medium"
+                      {loading && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="flex flex-col items-center justify-center py-8 gap-3"
                         >
-                          {cat}
-                        </motion.a>
-                      ))}
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{
+                              duration: 1,
+                              repeat: Infinity,
+                              ease: "linear",
+                            }}
+                          >
+                            <LoaderCircle
+                              size={30}
+                              className="text-green-700"
+                            />
+                          </motion.div>
+
+                          <p className="text-sm text-gray-500">
+                            Loading categories...
+                          </p>
+                        </motion.div>
+                      )}
+
+                      {!loading && error && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="px-5 py-6 text-center"
+                        >
+                          <AlertCircle
+                            size={30}
+                            className="mx-auto text-red-500 mb-2"
+                          />
+
+                          <p className="text-sm text-red-500">{error}</p>
+
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={fetchCategory}
+                            className="mt-3 px-4 py-2 bg-red-500 text-white rounded-lg text-sm"
+                          >
+                            Retry
+                          </motion.button>
+                        </motion.div>
+                      )}
+
+                      {!loading && !error && (
+                        <>
+                          {category.length > 0 ? (
+                            category.map((cat, idx) => (
+                              <motion.a
+                                key={cat._id}
+                                href={`#category-${cat.slug}`}
+                                onClick={() => setIsCategoriesOpen(false)}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.05 }}
+                                whileHover={{
+                                  x: 8,
+                                  backgroundColor: "rgba(6,78,59,0.05)",
+                                }}
+                                className="block px-5 py-3 text-sm text-stone-700 hover:text-green-900 transition-colors font-medium"
+                              >
+                                {cat.name}
+                              </motion.a>
+                            ))
+                          ) : (
+                            <p className="px-5 py-4 text-sm text-gray-400 text-center">
+                              No categories found
+                            </p>
+                          )}
+                        </>
+                      )}
                     </motion.div>
                   </>
                 )}
@@ -546,7 +621,7 @@ const Navbar = () => {
                   Shop Categories
                 </h3>
                 <div className="grid grid-cols-2 gap-2.5">
-                  {categories.map((cat, idx) => (
+                  {category.map((cat, idx) => (
                     <motion.a
                       key={cat}
                       href={`#category-${cat.toLowerCase().replace(/\s+/g, "-")}`}
