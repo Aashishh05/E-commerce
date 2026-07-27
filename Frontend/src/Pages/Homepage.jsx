@@ -84,7 +84,8 @@ const MagneticButton = ({ children, className = "", onClick }) => {
   const springY = useSpring(y, { stiffness: 500, damping: 25 });
 
   const handleMouseMove = (e) => {
-    const rect = ref.current.getBoundingClientRect();
+    const rect = ref.current?.getBoundingClientRect();
+    if (!rect) return;
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
     x.set((e.clientX - centerX) * 0.25);
@@ -152,40 +153,90 @@ const Homepage = () => {
   const [category, setCategory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
 
-  // const heroRef = useRef(null);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const heroImages = [
+    {
+      url: "https://www.truelogic.com.ph/wp-content/uploads/2024/06/truelogic-podcast-marketplace-vs-ecommerce.png",
+      title: "Global Marketplace",
+    },
+    {
+      url: "https://plus.unsplash.com/premium_photo-1681488262364-8aeb1b6aac56?fm=jpg&q=60&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8ZSUyMGNvbW1lcmNlfGVufDB8fDB8fHww",
+      title: "Curated Products",
+    },
+    {
+      url: "https://thumbs.dreamstime.com/b/retail-store-display-home-goods-shelves-toronto-canada-march-displays-such-as-pet-beds-decorative-items-shoppers-451548377.jpg",
+      title: "Premium Goods",
+    },
+    {
+      url: "https://images.pexels.com/photos/16097558/pexels-photo-16097558/free-photo-of-young-woman-browsing-clothes-on-sale.jpeg",
+      title: "Global Products",
+    },
+    {
+      url: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRSO4IBEDTzVgjXNLLBgUMMzk2IyhAyWF61-mxaZgKF53Np0lSeCyMC8gs&s=10",
+      title: "Sustainable Fashion",
+    },
+  ];
+
+  useEffect(() => {
+    const slideTimer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % heroImages.length);
+    }, 5000);
+    return () => clearInterval(slideTimer);
+  }, []);
+
   const { scrollYProgress } = useScroll({
-   
     offset: ["start start", "end start"],
   });
-  const heroY = useTransform(scrollYProgress, [0, 1], ["0%", "25%"]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
-  const heroScale = useTransform(scrollYProgress, [0, 1], [1, 1.08]);
 
   const countdown = useCountdown();
   const pad = (n) => String(n).padStart(2, "0");
 
   const fetchProducts = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
+      setError(null);
       const res = await API.get(`/api/product/getall`);
-      setProducts(res.data.data);
+
+      if (!res.data || !res.data.data) {
+        throw new Error("Invalid response format from server");
+      }
+
+      setProducts(Array.isArray(res.data.data) ? res.data.data : []);
+      setRetryCount(0);
     } catch (error) {
-      console.log(error);
-      setError("Error fetching products");
+      console.error("Error fetching products:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to load products. Please try again.";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   const fetchCategory = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
+      setError(null);
       const res = await API.get(`/api/category/getall`);
-      setCategory(res.data.data);
+
+      if (!res.data || !res.data.data) {
+        throw new Error("Invalid response format from server");
+      }
+
+      setCategory(Array.isArray(res.data.data) ? res.data.data : []);
+      setRetryCount(0);
     } catch (error) {
-      console.log(error);
-      setError("Error fetching category");
+      console.error("Error fetching categories:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to load categories. Please try again.";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -196,53 +247,81 @@ const Homepage = () => {
     fetchCategory();
   }, []);
 
-  if (loading) {
+  const handleRetry = () => {
+    setRetryCount((prev) => prev + 1);
+    setError(null);
+    fetchProducts();
+    fetchCategory();
+  };
+
+  if (loading && products.length === 0 && category.length === 0) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="min-h-[400px] flex flex-col items-center justify-center gap-4"
-        style={{ marginTop: "180px" }}
+        className="min-h-screen flex flex-col items-center justify-center gap-4 bg-stone-50"
       >
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
         >
-          <LoaderCircle size={45} className="text-blue-600" />
+          <LoaderCircle size={50} className="text-green-800" />
         </motion.div>
-        <p className="text-gray-500 text-lg">Loading products...</p>
+        <p className="text-gray-600 text-lg font-medium">
+          Loading marketplace...
+        </p>
       </motion.div>
     );
   }
 
-  if (error) {
+  if (error && products.length === 0 && category.length === 0) {
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.2 }}
-        className="min-h-[400px] flex items-center justify-center"
-        style={{ marginTop: "180px" }}
+        className="min-h-screen flex items-center justify-center bg-stone-50 px-4"
       >
-        <motion.div initial={{ y: -20 }} animate={{ y: 0 }} className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center shadow-md max-w-md">
-          <motion.div animate={{ rotate: [0, -10, 10, -10, 0] }} transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 2 }}>
-            <AlertCircle size={45} className="mx-auto text-red-500 mb-4" />
-          </motion.div>
-          <h2 className="text-xl font-semibold text-red-600">Something went wrong</h2>
-          <p className="text-gray-600 mt-2">{error}</p>
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.96 }}
-            onClick={() => {
-              setError(null);
-              fetchProducts();
-              fetchCategory();
-            }}
-            className="mt-5 px-6 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
+        <motion.div
+          initial={{ y: -20 }}
+          animate={{ y: 0 }}
+          className="bg-red-50 border border-red-200 rounded-3xl p-8 text-center shadow-lg max-w-md"
+        >
+          <motion.div
+            animate={{ rotate: [0, -10, 10, -10, 0] }}
+            transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 2 }}
           >
-            Try Again
-          </motion.button>
+            <AlertCircle size={50} className="mx-auto text-red-500 mb-4" />
+          </motion.div>
+          <h2 className="text-2xl font-semibold text-red-600 mb-2">
+            Oops! Something went wrong
+          </h2>
+          <p className="text-gray-600 mb-6 text-sm">{error}</p>
+          <div className="space-y-3">
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={handleRetry}
+              className="w-full px-6 py-3 rounded-lg bg-red-500 text-white hover:bg-red-600 transition font-semibold"
+            >
+              Try Again
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => window.location.reload()}
+              className="w-full px-6 py-3 rounded-lg bg-gray-500 text-white hover:bg-gray-600 transition font-semibold"
+            >
+              Reload Page
+            </motion.button>
+          </div>
+          {retryCount > 2 && (
+            <p className="text-xs text-gray-500 mt-4">
+              If the problem persists, please contact support or try again
+              later.
+            </p>
+          )}
         </motion.div>
       </motion.div>
     );
@@ -255,7 +334,8 @@ const Homepage = () => {
       rating: 4.9,
       productsCount: 65,
       logo: "🌿",
-      bannerImage: "https://images.unsplash.com/photo-1559056199-641a0ac8b3f4?w=400&h=200&fit=crop",
+      bannerImage:
+        "https://images.unsplash.com/photo-1559056199-641a0ac8b3f4?w=400&h=200&fit=crop",
       description: "100% natural botanical skincare & self-care elixirs.",
     },
     {
@@ -264,8 +344,10 @@ const Homepage = () => {
       rating: 4.8,
       productsCount: 42,
       logo: "🧵",
-      bannerImage: "https://images.unsplash.com/photo-1544441893-675973e31985?w=400&h=200&fit=crop",
-      description: "Slow-fashion garments spun from pure, bio-degradable flax fibers.",
+      bannerImage:
+        "https://images.unsplash.com/photo-1544441893-675973e31985?w=400&h=200&fit=crop",
+      description:
+        "Slow-fashion garments spun from pure, bio-degradable flax fibers.",
     },
     {
       name: "Earthy Pots Co.",
@@ -273,16 +355,38 @@ const Homepage = () => {
       rating: 4.7,
       productsCount: 29,
       logo: "🏺",
-      bannerImage: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&h=200&fit=crop",
-      description: "Stoneware ceramics handcrafted in wood-fired mountain kilns.",
+      bannerImage:
+        "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&h=200&fit=crop",
+      description:
+        "Stoneware ceramics handcrafted in wood-fired mountain kilns.",
     },
   ];
 
   const stats = [
-    { icon: <Globe size={22} />, value: 500, suffix: "+", label: "Global Shops" },
-    { icon: <Users size={22} />, value: 12000, suffix: "+", label: "Happy Buyers" },
-    { icon: <TrendingUp size={22} />, value: 98, suffix: "%", label: "Satisfaction Rate" },
-    { icon: <Shield size={22} />, value: 100, suffix: "%", label: "Secure Payments" },
+    {
+      icon: <Globe size={22} />,
+      value: 500,
+      suffix: "+",
+      label: "Global Shops",
+    },
+    {
+      icon: <Users size={22} />,
+      value: 12000,
+      suffix: "+",
+      label: "Happy Buyers",
+    },
+    {
+      icon: <TrendingUp size={22} />,
+      value: 98,
+      suffix: "%",
+      label: "Satisfaction Rate",
+    },
+    {
+      icon: <Shield size={22} />,
+      value: 100,
+      suffix: "%",
+      label: "Secure Payments",
+    },
   ];
 
   const staggerContainer = {
@@ -300,9 +404,21 @@ const Homepage = () => {
   };
 
   const features = [
-    { icon: "🌿", title: "Curated Sellers Only", desc: "Every store is audited for premium sustainable quality." },
-    { icon: "🛡️", title: "Aura Buyer Protection", desc: "Secure escrow payments and hassle-free local returns." },
-    { icon: "✨", title: "Artisanal & Original", desc: "Handcrafted items, green tech, and organic foods." },
+    {
+      icon: "🌿",
+      title: "Curated Sellers Only",
+      desc: "Every store is audited for premium sustainable quality.",
+    },
+    {
+      icon: "🛡️",
+      title: "Aura Buyer Protection",
+      desc: "Secure escrow payments and hassle-free local returns.",
+    },
+    {
+      icon: "✨",
+      title: "Artisanal & Original",
+      desc: "Handcrafted items, green tech, and organic foods.",
+    },
   ];
 
   const categoryTabs = [
@@ -313,194 +429,277 @@ const Homepage = () => {
     { key: "electronics", label: "Eco Electronics" },
   ];
 
-  const defaultCategoryImage = "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=600&h=600&fit=crop";
+  const defaultCategoryImage =
+    "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=600&h=600&fit=crop";
 
   return (
     <div className="bg-stone-50 font-sans overflow-x-hidden min-h-screen text-stone-800">
       <Navbar />
 
-      <section  className="relative h-[92vh] flex items-start overflow-hidden" >
-        <motion.div className="absolute inset-0" style={{ y: heroY, scale: heroScale }}>
-          <div
-            className="w-full h-full"
-            style={{
-              backgroundImage: "url(https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1600&h=900&fit=crop)",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              backgroundAttachment: "fixed",
+      <section className="relative w-full h-screen overflow-hidden">
+        <AnimatePresence initial={false}>
+          <motion.div
+            key={currentSlide}
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{
+              duration: 0.8,
+              ease: [0.4, 0, 0.2, 1],
             }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-stone-900/85 via-stone-900/55 to-stone-900/15" />
-        </motion.div>
+            className="absolute inset-0"
+          >
+            <img
+              src={heroImages[currentSlide].url}
+              alt={heroImages[currentSlide].title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.src = defaultCategoryImage;
+              }}
+            />
+
+            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/30" />
+          </motion.div>
+        </AnimatePresence>
 
         <FloatingOrb
           style={{
             width: 320,
             height: 320,
-            background: "radial-gradient(circle, rgba(120,180,120,0.18), transparent 70%)",
-            top: "10%",
-            right: "15%",
+            background:
+              "radial-gradient(circle, rgba(120,180,120,0.15), transparent 70%)",
+            top: "15%",
+            right: "10%",
             duration: 7,
             delay: 0,
+            zIndex: 5,
           }}
         />
         <FloatingOrb
           style={{
             width: 200,
             height: 200,
-            background: "radial-gradient(circle, rgba(200,160,80,0.15), transparent 70%)",
+            background:
+              "radial-gradient(circle, rgba(200,160,80,0.12), transparent 70%)",
             bottom: "20%",
-            right: "30%",
+            right: "35%",
             duration: 9,
             delay: 2,
+            zIndex: 5,
           }}
         />
-        <FloatingOrb
-          style={{
-            width: 150,
-            height: 150,
-            background: "radial-gradient(circle, rgba(100,160,100,0.12), transparent 70%)",
-            top: "40%",
-            right: "8%",
-            duration: 5,
-            delay: 1,
-          }}
-        />
-
-        <motion.div className="relative max-w-7xl mx-auto w-full px-6 z-10" style={{ opacity: heroOpacity }}>
-          <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="max-w-2xl text-stone-100">
-            <motion.div variants={slideUp} className="mb-6">
-              <motion.span
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-xs font-semibold uppercase tracking-wider"
-                animate={{
-                  boxShadow: [
-                    "0 0 0px rgba(245,158,11,0)",
-                    "0 0 16px rgba(245,158,11,0.3)",
-                    "0 0 0px rgba(245,158,11,0)",
-                  ],
-                }}
-                transition={{ duration: 2.5, repeat: Infinity }}
-              >
-                <Sparkles size={12} />
-                Global Multivendor Platform
-              </motion.span>
-            </motion.div>
-
-            <motion.h1 variants={staggerContainer} className="font-serif text-5xl md:text-7xl font-bold leading-tight mb-6">
-              {["Curated", "by", "Hand.", "Sold", "by", "Creators."].map((word, i) => (
-                <motion.span
-                  key={i}
-                  variants={{
-                    hidden: { opacity: 0, y: 50, rotateX: -20 },
-                    visible: {
-                      opacity: 1,
-                      y: 0,
-                      rotateX: 0,
-                      transition: { duration: 0.6, delay: 0.3 + i * 0.08, ease: [0.25, 0.46, 0.45, 0.94] },
-                    },
-                  }}
-                  className="inline-block mr-3"
-                >
-                  {word}
-                </motion.span>
-              ))}
-            </motion.h1>
-
-            <motion.p variants={slideUp} className="text-lg md:text-xl text-stone-200 mb-10 leading-relaxed max-w-xl">
-              Explore independent boutiques, organic growers, and zero-waste craftsmen from around the globe. Authenticity, guaranteed.
-            </motion.p>
-
-            <motion.div variants={slideUp} className="flex flex-wrap gap-4">
-              <MagneticButton className="px-8 py-3.5 bg-green-800 text-stone-100 font-semibold rounded-full hover:bg-green-700 transition-colors shadow-lg hover:shadow-2xl flex items-center gap-2 cursor-pointer">
-                <ShoppingBag size={18} />
-                Shop Marketplace
-                <motion.span animate={{ x: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>
-                  <ChevronRight size={18} />
-                </motion.span>
-              </MagneticButton>
-
-              <AnimatePresence mode="wait">
-                {isAuthenticated ? (
-                  <motion.div
-                    key="auth-hero"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex items-center gap-3"
-                  >
-                    <div className="flex items-center gap-2.5 px-5 py-3 bg-white/10 border border-white/20 rounded-full backdrop-blur-md">
-                      <span className="text-stone-100 font-semibold text-sm">Welcome, {user?.name?.split(" ")[0]}</span>
-                    </div>
-                    {user?.role === "seller" && (
-                      <MagneticButton
-                        className="px-6 py-3 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-semibold rounded-full border border-amber-400/30 text-sm cursor-pointer flex items-center gap-2"
-                        onClick={() => nav("/seller-dashboard")}
-                      >
-                        <Store size={15} />
-                        My Store
-                      </MagneticButton>
-                    )}
-                    {user?.role === "admin" && (
-                      <MagneticButton
-                        className="px-6 py-3 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-semibold rounded-full border border-amber-400/30 text-sm cursor-pointer flex items-center gap-2"
-                        onClick={() => nav("/admin-dashboard")}
-                      >
-                        <Zap size={15} />
-                        Dashboard
-                      </MagneticButton>
-                    )}
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="guest-hero"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <MagneticButton
-                      className="px-8 py-3.5 bg-white/10 hover:bg-white/20 text-stone-100 font-semibold rounded-full backdrop-blur-md transition-colors border border-white/30 cursor-pointer"
-                      onClick={() => nav("/register")}
-                    >
-                      Become a Seller
-                    </MagneticButton>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          </motion.div>
-        </motion.div>
 
         <motion.div
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+          className="relative h-full flex items-center -mt-6 md:-mt-10 z-10"
+          style={{ opacity: heroOpacity }}
+        >
+          <div className="max-w-7xl mx-auto w-full px-6 md:px-12">
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+              className="max-w-3xl"
+            >
+              <motion.div variants={slideUp} className="mt-5 mb-8">
+                <motion.span
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500/20 text-amber-100 border border-amber-400/40 rounded-full text-xs font-semibold uppercase tracking-[0.2em] backdrop-blur-md"
+                  animate={{
+                    boxShadow: [
+                      "0 0 0px rgba(245,158,11,0)",
+                      "0 0 22px rgba(245,158,11,0.35)",
+                      "0 0 0px rgba(245,158,11,0)",
+                    ],
+                  }}
+                  transition={{ duration: 2.5, repeat: Infinity }}
+                >
+                  <Sparkles size={13} />
+                  Global Multivendor Platform
+                </motion.span>
+              </motion.div>
+
+              <motion.h1
+                variants={staggerContainer}
+                className="font-serif text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-[-0.03em] text-white mb-10"
+              >
+                {[
+                  "Exceptional",
+                  "Products.",
+                  "Trusted",
+                  "Sellers.",
+                  "One",
+                  "Marketplace.",
+                ].map((word, i) => (
+                  <motion.span
+                    key={i}
+                    variants={{
+                      hidden: {
+                        opacity: 0,
+                        y: 50,
+                      },
+                      visible: {
+                        opacity: 1,
+                        y: 0,
+                        transition: {
+                          duration: 0.5,
+                          delay: 0.3 + i * 0.08,
+                          ease: [0.25, 0.46, 0.45, 0.94],
+                        },
+                      },
+                    }}
+                    className="inline-block mr-2"
+                  >
+                    {word}
+                  </motion.span>
+                ))}
+              </motion.h1>
+
+              <motion.p
+                variants={slideUp}
+                className="max-w-2xl text-lg md:text-xl leading-[2] text-gray-200/90 font-light tracking-[0.015em] mb-14"
+              >
+                Experience a thoughtfully curated marketplace where independent
+                brands, skilled artisans, and sustainable creators connect with
+                customers seeking authenticity, quality, and timeless
+                craftsmanship.
+              </motion.p>
+
+              <motion.div variants={slideUp} className="flex flex-wrap gap-4">
+                <MagneticButton className="px-8 py-4 bg-green-700 hover:bg-green-600 text-white font-bold rounded-full transition-colors shadow-xl hover:shadow-2xl flex items-center gap-2 cursor-pointer text-base">
+                  <ShoppingBag size={20} />
+                  Shop Marketplace
+                  <motion.span
+                    animate={{ x: [0, 4, 0] }}
+                    transition={{ repeat: Infinity, duration: 1.5 }}
+                  >
+                    <ChevronRight size={20} />
+                  </motion.span>
+                </MagneticButton>
+
+                <AnimatePresence mode="wait">
+                  {isAuthenticated ? (
+                    <motion.div
+                      key="auth-hero"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      transition={{ duration: 0.3 }}
+                      className="flex items-center gap-3 flex-wrap"
+                    >
+                      <div className="flex items-center gap-3 px-6 py-4 bg-white/15 border border-white/30 rounded-full backdrop-blur-md">
+                        <span className="text-white font-semibold">
+                          Welcome, {user?.name?.split(" ")[0] || "User"}
+                        </span>
+                      </div>
+
+                      {user?.role === "seller" && (
+                        <MagneticButton
+                          className="px-6 py-4 bg-amber-500/30 hover:bg-amber-500/40 text-amber-100 font-bold rounded-full border border-amber-400/50 cursor-pointer flex items-center gap-2"
+                          onClick={() => nav("/seller-dashboard")}
+                        >
+                          <Store size={17} />
+                          My Store
+                        </MagneticButton>
+                      )}
+
+                      {user?.role === "admin" && (
+                        <MagneticButton
+                          className="px-6 py-4 bg-amber-500/30 hover:bg-amber-500/40 text-amber-100 font-bold rounded-full border border-amber-400/50 cursor-pointer flex items-center gap-2"
+                          onClick={() => nav("/admin-dashboard")}
+                        >
+                          <Zap size={17} />
+                          Dashboard
+                        </MagneticButton>
+                      )}
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="guest-hero"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <MagneticButton
+                        className="px-8 py-4 bg-white/20 hover:bg-white/30 text-white font-bold rounded-full backdrop-blur-md transition-colors border border-white/40 cursor-pointer text-base"
+                        onClick={() => nav("/register")}
+                      >
+                        Become a Seller
+                      </MagneticButton>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            </motion.div>
+          </div>
+        </motion.div>
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+          {heroImages.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentSlide(idx)}
+              className={`h-2 rounded-full transition-all duration-500 cursor-pointer ${
+                idx === currentSlide
+                  ? "w-10 bg-white"
+                  : "w-2 bg-white/40 hover:bg-white/60"
+              }`}
+              aria-label={`Go to slide ${idx + 1}`}
+            />
+          ))}
+        </div>
+
+        <motion.div
+          className="absolute bottom-24 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-10"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.5 }}
         >
-          <span className="text-white/50 text-xs uppercase tracking-widest font-semibold">Scroll</span>
+          <span className="text-white/60 text-xs uppercase tracking-widest font-semibold">
+            Scroll
+          </span>
           <motion.div
-            className="w-px h-10 bg-gradient-to-b from-white/50 to-transparent"
-            animate={{ scaleY: [0, 1, 0], originY: 0 }}
+            className="w-px h-12 bg-gradient-to-b from-white/60 to-transparent"
+            animate={{ scaleY: [0.4, 1, 0.4], originY: 0 }}
             transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
           />
         </motion.div>
       </section>
 
-      <section className="py-10 bg-green-900 overflow-hidden relative">
-        <motion.div className="absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 80px)" }} />
+      <section className="py-8 bg-green-900 overflow-hidden relative">
+        <motion.div
+          className="absolute inset-0 opacity-20"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 80px)",
+          }}
+        />
         <div className="max-w-7xl mx-auto px-6">
-          <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-8"
+          >
             {stats.map((s, i) => (
-              <motion.div key={i} variants={slideUp} className="flex items-center gap-4 text-white">
-                <motion.div className="p-3 rounded-2xl bg-white/10 text-green-300" whileHover={{ scale: 1.08, rotate: 4 }} transition={{ duration: 0.2 }}>
+              <motion.div
+                key={i}
+                variants={slideUp}
+                className="flex items-center gap-4 text-white"
+              >
+                <motion.div
+                  className="p-3 rounded-2xl bg-white/10 text-green-300"
+                  whileHover={{ scale: 1.08, rotate: 4 }}
+                  transition={{ duration: 0.2 }}
+                >
                   {s.icon}
                 </motion.div>
                 <div>
-                  <p className="text-2xl font-bold font-serif">
+                  <p className="text-2xl md:text-3xl font-bold font-serif">
                     <CountUp end={s.value} suffix={s.suffix} />
                   </p>
-                  <p className="text-green-300/80 text-xs font-semibold uppercase tracking-wider">{s.label}</p>
+                  <p className="text-green-300/80 text-xs font-semibold uppercase tracking-wider">
+                    {s.label}
+                  </p>
                 </div>
               </motion.div>
             ))}
@@ -508,22 +707,35 @@ const Homepage = () => {
         </div>
       </section>
 
-      <section className="py-16 bg-white overflow-hidden">
+      <section className="py-20 bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
             <RevealText>
-              <div className="flex items-center gap-2 mb-2">
-                <motion.div animate={{ scale: [1, 1.2, 1], rotate: [0, 8, -8, 0] }} transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 2 }}>
-                  <Zap className="text-amber-500 fill-amber-500" size={22} />
+              <div className="flex items-center gap-2 mb-3">
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1], rotate: [0, 8, -8, 0] }}
+                  transition={{
+                    duration: 0.8,
+                    repeat: Infinity,
+                    repeatDelay: 2,
+                  }}
+                >
+                  <Zap className="text-amber-500 fill-amber-500" size={24} />
                 </motion.div>
-                <span className="text-xs font-extrabold uppercase tracking-widest text-amber-700">Limited Offers</span>
+                <span className="text-xs font-extrabold uppercase tracking-widest text-amber-700">
+                  Limited Offers
+                </span>
               </div>
-              <h2 className="font-serif text-3xl md:text-4xl font-bold text-stone-900">Flash Deals</h2>
+              <h2 className="font-serif text-4xl md:text-5xl font-bold text-stone-900">
+                Flash Deals
+              </h2>
             </RevealText>
 
             <RevealText delay={0.15}>
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">Ends In:</span>
+              <div className="flex items-center gap-4">
+                <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+                  Ends In:
+                </span>
                 <div className="flex gap-2">
                   {[
                     { val: pad(countdown.h), label: "h" },
@@ -537,10 +749,14 @@ const Homepage = () => {
                         animate={{ y: 0, opacity: 1 }}
                         exit={{ y: 10, opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="flex items-baseline bg-green-50 border border-green-200/50 px-2.5 py-1.5 rounded-lg min-w-[44px] justify-center"
+                        className="flex items-baseline bg-green-50 border border-green-200 px-3 py-2 rounded-lg min-w-[48px] justify-center"
                       >
-                        <span className="text-base font-extrabold text-green-950 font-mono">{unit.val}</span>
-                        <span className="text-[10px] font-bold text-green-700 ml-0.5">{unit.label}</span>
+                        <span className="text-lg font-extrabold text-green-950 font-mono">
+                          {unit.val}
+                        </span>
+                        <span className="text-xs font-bold text-green-700 ml-1">
+                          {unit.label}
+                        </span>
                       </motion.div>
                     </AnimatePresence>
                   ))}
@@ -556,116 +772,139 @@ const Homepage = () => {
             viewport={{ once: true, margin: "-80px" }}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
           >
-            {products.slice(0, 4).map((product, i) => (
-              <motion.div
-                key={product._id}
-                variants={{
-                  hidden: { opacity: 0, y: 50, scale: 0.97 },
-                  visible: {
-                    opacity: 1,
-                    y: 0,
-                    scale: 1,
-                    transition: { duration: 0.35, delay: i * 0.05, ease: [0.25, 0.46, 0.45, 0.94] },
-                  },
-                }}
-                whileHover={{ y: -4, transition: { duration: 0.15 } }}
-              >
-                <ProductCard product={{ ...product, badgeText: "Flash Deal", badgeColor: "orange" }} />
-              </motion.div>
-            ))}
+            {products && products.length > 0 ? (
+              products.slice(0, 4).map((product, i) => (
+                <motion.div
+                  key={product?._id || i}
+                  variants={{
+                    hidden: { opacity: 0, y: 50, scale: 0.97 },
+                    visible: {
+                      opacity: 1,
+                      y: 0,
+                      scale: 1,
+                      transition: {
+                        duration: 0.35,
+                        delay: i * 0.05,
+                        ease: [0.25, 0.46, 0.45, 0.94],
+                      },
+                    },
+                  }}
+                  whileHover={{ y: -4, transition: { duration: 0.15 } }}
+                >
+                  <ProductCard
+                    product={{
+                      ...product,
+                      badgeText: "Flash Deal",
+                      badgeColor: "orange",
+                    }}
+                  />
+                </motion.div>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12">
+                <p className="text-stone-600 text-lg">
+                  No products available for flash deals
+                </p>
+              </div>
+            )}
           </motion.div>
         </div>
       </section>
 
-      <section className="py-16 bg-stone-50">
+      <section className="py-20 bg-stone-50">
         <div className="max-w-7xl mx-auto px-6">
-          <RevealText className="text-center max-w-xl mx-auto mb-12">
-            <h2 className="font-serif text-3xl md:text-4xl font-bold text-stone-900 mb-3">Explore Categories</h2>
-            <p className="text-stone-600 text-sm">Discover specialized product categories from our sustainable multi-vendor network.</p>
+          <RevealText className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="font-serif text-4xl md:text-5xl font-bold text-stone-900 mb-4">
+              Explore Categories
+            </h2>
+            <p className="text-stone-600 text-base">
+              Discover specialized product categories from our sustainable
+              multi-vendor network.
+            </p>
           </RevealText>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {category && category.length > 0 ? (
               category.map((cat, i) => (
                 <motion.div
-                  key={cat._id || i}
+                  key={cat?._id || i}
                   initial={{ opacity: 0, y: 60 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-60px" }}
-                  transition={{ duration: 0.4, delay: i * 0.06, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  whileHover={{ y: -6, transition: { duration: 0.15 } }}
-                  className="relative rounded-3xl overflow-hidden shadow-md h-96 group border border-stone-200/60 cursor-pointer"
+                  transition={{
+                    duration: 0.4,
+                    delay: i * 0.06,
+                    ease: [0.25, 0.46, 0.45, 0.94],
+                  }}
+                  whileHover={{ y: -8, transition: { duration: 0.15 } }}
+                  className="relative rounded-2xl overflow-hidden shadow-lg h-96 group border border-stone-200/60 cursor-pointer"
                 >
-                  <motion.div
-                    className="absolute inset-0 bg-stone-900/40 z-10"
-                    whileHover={{ backgroundColor: "rgba(28,25,23,0.25)" }}
-                    transition={{ duration: 0.15 }}
-                  />
-                  <motion.img
-                    src={cat.image?.url || defaultCategoryImage}
-                    alt={cat.name}
-                    className="w-full h-full object-cover"
-                    whileHover={{ scale: 1.07 }}
-                    transition={{ duration: 0.5, ease: "easeOut" }}
+                  <div className="absolute inset-0 bg-stone-900/30 z-10 group-hover:bg-stone-900/20 transition-colors duration-300" />
+                  <img
+                    src={cat?.image?.url || defaultCategoryImage}
+                    alt={cat?.name || "Category"}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     onError={(e) => {
                       e.target.src = defaultCategoryImage;
                     }}
                   />
-                  <motion.div
-                    className="absolute inset-x-0 bottom-0 p-6 z-20 text-white flex flex-col justify-end"
-                    initial={{ y: 8 }}
-                    whileHover={{ y: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-green-300 mb-1">
-                      {cat.isActive ? "Active" : "Coming Soon"}
+                  <div className="absolute inset-x-0 bottom-0 p-6 z-20 text-white flex flex-col justify-end bg-gradient-to-t from-black/80 to-transparent">
+                    <span className="text-xs font-extrabold uppercase tracking-widest text-green-300 mb-2">
+                      {cat?.isActive ? "Active" : "Coming Soon"}
                     </span>
-                    <h3 className="font-serif text-2xl font-bold mb-2">{cat.name}</h3>
-                    <p className="text-xs text-stone-200 mb-4 font-medium">{cat.description || "Explore this collection"}</p>
-                    <a href="#" className="inline-flex items-center gap-1.5 text-sm font-bold text-white hover:text-green-300 transition-colors">
+                    <h3 className="font-serif text-2xl font-bold mb-2">
+                      {cat?.name || "Category"}
+                    </h3>
+                    <p className="text-sm text-gray-200 mb-4">
+                      {cat?.description || "Explore this collection"}
+                    </p>
+                    <a
+                      href="#"
+                      className="inline-flex items-center gap-2 text-sm font-bold text-white hover:text-green-300 transition-colors"
+                    >
                       Shop Collection
-                      <motion.span className="inline-block group-hover:translate-x-1 transition-transform">
-                        <ArrowRight size={14} />
-                      </motion.span>
+                      <ArrowRight
+                        size={16}
+                        className="group-hover:translate-x-1 transition-transform"
+                      />
                     </a>
-                  </motion.div>
+                  </div>
                 </motion.div>
               ))
             ) : (
-              <div className="col-span-full text-center py-12">
-                <p className="text-stone-600">No categories available</p>
+              <div className="col-span-full text-center py-16">
+                <p className="text-stone-600 text-lg">
+                  No categories available
+                </p>
               </div>
             )}
           </div>
         </div>
       </section>
 
-      <section className="py-16 bg-white">
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6">
-          <RevealText className="text-center max-w-xl mx-auto mb-10">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-green-800">All Stores Catalog</span>
-            <h2 className="font-serif text-3xl md:text-4xl font-bold text-stone-900 mt-2 mb-4">Discover Products</h2>
-            <div className="flex flex-wrap items-center justify-center gap-2 mt-6">
+          <RevealText className="text-center max-w-2xl mx-auto mb-16">
+            <span className="text-xs font-extrabold uppercase tracking-widest text-green-800 bg-green-50 px-4 py-2 rounded-full inline-block">
+              All Stores Catalog
+            </span>
+            <h2 className="font-serif text-4xl md:text-5xl font-bold text-stone-900 mt-6 mb-4">
+              Discover Products
+            </h2>
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-8">
               {categoryTabs.map((tab) => (
                 <motion.button
                   key={tab.key}
                   onClick={() => setProductCategoryTab(tab.key)}
-                  className={`px-4 py-2 rounded-full text-xs font-semibold tracking-wide border transition-all duration-300 cursor-pointer relative overflow-hidden ${
+                  className={`px-5 py-2.5 rounded-full text-xs font-semibold tracking-wide border transition-all duration-300 cursor-pointer ${
                     productCategoryTab === tab.key
-                      ? "bg-green-800 border-green-800 text-stone-100"
-                      : "bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+                      ? "bg-green-800 border-green-800 text-white shadow-lg"
+                      : "bg-stone-100 border-stone-300 text-stone-700 hover:bg-stone-200"
                   }`}
                   whileTap={{ scale: 0.95 }}
                   layout
                 >
                   {tab.label}
-                  {productCategoryTab === tab.key && (
-                    <motion.div
-                      layoutId="activeFilterPill"
-                      className="absolute inset-0 bg-green-800 rounded-full -z-10"
-                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                    />
-                  )}
                 </motion.button>
               ))}
             </div>
@@ -677,53 +916,66 @@ const Homepage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.3 }}
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
             >
               {products && products.length > 0 ? (
                 products.map((product, i) => (
                   <motion.div
-                    key={product._id}
+                    key={product?._id || i}
                     initial={{ opacity: 0, scale: 0.95, y: 30 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     transition={{ duration: 0.25, delay: i * 0.03 }}
-                    whileHover={{ y: -4, transition: { duration: 0.1 } }}
+                    whileHover={{ y: -6, transition: { duration: 0.1 } }}
                   >
                     <ProductCard product={product} />
                   </motion.div>
                 ))
               ) : (
-                <div className="col-span-full text-center py-12">
-                  <p className="text-stone-600">No products available</p>
+                <div className="col-span-full text-center py-16">
+                  <p className="text-stone-600 text-lg">
+                    No products available
+                  </p>
                 </div>
               )}
             </motion.div>
           </AnimatePresence>
 
-          <RevealText className="text-center mt-12" delay={0.15}>
-            <MagneticButton className="px-8 py-3 bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-800 font-semibold rounded-full text-sm transition-colors cursor-pointer inline-flex items-center gap-2">
+          <RevealText className="text-center mt-16" delay={0.15}>
+            <MagneticButton className="px-8 py-4 bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-800 font-bold rounded-full transition-colors cursor-pointer inline-flex items-center gap-2 text-base">
               <span>Explore All Products</span>
-              <ChevronRight size={16} />
+              <ChevronRight size={18} />
             </MagneticButton>
           </RevealText>
         </div>
       </section>
 
-      <section className="py-16 bg-stone-50 border-t border-b border-stone-200/50">
+      <section className="py-20 bg-stone-50 border-t border-b border-stone-200">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-10 gap-4">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-16 gap-4">
             <RevealText>
-              <div className="flex items-center gap-2 mb-2">
-                <Users className="text-green-800" size={18} />
-                <span className="text-xs font-extrabold uppercase tracking-widest text-green-800">Meet the Producers</span>
+              <div className="flex items-center gap-2 mb-3">
+                <Users className="text-green-800" size={20} />
+                <span className="text-xs font-extrabold uppercase tracking-widest text-green-800">
+                  Meet the Producers
+                </span>
               </div>
-              <h2 className="font-serif text-3xl md:text-4xl font-bold text-stone-900">Featured Shops</h2>
+              <h2 className="font-serif text-4xl md:text-5xl font-bold text-stone-900">
+                Featured Shops
+              </h2>
             </RevealText>
             <RevealText delay={0.1}>
-              <a href="#all-vendors" className="text-green-800 hover:text-green-950 font-semibold text-sm flex items-center gap-1 group">
+              <a
+                href="#all-vendors"
+                className="text-green-800 hover:text-green-950 font-semibold flex items-center gap-1 group"
+              >
                 View All 500+ Shops
-                <motion.span className="inline-block" animate={{ x: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 1.6 }}>
-                  <ArrowRight size={14} />
+                <motion.span
+                  className="inline-block"
+                  animate={{ x: [0, 4, 0] }}
+                  transition={{ repeat: Infinity, duration: 1.6 }}
+                >
+                  <ArrowRight size={16} />
                 </motion.span>
               </a>
             </RevealText>
@@ -732,51 +984,70 @@ const Homepage = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {featuredVendors.map((vendor, i) => (
               <motion.div
-                key={vendor.name}
+                key={vendor?.name || i}
                 initial={{ opacity: 0, y: 50 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: 0.4, delay: i * 0.06, ease: [0.25, 0.46, 0.45, 0.94] }}
-                whileHover={{ y: -6, boxShadow: "0 24px 48px rgba(0,0,0,0.10)", transition: { duration: 0.15 } }}
-                className="bg-white rounded-3xl border border-stone-200/80 overflow-hidden transition-all duration-300 flex flex-col h-full"
+                transition={{
+                  duration: 0.4,
+                  delay: i * 0.06,
+                  ease: [0.25, 0.46, 0.45, 0.94],
+                }}
+                whileHover={{
+                  y: -8,
+                  boxShadow: "0 24px 48px rgba(0,0,0,0.12)",
+                  transition: { duration: 0.15 },
+                }}
+                className="bg-white rounded-2xl border border-stone-200 overflow-hidden flex flex-col h-full shadow-md hover:shadow-xl transition-shadow duration-300"
               >
-                <motion.div className="h-32 relative bg-stone-100 overflow-hidden">
-                  <motion.img
-                    src={vendor.bannerImage}
-                    alt={vendor.name}
-                    className="w-full h-full object-cover opacity-80"
-                    whileHover={{ scale: 1.06, transition: { duration: 0.3 } }}
+                <div className="h-40 relative bg-stone-100 overflow-hidden">
+                  <img
+                    src={vendor?.bannerImage}
+                    alt={vendor?.name}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    onError={(e) => {
+                      e.target.src = defaultCategoryImage;
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                  <motion.div
-                    className="absolute -bottom-5 left-6 w-12 h-12 rounded-2xl bg-white border border-stone-200 shadow-md flex items-center justify-center text-xl"
-                    whileHover={{ scale: 1.1, rotate: 4 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {vendor.logo}
-                  </motion.div>
-                </motion.div>
-                <div className="p-6 pt-8 flex-grow flex flex-col justify-between">
+                  <div className="absolute -bottom-6 left-6 w-14 h-14 rounded-2xl bg-white border-2 border-stone-200 shadow-lg flex items-center justify-center text-2xl">
+                    {vendor?.logo}
+                  </div>
+                </div>
+                <div className="p-6 pt-10 flex-grow flex flex-col justify-between">
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-serif text-xl font-bold text-stone-900 cursor-pointer">{vendor.name}</h3>
-                      <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-green-900 bg-green-50 border border-green-200/30 rounded-full">
-                        {vendor.type}
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="font-serif text-xl font-bold text-stone-900 cursor-pointer">
+                        {vendor?.name}
+                      </h3>
+                      <span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-green-900 bg-green-50 border border-green-200 rounded-full">
+                        {vendor?.type}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5 mb-3 text-xs text-stone-500">
-                      <Star size={12} className="fill-amber-500 text-amber-500" />
-                      <span className="font-bold text-stone-700">{vendor.rating}</span>
+                    <div className="flex items-center gap-2 mb-4 text-sm text-stone-600">
+                      <Star
+                        size={14}
+                        className="fill-amber-500 text-amber-500"
+                      />
+                      <span className="font-bold text-stone-800">
+                        {vendor?.rating}
+                      </span>
                       <span>•</span>
-                      <span>{vendor.productsCount} products</span>
+                      <span>{vendor?.productsCount} products</span>
                     </div>
-                    <p className="text-xs text-stone-500 leading-relaxed mb-6">{vendor.description}</p>
+                    <p className="text-sm text-stone-600 leading-relaxed mb-6">
+                      {vendor?.description}
+                    </p>
                   </div>
                   <motion.button
-                    whileHover={{ backgroundColor: "#166534", color: "#f0fdf4", borderColor: "#166534" }}
-                    className="w-full py-2.5 border border-stone-200 rounded-xl text-xs font-bold text-stone-700 transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                    whileHover={{
+                      backgroundColor: "#166534",
+                      color: "#f0fdf4",
+                      borderColor: "#166534",
+                    }}
+                    className="w-full py-3 border border-stone-300 rounded-lg text-sm font-bold text-stone-700 transition-colors flex items-center justify-center gap-2 cursor-pointer hover:shadow-md"
                   >
-                    <Compass size={14} />
+                    <Compass size={16} />
                     <span>Visit Shop Portal</span>
                   </motion.button>
                 </div>
@@ -794,17 +1065,22 @@ const Homepage = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="py-20 bg-gradient-to-br from-green-900 via-green-800 to-green-900 relative overflow-hidden"
+            className="py-24 bg-gradient-to-br from-green-900 via-green-800 to-emerald-900 relative overflow-hidden"
           >
             <motion.div
-              className="absolute top-20 right-20 w-96 h-96 bg-green-400/10 rounded-full blur-3xl"
-              animate={{ scale: [1, 1.15, 1], x: [0, 20, 0] }}
-              transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute top-10 right-10 w-96 h-96 bg-green-400/8 rounded-full blur-3xl"
+              animate={{ scale: [1, 1.15, 1], x: [0, 30, 0] }}
+              transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
             />
             <motion.div
-              className="absolute bottom-0 left-10 w-80 h-80 bg-green-300/10 rounded-full blur-3xl"
-              animate={{ scale: [1, 1.2, 1], y: [0, -20, 0] }}
-              transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+              className="absolute bottom-0 left-20 w-80 h-80 bg-green-300/8 rounded-full blur-3xl"
+              animate={{ scale: [1, 1.2, 1], y: [0, -30, 0] }}
+              transition={{
+                duration: 8,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 2,
+              }}
             />
 
             <div className="relative max-w-6xl mx-auto px-6">
@@ -812,31 +1088,42 @@ const Homepage = () => {
                 <motion.div
                   initial="hidden"
                   whileInView="visible"
-                  variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
+                  variants={{
+                    visible: { transition: { staggerChildren: 0.08 } },
+                  }}
                   viewport={{ once: true }}
                   className="text-white"
                 >
-                  <motion.h2 variants={slideUp} className="font-serif text-4xl md:text-5xl font-bold mb-4 leading-tight">
+                  <motion.h2
+                    variants={slideUp}
+                    className="font-serif text-5xl md:text-6xl font-bold mb-6 leading-tight"
+                  >
                     Join Our Global Network
                   </motion.h2>
-                  <motion.p variants={slideUp} className="text-lg text-green-50 leading-relaxed mb-10">
-                    Register as a Shopper to collect coupons, or open a Creator Account to list your products globally.
+                  <motion.p
+                    variants={slideUp}
+                    className="text-lg text-green-50 leading-relaxed mb-12"
+                  >
+                    Register as a Shopper to collect coupons, or open a Creator
+                    Account to list your products globally.
                   </motion.p>
                   <motion.div variants={staggerContainer} className="space-y-6">
                     {features.map((f, i) => (
                       <motion.div
                         key={i}
                         variants={slideUp}
-                        className="flex items-start gap-4 group"
-                        whileHover={{ x: 4 }}
+                        className="flex items-start gap-4"
+                        whileHover={{ x: 6 }}
                         transition={{ duration: 0.15 }}
                       >
-                        <motion.span className="text-2xl mt-0.5" whileHover={{ scale: 1.1, rotate: 8 }} transition={{ duration: 0.15 }}>
-                          {f.icon}
-                        </motion.span>
+                        <span className="text-3xl mt-1">{f.icon}</span>
                         <div>
-                          <h3 className="font-semibold text-lg text-green-200">{f.title}</h3>
-                          <p className="text-green-100/90 text-sm">{f.desc}</p>
+                          <h3 className="font-semibold text-lg text-green-100">
+                            {f.title}
+                          </h3>
+                          <p className="text-green-100/80 text-base leading-relaxed">
+                            {f.desc}
+                          </p>
                         </div>
                       </motion.div>
                     ))}
@@ -847,42 +1134,61 @@ const Homepage = () => {
                   initial={{ opacity: 0, y: 60, scale: 0.95 }}
                   whileInView={{ opacity: 1, y: 0, scale: 1 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  className="bg-white rounded-3xl shadow-2xl p-8 md:p-10 flex flex-col items-center justify-center text-center"
+                  transition={{
+                    duration: 0.5,
+                    ease: [0.25, 0.46, 0.45, 0.94],
+                  }}
+                  className="bg-white rounded-3xl shadow-2xl p-10 flex flex-col items-center justify-center text-center"
                 >
-                  <h3 className="font-serif text-3xl font-bold text-stone-900 mb-2">Ready to Join?</h3>
-                  <p className="text-stone-600 text-sm mb-8">Access your account or create a new one</p>
+                  <h3 className="font-serif text-4xl font-bold text-stone-900 mb-3">
+                    Ready to Join?
+                  </h3>
+                  <p className="text-stone-600 text-base mb-10">
+                    Access your account or create a new one
+                  </p>
 
                   <div className="space-y-3 w-full">
                     <motion.button
-                      whileHover={{ scale: 1.01, backgroundColor: "#166534" }}
+                      whileHover={{
+                        scale: 1.02,
+                        backgroundColor: "#166534",
+                      }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => nav("/login")}
-                      className="w-full py-3.5 bg-green-800 text-white font-bold rounded-xl shadow-md transition-colors text-sm cursor-pointer"
+                      className="w-full py-4 bg-green-800 text-white font-bold rounded-xl shadow-md transition-colors text-base cursor-pointer"
                     >
                       Sign In
                     </motion.button>
 
                     <motion.button
-                      whileHover={{ scale: 1.01, borderColor: "#166534", backgroundColor: "#f0fdf4" }}
+                      whileHover={{
+                        scale: 1.02,
+                        borderColor: "#166534",
+                        backgroundColor: "#f0fdf4",
+                      }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => nav("/register")}
-                      className="w-full py-3.5 border-2 border-green-800 text-green-800 font-bold rounded-xl transition-colors text-sm cursor-pointer bg-transparent hover:bg-green-50"
+                      className="w-full py-4 border-2 border-green-800 text-green-800 font-bold rounded-xl transition-colors text-base cursor-pointer bg-transparent hover:bg-green-50"
                     >
                       Create Account
                     </motion.button>
                   </div>
 
-                  <div className="mt-8 pt-6 border-t border-stone-200 w-full">
-                    <p className="text-xs text-stone-500 mb-2">Already registered?</p>
+                  <div className="mt-10 pt-8 border-t border-stone-200 w-full">
+                    <p className="text-sm text-stone-500 mb-3">
+                      Already registered?
+                    </p>
                     <motion.a
                       href="/login"
                       whileHover={{ color: "#166534" }}
-                      className="text-green-800 hover:text-green-950 font-semibold text-sm transition-colors inline-flex items-center gap-1"
+                      className="text-green-800 hover:text-green-950 font-semibold transition-colors inline-flex items-center gap-1"
                     >
                       Go to Sign In
-                      <motion.span animate={{ x: [0, 3, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
-                        <ChevronRight size={14} />
+                      <motion.span
+                        animate={{ x: [0, 3, 0] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                      >
+                        <ChevronRight size={16} />
                       </motion.span>
                     </motion.a>
                   </div>
@@ -897,55 +1203,82 @@ const Homepage = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="py-20 bg-gradient-to-br from-green-900 via-green-800 to-green-900 relative overflow-hidden"
+            className="py-24 bg-gradient-to-br from-green-900 via-green-800 to-emerald-900 relative overflow-hidden"
           >
             <motion.div
-              className="absolute top-20 right-20 w-96 h-96 bg-green-400/10 rounded-full blur-3xl"
-              animate={{ scale: [1, 1.15, 1], x: [0, 20, 0] }}
-              transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute top-10 right-10 w-96 h-96 bg-green-400/8 rounded-full blur-3xl"
+              animate={{ scale: [1, 1.15, 1], x: [0, 30, 0] }}
+              transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
             />
             <motion.div
-              className="absolute bottom-0 left-10 w-80 h-80 bg-green-300/10 rounded-full blur-3xl"
-              animate={{ scale: [1, 1.2, 1], y: [0, -20, 0] }}
-              transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+              className="absolute bottom-0 left-20 w-80 h-80 bg-green-300/8 rounded-full blur-3xl"
+              animate={{ scale: [1, 1.2, 1], y: [0, -30, 0] }}
+              transition={{
+                duration: 8,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 2,
+              }}
             />
 
             <div className="relative max-w-6xl mx-auto px-6">
               <motion.div
                 initial="hidden"
                 animate="visible"
-                variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
-                className="flex flex-col lg:flex-row items-center justify-between gap-10"
+                variants={{
+                  visible: { transition: { staggerChildren: 0.08 } },
+                }}
+                className="flex flex-col lg:flex-row items-center justify-between gap-12"
               >
                 <div className="text-white text-center lg:text-left">
-                  <motion.div variants={slideUp} className="flex items-center gap-4 mb-4 justify-center lg:justify-start">
-                    <div className="w-16 h-16 rounded-full bg-white/15 border-2 border-white/30 text-white font-bold flex items-center justify-center text-2xl font-serif">
-                      {user?.name?.charAt(0).toUpperCase()}
+                  <motion.div
+                    variants={slideUp}
+                    className="flex items-center gap-4 mb-6 justify-center lg:justify-start"
+                  >
+                    <div className="w-20 h-20 rounded-full bg-white/20 border-2 border-white/40 text-white font-bold flex items-center justify-center text-3xl font-serif">
+                      {user?.name?.charAt(0).toUpperCase() || "U"}
                     </div>
-                    <div>
-                      <p className="text-green-300 text-xs uppercase tracking-widest font-semibold">Welcome back</p>
-                      <h2 className="font-serif text-3xl md:text-4xl font-bold">{user?.name}</h2>
+                    <div className="text-left">
+                      <p className="text-green-300 text-xs uppercase tracking-widest font-semibold">
+                        Welcome back
+                      </p>
+                      <h2 className="font-serif text-4xl font-bold">
+                        {user?.name || "User"}
+                      </h2>
                     </div>
                   </motion.div>
-                  <motion.p variants={slideUp} className="text-green-100/80 text-sm mb-2">
-                    Signed in as <span className="font-semibold text-white">{user?.email}</span>
+                  <motion.p
+                    variants={slideUp}
+                    className="text-green-100/80 text-base mb-3"
+                  >
+                    Signed in as{" "}
+                    <span className="font-semibold text-white">
+                      {user?.email || "user@example.com"}
+                    </span>
                   </motion.p>
                   <motion.span
                     variants={slideUp}
-                    className="inline-block px-3 py-1 bg-white/10 border border-white/20 rounded-full text-xs text-green-200 capitalize font-semibold tracking-wide"
+                    className="inline-block px-4 py-2 bg-white/15 border border-white/30 rounded-full text-xs text-green-200 capitalize font-semibold tracking-wide"
                   >
-                    {user?.role} Account
+                    {user?.role || "user"} Account
                   </motion.span>
                 </div>
 
-                <motion.div variants={slideUp} className="flex flex-col sm:flex-row gap-4 flex-wrap justify-center">
+                <motion.div
+                  variants={slideUp}
+                  className="flex flex-col sm:flex-row gap-4 flex-wrap justify-center w-full lg:w-auto"
+                >
                   <motion.button
-                    whileHover={{ scale: 1.02, backgroundColor: "#f0fdf4", color: "#14532d" }}
+                    whileHover={{
+                      scale: 1.02,
+                      backgroundColor: "#f0fdf4",
+                      color: "#14532d",
+                    }}
                     whileTap={{ scale: 0.97 }}
                     onClick={() => nav("/profile")}
-                    className="flex items-center gap-2.5 px-7 py-3.5 bg-white text-green-900 font-bold rounded-full shadow-lg transition-all text-sm cursor-pointer"
+                    className="flex items-center gap-2.5 px-8 py-4 bg-white text-green-900 font-bold rounded-full shadow-lg transition-all cursor-pointer text-base"
                   >
-                    <User size={16} />
+                    <User size={18} />
                     My Profile
                   </motion.button>
 
@@ -954,9 +1287,9 @@ const Homepage = () => {
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.97 }}
                       onClick={() => nav("/seller-dashboard")}
-                      className="flex items-center gap-2.5 px-7 py-3.5 bg-amber-500 hover:bg-amber-400 text-white font-bold rounded-full shadow-lg transition-all text-sm cursor-pointer"
+                      className="flex items-center gap-2.5 px-8 py-4 bg-amber-500 hover:bg-amber-400 text-white font-bold rounded-full shadow-lg transition-all cursor-pointer text-base"
                     >
-                      <Store size={16} />
+                      <Store size={18} />
                       Seller Dashboard
                     </motion.button>
                   )}
@@ -966,23 +1299,26 @@ const Homepage = () => {
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.97 }}
                       onClick={() => nav("/admin-dashboard")}
-                      className="flex items-center gap-2.5 px-7 py-3.5 bg-amber-500 hover:bg-amber-400 text-white font-bold rounded-full shadow-lg transition-all text-sm cursor-pointer"
+                      className="flex items-center gap-2.5 px-8 py-4 bg-amber-500 hover:bg-amber-400 text-white font-bold rounded-full shadow-lg transition-all cursor-pointer text-base"
                     >
-                      <Zap size={16} />
+                      <Zap size={18} />
                       Admin Dashboard
                     </motion.button>
                   )}
 
                   <motion.button
-                    whileHover={{ scale: 1.02, backgroundColor: "rgba(239,68,68,0.15)" }}
+                    whileHover={{
+                      scale: 1.02,
+                      backgroundColor: "rgba(239,68,68,0.15)",
+                    }}
                     whileTap={{ scale: 0.97 }}
                     onClick={() => {
                       dispatch(logout());
                       nav("/");
                     }}
-                    className="flex items-center gap-2.5 px-7 py-3.5 bg-white/10 hover:bg-red-500/10 border border-white/20 hover:border-red-400/40 text-white hover:text-red-300 font-bold rounded-full transition-all text-sm cursor-pointer"
+                    className="flex items-center gap-2.5 px-8 py-4 bg-white/15 hover:bg-red-500/10 border border-white/30 hover:border-red-400/50 text-white hover:text-red-300 font-bold rounded-full transition-all cursor-pointer text-base"
                   >
-                    <LogOut size={16} />
+                    <LogOut size={18} />
                     Sign Out
                   </motion.button>
                 </motion.div>
@@ -992,44 +1328,60 @@ const Homepage = () => {
         )}
       </AnimatePresence>
 
-      <section className="py-20 bg-white relative overflow-hidden">
+      <section className="py-24 bg-white relative overflow-hidden">
         <div
-          className="absolute inset-0 opacity-30"
+          className="absolute inset-0 opacity-40"
           style={{
-            backgroundImage: "radial-gradient(circle at 20% 50%, rgba(120,180,120,0.08) 0%, transparent 50%), radial-gradient(circle at 80% 50%, rgba(200,160,60,0.06) 0%, transparent 50%)",
+            backgroundImage:
+              "radial-gradient(circle at 20% 50%, rgba(120,180,120,0.08) 0%, transparent 50%), radial-gradient(circle at 80% 50%, rgba(200,160,60,0.06) 0%, transparent 50%)",
           }}
         />
-        <div className="relative max-w-3xl mx-auto px-6 text-center">
+        <div className="relative max-w-4xl mx-auto px-6 text-center">
           <motion.div
             initial="hidden"
             whileInView="visible"
-            variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
+            variants={{
+              visible: { transition: { staggerChildren: 0.08 } },
+            }}
             viewport={{ once: true }}
           >
-            <motion.span variants={slideUp} className="text-xs font-bold text-amber-700 uppercase tracking-widest bg-amber-50 px-3 py-1 rounded-full inline-block">
+            <motion.span
+              variants={slideUp}
+              className="text-xs font-bold text-amber-700 uppercase tracking-widest bg-amber-50 px-4 py-2 rounded-full inline-block"
+            >
               Join the Circle
             </motion.span>
-            <motion.h2 variants={slideUp} className="font-serif text-4xl font-bold text-stone-900 mt-4 mb-3">
+            <motion.h2
+              variants={slideUp}
+              className="font-serif text-5xl font-bold text-stone-900 mt-6 mb-4"
+            >
               Subscribe for Eco Voucher Codes
             </motion.h2>
-            <motion.p variants={slideUp} className="text-stone-500 text-sm max-w-md mx-auto mb-8">
-              Receive $15 off on your first order. Plus, get updates on new local stores, artisan spotlights, and green living.
+            <motion.p
+              variants={slideUp}
+              className="text-stone-600 text-lg max-w-2xl mx-auto mb-10"
+            >
+              Receive $15 off on your first order. Plus, get updates on new
+              local stores, artisan spotlights, and green living tips.
             </motion.p>
             <motion.div
               variants={slideUp}
-              className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto bg-stone-100 p-1.5 rounded-2xl sm:rounded-full border border-stone-200 focus-within:ring-2 focus-within:ring-green-800/10 focus-within:border-green-800 transition-all"
+              className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto bg-stone-100 p-2 rounded-full border border-stone-300 focus-within:ring-2 focus-within:ring-green-800/20 focus-within:border-green-800 transition-all"
             >
               <input
                 type="email"
                 value={formEmail}
                 onChange={(e) => setFormEmail(e.target.value)}
                 placeholder="Enter your email address"
-                className="flex-1 px-4 py-2.5 text-sm bg-transparent outline-none border-none text-stone-800 placeholder-stone-400 rounded-full"
+                className="flex-1 px-6 py-3.5 text-base bg-transparent outline-none border-none text-stone-800 placeholder-stone-500 rounded-full"
               />
               <motion.button
-                whileHover={{ scale: 1.02, backgroundColor: "#14532d" }}
+                whileHover={{
+                  scale: 1.02,
+                  backgroundColor: "#14532d",
+                }}
                 whileTap={{ scale: 0.98 }}
-                className="px-6 py-2.5 bg-green-800 text-stone-100 font-bold rounded-xl sm:rounded-full text-xs transition-colors cursor-pointer"
+                className="px-8 py-3.5 bg-green-800 text-white font-bold rounded-full text-sm transition-colors cursor-pointer"
               >
                 Get Voucher
               </motion.button>
