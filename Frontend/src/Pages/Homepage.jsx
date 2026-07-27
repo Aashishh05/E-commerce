@@ -319,7 +319,7 @@ const Homepage = () => {
     <div className="bg-stone-50 font-sans overflow-x-hidden min-h-screen text-stone-800">
       <Navbar />
 
-      <section  className="relative h-[92vh] flex items-center overflow-hidden" style={{ marginTop: "1px" }}>
+      <section  className="relative h-[92vh] flex items-start overflow-hidden" >
         <motion.div className="absolute inset-0" style={{ y: heroY, scale: heroScale }}>
           <div
             className="w-full h-full"

@@ -133,7 +133,7 @@ const Navbar = () => {
       </motion.div>
 
       <div
-        className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-6"
+        className="max-w-7xl mx-auto px-6 py-2 flex items-center justify-between gap-6"
         style={{ zIndex: 2 }}
       >
         <motion.a
@@ -410,7 +410,7 @@ const Navbar = () => {
         className="hidden lg:block border-t border-stone-200/60 bg-gradient-to-r from-stone-50/80 via-stone-50/60 to-stone-50/80 backdrop-blur-sm"
         style={{ zIndex: 2 }} // Ensure sub-nav stays on top
       >
-        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 py-2 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <div className="relative">
               <motion.button
@@ -531,33 +531,33 @@ const Navbar = () => {
 
           <div className="flex items-center gap-6">
             <motion.div
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200/50"
+              className="flex items-center gap-2 px-1 py-1 rounded-full bg-amber-50 border border-amber-200/50"
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
-              <Crown size={14} className="text-amber-600" />
+              <Crown size={10} className="text-amber-600" />
               <span className="text-xs font-semibold text-amber-900">
                 Premium
               </span>
             </motion.div>
 
             <motion.div
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200/50"
+              className="flex items-center gap-2 px-1 py-1 rounded-full bg-blue-50 border border-blue-200/50"
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
-              <Truck size={14} className="text-blue-600" />
+              <Truck size={10} className="text-blue-600" />
               <span className="text-xs font-semibold text-blue-900">
                 Fast Shipping
               </span>
             </motion.div>
 
             <motion.div
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-50 border border-green-200/50"
+              className="flex items-center gap-2 px-1 py-1 rounded-full bg-green-50 border border-green-200/50"
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
-              <Shield size={14} className="text-green-700" />
+              <Shield size={10} className="text-green-700" />
               <span className="text-xs font-semibold text-green-900">
                 100% Safe
               </span>
