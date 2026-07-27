@@ -21,12 +21,14 @@ import AdminUsers from "./Pages/Admin/Adminusers";
 import AdminDashboard from "./Pages/Admin/AdminDashboard";
 import AdminProducts from "./Pages/Admin/AdminProducts";
 import AdminCategories from "./Pages/Admin/AdminCategories";
+import ProductDetails from "./Components/ProductDetails";
 
 const App = () => {
   return (
     <>
       <Routes>
         <Route index element={<Homepage />} />
+        <Route path="/productdetails/:id" element={<ProductDetails />} />
 
         <Route element={<AdminLayout />}>
           <Route path="/admin/sellers" element={<AdminSellers />} />

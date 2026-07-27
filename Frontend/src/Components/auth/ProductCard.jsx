@@ -4,12 +4,14 @@ import { Heart, Star, ShoppingCart, Eye, Store } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const ProductCard = ({ product }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [showAddedMessage, setShowAddedMessage] = useState(false);
   const { isAuthenticated } = useSelector((state) => state.auth);
+  const nav = useNavigate()
 
 const {
   name,
@@ -54,6 +56,7 @@ const {
 
   return (
     <motion.div
+    onClick={() => nav(`/productdetails/${product._id}`) }
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
       initial="initial"
@@ -140,6 +143,7 @@ const {
           animate={{ opacity: isHovered ? 1 : 0 }}
         >
           <motion.button
+          onClick={() => nav(`/productdetails/${product._id}`)}
             whileHover={{ scale: 1.15 }}
             whileTap={{ scale: 0.9 }}
             className="w-12 h-12 bg-white hover:bg-green-800 hover:text-white rounded-full flex items-center justify-center shadow-xl transition-all text-stone-700 cursor-pointer font-semibold group/btn"
