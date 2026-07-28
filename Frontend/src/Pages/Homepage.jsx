@@ -565,7 +565,7 @@ const Homepage = () => {
 
               <motion.div variants={slideUp} className="flex flex-wrap gap-4">
                 <MagneticButton className="px-8 py-4 bg-green-700 hover:bg-green-600 text-white font-bold rounded-full transition-colors shadow-xl hover:shadow-2xl flex items-center gap-2 cursor-pointer text-base">
-                  <ShoppingBag size={20} />
+                  <ShoppingBag size={20}  />
                   Shop Marketplace
                   <motion.span
                     animate={{ x: [0, 4, 0] }}

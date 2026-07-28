@@ -1,4 +1,11 @@
-import { getToken, getUser, removeToken, removeUser, setToken, setUser } from "../Localstorage/storage";
+import {
+  getToken,
+  getUser,
+  removeToken,
+  removeUser,
+  setToken,
+  setUser,
+} from "../Localstorage/storage";
 import { createSlice } from "@reduxjs/toolkit";
 
 const loadAuthState = () => {
@@ -40,11 +47,17 @@ const authSlice = createSlice({
       setUser(user);
     },
     logout(state) {
+      const user = getUser();
+
+      if (user) {
+        localStorage.removeItem(`cart_${user._id}`);
+      }
+
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
 
-      removeToken()
+      removeToken();
       removeUser();
     },
   },

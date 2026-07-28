@@ -50,7 +50,7 @@ export const addToCart = async (req, res) => {
       });
     }
 
-    if (prod.status !== "Active") {
+    if (prod.status?.toLowerCase() !== "active") {
       return res.status(400).json({
         success: false,
         message: "Product is not available",
@@ -91,9 +91,9 @@ export const addToCart = async (req, res) => {
       quantity,
       price: prod.price,
       image: {
-        url: prod.images?.url || "",
-        public_id: prod.images?.public_id || "",
-        path: prod.images?.path || "",
+        url: prod.images?.[0]?.url || "",
+        public_id: prod.images?.[0]?.public_id || "",
+        path: prod.images?.[0]?.path || "",
       },
     });
 
