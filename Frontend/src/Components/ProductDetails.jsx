@@ -86,9 +86,7 @@ const ProductDetails = () => {
     )
     .slice(0, 4);
 
-const isInCart = cartItems.some(
-  (item) => item.product === product?._id
-);
+  const isInCart = cartItems.some((item) => item.product === product?._id);
   if (loading)
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center">
@@ -146,11 +144,10 @@ const isInCart = cartItems.some(
         product: product._id,
         quantity,
       });
-      console.log(res)
 
       dispatch(setCart(res.data.data.items));
+            toast.success("Added to cart");
 
-      toast.success("Added to cart");
     } catch (error) {
       console.log(error);
 
