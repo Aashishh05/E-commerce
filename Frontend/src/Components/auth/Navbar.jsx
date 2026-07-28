@@ -23,6 +23,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../Redux/authSlice";
 import { clearStorage } from "../../Localstorage/storage";
 import API from "../../utils/axios";
+import { clearCart, setCart } from "../../Redux/cartSlice";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -59,11 +60,27 @@ const Navbar = () => {
   }, []);
 
   const handleLogout = () => {
+    dispatch(clearCart());
     dispatch(logout());
     clearStorage();
     setIsMobileMenuOpen(false);
     nav("/");
   };
+
+  const fetchCart = async () => {
+    try {
+      const res = await API.get(`/api/cart/get`);
+      dispatch(setCart(res.data.data.items));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchCart();
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -336,6 +353,7 @@ const Navbar = () => {
                         <motion.button
                           whileHover={{ x: 3 }}
                           onClick={() => {
+                            dispatch(clearCart())
                             dispatch(logout());
                             setOpen(false);
                             nav("/");

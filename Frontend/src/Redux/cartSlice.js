@@ -74,11 +74,10 @@ const cartSlice = createSlice({
 
       saveCartToStorage(state.items);
     },
-
-    clearCart: (state) => {
+    
+    clearCart(state) {
       state.items = [];
-
-      saveCartToStorage(state.items);
+      state.totalAmount = 0;
     },
 
     setLoading: (state, action) => {
