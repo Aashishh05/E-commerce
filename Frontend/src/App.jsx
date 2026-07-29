@@ -22,13 +22,14 @@ import AdminDashboard from "./Pages/Admin/AdminDashboard";
 import AdminProducts from "./Pages/Admin/AdminProducts";
 import AdminCategories from "./Pages/Admin/AdminCategories";
 import ProductDetails from "./Components/ProductDetails";
-
+import CartPage from "./Pages/CartPage";
 const App = () => {
   return (
     <>
       <Routes>
         <Route index element={<Homepage />} />
         <Route path="/productdetails/:id" element={<ProductDetails />} />
+        <Route path="/cart" element={<CartPage />} />
 
         <Route element={<AdminLayout />}>
           <Route path="/admin/sellers" element={<AdminSellers />} />
