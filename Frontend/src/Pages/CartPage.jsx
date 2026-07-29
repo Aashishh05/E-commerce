@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ShoppingBag,
   Trash2,
@@ -10,29 +10,39 @@ import {
   Gift,
   Lock,
   ArrowRight,
+  AlertCircle,
+  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../Components/auth/Navbar";
 import Footer from "../Components/auth/Footer";
 import { useDispatch, useSelector } from "react-redux";
 import API from "../utils/axios";
-import { setCart, setError, setLoading } from "../Redux/cartSlice";
+import {
+  clearCart,
+  removeItem,
+  setCart,
+  setError,
+  setLoading,
+} from "../Redux/cartSlice";
 
 const CartPage = () => {
   const nav = useNavigate();
   const dispatch = useDispatch();
-  const cartItems = useSelector((state) => state.cart.items)
+  const cartItems = useSelector((state) => state.cart.items);
 
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponInput, setCouponInput] = useState("");
+
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmationType, setConfirmationType] = useState(null);
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   const fetchCartProducts = async () => {
     try {
       dispatch(setLoading(true));
       const res = await API.get(`/api/cart/get`);
-      dispatch(setCart(res.data.data.items))
-      console.log("API Items:", res.data.data.items);
-      console.log(res);
+      dispatch(setCart(res.data.data.items));
     } catch (error) {
       console.log(error);
       dispatch(setError(error.message));
@@ -40,8 +50,6 @@ const CartPage = () => {
       dispatch(setLoading(false));
     }
   };
-
-  console.log("Redux Cart:", cartItems);
 
   useEffect(() => {
     fetchCartProducts();
@@ -75,6 +83,27 @@ const CartPage = () => {
     visible: { transition: { staggerChildren: 0.04, delayChildren: 0.05 } },
   };
 
+  const handleDeleteClick = (item) => {
+    setItemToDelete(item);
+    setConfirmationType("deleteItem");
+    setShowConfirmation(true);
+  };
+
+  const handleClearCartClick = () => {
+    setConfirmationType("clearCart");
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmAction = () => {
+    if (confirmationType === "deleteItem") {
+      dispatch(removeItem(itemToDelete._id));
+    } else if (confirmationType === "clearCart") {
+      dispatch(clearCart());
+    }
+    setShowConfirmation(false);
+    setItemToDelete(null)
+  };
+
   return (
     <div className="min-h-screen bg-stone-50 text-stone-800 flex flex-col">
       <Navbar />
@@ -95,7 +124,7 @@ const CartPage = () => {
           <h1 className="font-serif text-5xl font-bold text-stone-900">
             Your Cart
           </h1>
-          <p className="text-stone-600 mt-2 text-base">
+          <p className="text-stone-600 mt-2 text-base font-semibold">
             {cartItems.length} {cartItems.length === 1 ? "item" : "items"} in
             your cart
           </p>
@@ -174,7 +203,6 @@ const CartPage = () => {
                           <h3 className="font-semibold text-stone-900 text-sm md:text-base truncate">
                             {item.name}
                           </h3>
-                          
                         </div>
 
                         <div className="flex items-center justify-between mt-3">
@@ -206,16 +234,15 @@ const CartPage = () => {
                           </p>
                           <p className="font-bold text-stone-900">
                             Rs.
-                            {(
-                              item.price * item.quantity
-                            )?.toFixed(2)}
+                            {(item.price * item.quantity)?.toFixed(2)}
                           </p>
                         </div>
 
                         <motion.button
                           whileHover={{ scale: 1.08 }}
                           whileTap={{ scale: 0.95 }}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
+                          onClick={() => handleDeleteClick(item)}
+                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition cursor-pointer"
                         >
                           <Trash2 size={18} />
                         </motion.button>
@@ -223,6 +250,17 @@ const CartPage = () => {
                     </div>
                   </motion.div>
                 ))}
+                <div className="flex justify-end">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleClearCartClick}
+                    className="flex items-center gap-2 justify-center rounded-xl bg-red-500/20 text-red-700 font-semibold px-5 py-3 hover:bg-red-500/30 transition cursor-pointer"
+                  >
+                    <Trash2 size={18} />
+                    Clear Cart
+                  </motion.button>
+                </div>
               </motion.div>
             </div>
 
@@ -366,6 +404,104 @@ const CartPage = () => {
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {showConfirmation && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+            onClick={() => setShowConfirmation(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 30, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 30, scale: 0.96 }}
+              transition={{ duration: 0.25 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md rounded-2xl bg-white p-7 shadow-xl"
+            >
+              {/* Icon */}
+              <div className="flex justify-center mb-5">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
+                  <Trash2 size={28} className="text-red-600" />
+                </div>
+              </div>
+
+              {/* Title */}
+              <h2 className="text-xl font-bold text-stone-900 text-center">
+                {confirmationType === "clearCart"
+                  ? "Clear cart?"
+                  : "Remove item?"}
+              </h2>
+
+              {/* Description */}
+              <p className="mt-3 text-center text-sm leading-relaxed text-stone-600">
+                {confirmationType === "clearCart"
+                  ? "Are you sure you want to remove all items from your cart?"
+                  : `Are you sure you want to remove "${itemToDelete?.name}" from your cart?`}
+              </p>
+
+              {/* Buttons */}
+              <div className="mt-7 flex gap-3">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setShowConfirmation(false)}
+                  className="
+              flex-1
+              rounded-xl
+              border
+              border-stone-200
+              bg-white
+              px-5
+              py-3
+              text-sm
+              font-semibold
+              text-stone-700
+              transition
+              hover:bg-stone-100
+              flex
+              items-center
+              justify-center
+              gap-2
+            "
+                >
+                  <X size={17} />
+                  Cancel
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleConfirmAction}
+                  className="
+              flex-1
+              rounded-xl
+              bg-red-600
+              px-5
+              py-3
+              text-sm
+              font-semibold
+              text-white
+              transition
+              hover:bg-red-700
+              flex
+              items-center
+              justify-center
+              gap-2
+            "
+                >
+                  <Trash2 size={17} />
+
+                  {confirmationType === "clearCart" ? "Clear Cart" : "Remove"}
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <Footer />
     </div>
