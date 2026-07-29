@@ -10,7 +10,6 @@ import {
   Gift,
   Lock,
   ArrowRight,
-  AlertCircle,
   X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -25,6 +24,10 @@ import {
   setError,
   setLoading,
 } from "../Redux/cartSlice";
+import toast from "react-hot-toast"
+
+const placeholder =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23e8e8e8' width='200' height='200'/%3E%3Ctext x='50%25' y='50%25' font-size='14' fill='%23999' text-anchor='middle' dy='.3em'%3ENo Image%3C/text%3E%3C/svg%3E";
 
 const CartPage = () => {
   const nav = useNavigate();
@@ -51,12 +54,45 @@ const CartPage = () => {
     }
   };
 
+  const handleRemoveItem = async () => {
+    try {
+      await API.delete(`/api/cart/remove/${itemToDelete.product._id}`);
+      dispatch(removeItem(itemToDelete.product._id));
+      toast.success("Item removed successfully")
+      setShowConfirmation(false);
+      setItemToDelete(null);
+    } catch (error) {
+      console.log(error);
+      toast.error("Cannot remove item")
+    }
+  };
+
+  const haldleClearCart = async () => {
+    try {
+      await API.delete(`/api/cart/clear`);
+      dispatch(clearCart());
+      toast.success("Cart cleared")
+      setShowConfirmation(false);
+    } catch (error) {
+      console.log(error);
+      toast.error("Cannot clear cart")
+    }
+  };
+
   useEffect(() => {
     fetchCartProducts();
   }, []);
 
-  const placeholder =
-    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23e8e8e8' width='200' height='200'/%3E%3Ctext x='50%25' y='50%25' font-size='14' fill='%23999' text-anchor='middle' dy='.3em'%3ENo Image%3C/text%3E%3C/svg%3E";
+  const handleDeleteClick = (item) => {
+  setItemToDelete(item);
+  setConfirmationType("deleteItem");
+  setShowConfirmation(true);
+};
+
+const handleClearCartClick = () => {
+  setConfirmationType("clearCart");
+  setShowConfirmation(true);
+};
 
   const subtotal = cartItems.reduce((sum, item) => {
     return sum + (item.price || 0) * item.quantity;
@@ -81,27 +117,6 @@ const CartPage = () => {
   const staggerContainer = {
     hidden: {},
     visible: { transition: { staggerChildren: 0.04, delayChildren: 0.05 } },
-  };
-
-  const handleDeleteClick = (item) => {
-    setItemToDelete(item);
-    setConfirmationType("deleteItem");
-    setShowConfirmation(true);
-  };
-
-  const handleClearCartClick = () => {
-    setConfirmationType("clearCart");
-    setShowConfirmation(true);
-  };
-
-  const handleConfirmAction = () => {
-    if (confirmationType === "deleteItem") {
-      dispatch(removeItem(itemToDelete._id));
-    } else if (confirmationType === "clearCart") {
-      dispatch(clearCart());
-    }
-    setShowConfirmation(false);
-    setItemToDelete(null)
   };
 
   return (
@@ -422,28 +437,24 @@ const CartPage = () => {
               onClick={(e) => e.stopPropagation()}
               className="w-full max-w-md rounded-2xl bg-white p-7 shadow-xl"
             >
-              {/* Icon */}
               <div className="flex justify-center mb-5">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
                   <Trash2 size={28} className="text-red-600" />
                 </div>
               </div>
 
-              {/* Title */}
               <h2 className="text-xl font-bold text-stone-900 text-center">
                 {confirmationType === "clearCart"
                   ? "Clear cart?"
                   : "Remove item?"}
               </h2>
 
-              {/* Description */}
               <p className="mt-3 text-center text-sm leading-relaxed text-stone-600">
                 {confirmationType === "clearCart"
                   ? "Are you sure you want to remove all items from your cart?"
                   : `Are you sure you want to remove "${itemToDelete?.name}" from your cart?`}
               </p>
 
-              {/* Buttons */}
               <div className="mt-7 flex gap-3">
                 <motion.button
                   whileHover={{ scale: 1.02 }}
@@ -475,7 +486,11 @@ const CartPage = () => {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
-                  onClick={handleConfirmAction}
+                  onClick={
+                    confirmationType === "deleteItem"
+                      ? handleRemoveItem
+                      : haldleClearCart
+                  }
                   className="
               flex-1
               rounded-xl
