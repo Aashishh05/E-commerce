@@ -35,6 +35,7 @@ const Navbar = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { user, isAuthenticated } = useSelector((state) => state.auth);
+  const cartItems = useSelector((state) => state.cart.items)
   const nav = useNavigate();
   const dispatch = useDispatch();
 
@@ -234,7 +235,7 @@ const Navbar = () => {
 
           {isAuthenticated && (
             <motion.a
-              href="#cart"
+              href="/cart"
               className="relative p-2.5 text-stone-700 hover:text-amber-600 transition-colors group"
               whileHover={{ y: -2 }}
             >
@@ -245,7 +246,7 @@ const Navbar = () => {
                   animate={{ scale: 1 }}
                   className="absolute -top-1 -right-1 w-4.5 h-4.5 bg-gradient-to-br from-amber-500 to-amber-600 text-[10px] text-white font-bold rounded-full flex items-center justify-center shadow-md"
                 >
-                  2
+                  {cartItems.length}
                 </motion.span>
               </div>
             </motion.a>
@@ -381,13 +382,13 @@ const Navbar = () => {
           </motion.button>
           {isAuthenticated && (
             <motion.a
-              href="#cart"
+              href="/cart"
               className="relative p-2 text-stone-700 hover:text-amber-600 transition-colors"
               whileHover={{ y: -2 }}
             >
               <ShoppingCart size={20} />
               <motion.span className="absolute top-0 right-0 w-4 h-4 bg-amber-600 text-[9px] text-white font-bold rounded-full flex items-center justify-center">
-                2
+                {cartItems.length}
               </motion.span>
             </motion.a>
           )}
