@@ -35,7 +35,7 @@ const Navbar = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const cartItems = useSelector((state) => state.cart.items)
+  const cartItems = useSelector((state) => state.cart.items);
   const nav = useNavigate();
   const dispatch = useDispatch();
 
@@ -78,10 +78,10 @@ const Navbar = () => {
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && user) {
       fetchCart();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -113,7 +113,6 @@ const Navbar = () => {
           ? "bg-stone-50/95 backdrop-blur-md shadow-lg border-b border-stone-200/80"
           : "bg-stone-50/95 backdrop-blur-md border-b border-stone-200/40"
       }`}
-      style={{ willChange: "auto", position: "sticky" }}
     >
       <motion.div
         initial={{ opacity: 0, height: 0 }}
@@ -354,7 +353,7 @@ const Navbar = () => {
                         <motion.button
                           whileHover={{ x: 3 }}
                           onClick={() => {
-                            dispatch(clearCart())
+                            dispatch(clearCart());
                             dispatch(logout());
                             setOpen(false);
                             nav("/");
@@ -640,21 +639,14 @@ const Navbar = () => {
                   Shop Categories
                 </h3>
                 <div className="grid grid-cols-2 gap-2.5">
-                  {category.map((cat, idx) => (
+                  {category.map((cat) => (
                     <motion.a
-                      key={cat}
-                      href={`#category-${cat.toLowerCase().replace(/\s+/g, "-")}`}
+                      key={cat._id}
+                      href={`#category-${cat.slug}`}
                       onClick={() => setIsMobileMenuOpen(false)}
-                      initial={{ opacity: 0, y: 5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.15 + idx * 0.05 }}
-                      whileHover={{
-                        backgroundColor: "rgba(6, 78, 59, 0.08)",
-                        y: -2,
-                      }}
-                      className="px-3 py-2.5 text-sm bg-stone-50 rounded-lg text-stone-700 hover:text-green-950 transition-all font-medium"
+                      className="px-3 py-2.5 text-sm bg-stone-50 rounded-lg"
                     >
-                      {cat}
+                      {cat.name}
                     </motion.a>
                   ))}
                 </div>
