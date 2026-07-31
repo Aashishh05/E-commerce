@@ -23,8 +23,9 @@ import {
   setCart,
   setError,
   setLoading,
+  updateQuantity,
 } from "../Redux/cartSlice";
-import toast from "react-hot-toast"
+import toast from "react-hot-toast";
 
 const placeholder =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23e8e8e8' width='200' height='200'/%3E%3Ctext x='50%25' y='50%25' font-size='14' fill='%23999' text-anchor='middle' dy='.3em'%3ENo Image%3C/text%3E%3C/svg%3E";
@@ -58,24 +59,47 @@ const CartPage = () => {
     try {
       await API.delete(`/api/cart/remove/${itemToDelete.product._id}`);
       dispatch(removeItem(itemToDelete.product._id));
-      toast.success("Item removed successfully")
+      toast.success("Item removed successfully");
       setShowConfirmation(false);
       setItemToDelete(null);
     } catch (error) {
       console.log(error);
-      toast.error("Cannot remove item")
+      toast.error("Cannot remove item");
     }
   };
+  
+const handleUpdateCart = async (item, quantity) => {
+  try {
+    // update UI immediately
+    dispatch(
+      updateQuantity({
+        id: item.product._id,
+        quantity,
+      })
+    );
 
+    // update database
+    await API.put(`/api/cart/update/${item.product._id}`, {
+      quantity,
+    });
+
+  } catch (error) {
+    console.log(error);
+    toast.error("Failed to update quantity");
+
+    // reload cart if API fails
+    fetchCartProducts();
+  }
+};
   const haldleClearCart = async () => {
     try {
       await API.delete(`/api/cart/clear`);
       dispatch(clearCart());
-      toast.success("Cart cleared")
+      toast.success("Cart cleared");
       setShowConfirmation(false);
     } catch (error) {
       console.log(error);
-      toast.error("Cannot clear cart")
+      toast.error("Cannot clear cart");
     }
   };
 
@@ -84,15 +108,15 @@ const CartPage = () => {
   }, []);
 
   const handleDeleteClick = (item) => {
-  setItemToDelete(item);
-  setConfirmationType("deleteItem");
-  setShowConfirmation(true);
-};
+    setItemToDelete(item);
+    setConfirmationType("deleteItem");
+    setShowConfirmation(true);
+  };
 
-const handleClearCartClick = () => {
-  setConfirmationType("clearCart");
-  setShowConfirmation(true);
-};
+  const handleClearCartClick = () => {
+    setConfirmationType("clearCart");
+    setShowConfirmation(true);
+  };
 
   const subtotal = cartItems.reduce((sum, item) => {
     return sum + (item.price || 0) * item.quantity;
@@ -229,13 +253,25 @@ const handleClearCartClick = () => {
                           </div>
 
                           <div className="flex items-center gap-2 bg-stone-50 border border-stone-200 rounded-full px-2 py-1">
-                            <button className="p-1 hover:bg-stone-200 rounded-full transition cursor-pointer">
+                            <button
+                              onClick={() => {
+                                if (item.quantity > 1) {
+                                  handleUpdateCart(item, item.quantity - 1);
+                                }
+                              }}
+                              className="p-1 hover:bg-stone-200 rounded-full transition cursor-pointer"
+                            >
                               <Minus size={14} className="text-stone-700" />
                             </button>
                             <span className="w-8 text-center text-sm font-bold">
                               {item.quantity}
                             </span>
-                            <button className="p-1 hover:bg-stone-200 rounded-full transition cursor-pointer">
+                            <button
+                              onClick={() =>
+                                handleUpdateCart(item, item.quantity + 1)
+                              }
+                              className="p-1 hover:bg-stone-200 rounded-full transition cursor-pointer"
+                            >
                               <Plus size={14} className="text-stone-700" />
                             </button>
                           </div>

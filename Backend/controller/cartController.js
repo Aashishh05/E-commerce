@@ -148,7 +148,8 @@ export const updateCartItem = async (req, res) => {
   try {
     if (isNotBuyer(req, res)) return;
 
-    const { product, quantity } = req.body;
+    const product = req.params.id;
+    const { quantity } = req.body;
 
     if (quantity < 1) {
       return res.status(400).json({
@@ -177,6 +178,7 @@ export const updateCartItem = async (req, res) => {
 
     const prod = await Product.findById(product);
 
+
     if (!prod) {
       return res.status(404).json({
         success: false,
@@ -194,21 +196,24 @@ export const updateCartItem = async (req, res) => {
     item.quantity = quantity;
 
     recalculateCart(cart);
+
     await cart.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Cart updated successfully",
       data: cart,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error(error);
+    console.error(error.stack);
+
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
-
 // Remove Item from Cart
 export const removeFromCart = async (req, res) => {
   try {
