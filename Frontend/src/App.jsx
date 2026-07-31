@@ -23,6 +23,8 @@ import AdminProducts from "./Pages/Admin/AdminProducts";
 import AdminCategories from "./Pages/Admin/AdminCategories";
 import ProductDetails from "./Components/ProductDetails";
 import CartPage from "./Pages/CartPage";
+import CheckoutPage from "./Pages/Checkoutpage";
+import Order from "./Pages/Order";
 const App = () => {
   return (
     <>
@@ -30,6 +32,8 @@ const App = () => {
         <Route index element={<Homepage />} />
         <Route path="/productdetails/:id" element={<ProductDetails />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/order" element={<Order />} />
 
         <Route element={<AdminLayout />}>
           <Route path="/admin/sellers" element={<AdminSellers />} />

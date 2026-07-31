@@ -63,14 +63,13 @@ const orderSchema = new mongoose.Schema(
     },
 
     orderItems: [orderItemSchema],
-
     shippingAddress: {
-      name: String,
+      fullName: String,
+      email: String,
       phone: String,
       address: String,
       city: String,
-      postalCode: String,
-      country: String,
+      state: String,
     },
 
     status: {
@@ -150,7 +149,6 @@ orderSchema.pre("save", function (next) {
     const random = Math.random().toString(36).substring(2, 7);
     this.orderId = `ORD-${timestamp}-${random}`.toUpperCase();
   }
-  next();
 });
 
 orderSchema.index({ "orderItems.sellerId": 1 });

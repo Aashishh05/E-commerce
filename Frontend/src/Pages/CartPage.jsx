@@ -67,7 +67,7 @@ const CartPage = () => {
       toast.error("Cannot remove item");
     }
   };
-  
+
 const handleUpdateCart = async (item, quantity) => {
   try {
     // update UI immediately
@@ -436,6 +436,7 @@ const handleUpdateCart = async (item, quantity) => {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  onClick={() => nav(`/checkout`)}
                   className="w-full py-3 bg-green-800 text-white font-bold rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2 text-base cursor-pointer"
                 >
                   Proceed to Checkout
