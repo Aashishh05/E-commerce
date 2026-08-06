@@ -3,6 +3,7 @@ import UploadToCloudinary from "../utils/uploadCloudinaryImage.js";
 import deleteCloudinaryImage from "../utils/deleteCloudinaryImage.js";
 import asyncErrorHandler from "../middleware/asyncErrorHandler.js";
 import ErrorHandler from "../utils/ErrorHandler.js";
+import Seller from "../models/sellerModel.js";
 
 export const createProduct = asyncErrorHandler(async (req, res, next) => {
   if (req.user.role !== "seller") {
@@ -44,8 +45,15 @@ export const createProduct = asyncErrorHandler(async (req, res, next) => {
     return next(new ErrorHandler("At least one image is required", 400));
   }
 
+  const seller = await Seller.findOne({
+    user: req.user._id,
+  });
+
+  if (!seller) {
+    return next(new ErrorHandler("Seller profile not found", 404));
+  }
   const product = await Product.create({
-    seller: req.user._id,
+    seller: seller._id,
     name,
     description,
     category,

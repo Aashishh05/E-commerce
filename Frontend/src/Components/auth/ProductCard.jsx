@@ -200,7 +200,7 @@ const {
           >
             <Store size={11} className="shrink-0" />
             <span className="truncate max-w-[90px] group-hover/vendor:underline">
-              {seller}
+              {product?.seller?.shopName}
             </span>
           </motion.div>
         </motion.div>
