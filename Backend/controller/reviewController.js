@@ -2,8 +2,9 @@ import Review from "../models/reviewModel.js";
 import Product from "../models/productModel.js";
 import Order from "../models/orderModel.js";
 import Seller from "../models/sellerModel.js";
+import asyncErrorHandler from "../middleware/asyncErrorHandler.js";
+import ErrorHandler from "../utils/ErrorHandler.js";
 
-// Recalculate product rating
 const updateProductRating = async (productId) => {
   const reviews = await Review.find({ product: productId });
 
@@ -16,7 +17,6 @@ const updateProductRating = async (productId) => {
     product.numReviews = 0;
   } else {
     const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
-
     product.averageRating = Number((totalRating / reviews.length).toFixed(1));
     product.numReviews = reviews.length;
   }
@@ -24,207 +24,138 @@ const updateProductRating = async (productId) => {
   await product.save();
 };
 
-// Create Review
-export const createReview = async (req, res) => {
-  try {
-    const { productId, rating, title, comment } = req.body;
+export const createReview = asyncErrorHandler(async (req, res, next) => {
+  const { productId, rating, title, comment } = req.body;
 
-    const product = await Product.findById(productId);
+  const product = await Product.findById(productId);
 
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found",
-      });
-    }
-
-    const alreadyReviewed = await Review.findOne({
-      product: productId,
-      user: req.user._id,
-    });
-
-    if (alreadyReviewed) {
-      return res.status(400).json({
-        success: false,
-        message: "You have already reviewed this product",
-      });
-    }
-
-    const order = await Order.findOne({
-      user: req.user._id,
-      orderStatus: "delivered",
-      "items.product": productId,
-    });
-
-    const review = await Review.create({
-      product: productId,
-      seller: product.seller,
-      user: req.user._id,
-      order: order?._id,
-      rating,
-      title,
-      comment,
-      isVerifiedPurchase: !!order,
-    });
-
-    await updateProductRating(productId);
-
-    res.status(201).json({
-      success: true,
-      message: "Review created successfully",
-      review,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+  if (!product) {
+    return next(new ErrorHandler("Product not found", 404));
   }
-};
 
-// Get Product Reviews
-export const getProductReviews = async (req, res) => {
-  try {
-    const reviews = await Review.find({
-      product: req.params.id,
-    })
-      .populate("user", "name")
-      .sort({ createdAt: -1 });
+  const alreadyReviewed = await Review.findOne({
+    product: productId,
+    user: req.user._id,
+  });
 
-    res.status(200).json({
-      success: true,
-      count: reviews.length,
-      reviews,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+  if (alreadyReviewed) {
+    return next(
+      new ErrorHandler("You have already reviewed this product", 400),
+    );
   }
-};
 
-// Get My Reviews
-export const getMyReviews = async (req, res) => {
-  try {
-    const reviews = await Review.find({
-      user: req.user._id,
-    })
-      .populate("product", "name images averageRating")
-      .sort({ createdAt: -1 });
+  const order = await Order.findOne({
+    user: req.user._id,
+    orderStatus: "delivered",
+    "items.product": productId,
+  });
 
-    res.status(200).json({
-      success: true,
-      count: reviews.length,
-      reviews,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+  const review = await Review.create({
+    product: productId,
+    seller: product.seller,
+    user: req.user._id,
+    order: order?._id,
+    rating,
+    title,
+    comment,
+    isVerifiedPurchase: !!order,
+  });
+
+  await updateProductRating(productId);
+
+  res.status(201).json({
+    success: true,
+    message: "Review created successfully",
+    review,
+  });
+});
+
+export const getProductReviews = asyncErrorHandler(async (req, res, next) => {
+  const reviews = await Review.find({ product: req.params.id })
+    .populate("user", "name")
+    .sort({ createdAt: -1 });
+
+  res.status(200).json({
+    success: true,
+    count: reviews.length,
+    reviews,
+  });
+});
+
+export const getMyReviews = asyncErrorHandler(async (req, res, next) => {
+  const reviews = await Review.find({ user: req.user._id })
+    .populate("product", "name images averageRating")
+    .sort({ createdAt: -1 });
+
+  res.status(200).json({
+    success: true,
+    count: reviews.length,
+    reviews,
+  });
+});
+
+export const getSellerReviews = asyncErrorHandler(async (req, res, next) => {
+  const seller = await Seller.findOne({ user: req.user._id });
+
+  if (!seller) {
+    return next(new ErrorHandler("Seller profile not found", 404));
   }
-};
 
-// Get Seller Reviews
-export const getSellerReviews = async (req, res) => {
-  try {
-    const seller = await Seller.findOne({
-      user: req.user._id,
-    });
+  const reviews = await Review.find({ seller: seller._id })
+    .populate("product", "name images")
+    .populate("user", "name email")
+    .sort({ createdAt: -1 });
 
-    if (!seller) {
-      return res.status(404).json({
-        success: false,
-        message: "Seller profile not found",
-      });
-    }
+  res.status(200).json({
+    success: true,
+    count: reviews.length,
+    reviews,
+  });
+});
 
-    const reviews = await Review.find({
-      seller: seller._id,
-    })
-      .populate("product", "name images")
-      .populate("user", "name email")
-      .sort({ createdAt: -1 });
+export const updateReview = asyncErrorHandler(async (req, res, next) => {
+  const review = await Review.findOne({
+    _id: req.params.id,
+    user: req.user._id,
+  });
 
-    res.status(200).json({
-      success: true,
-      count: reviews.length,
-      reviews,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+  if (!review) {
+    return next(new ErrorHandler("Review not found", 404));
   }
-};
 
-// Update Review
-export const updateReview = async (req, res) => {
-  try {
-    const review = await Review.findOne({
-      _id: req.params.id,
-      user: req.user._id,
-    });
+  review.rating = req.body.rating ?? review.rating;
+  review.title = req.body.title ?? review.title;
+  review.comment = req.body.comment ?? review.comment;
 
-    if (!review) {
-      return res.status(404).json({
-        success: false,
-        message: "Review not found",
-      });
-    }
+  await review.save();
 
-    review.rating = req.body.rating ?? review.rating;
-    review.title = req.body.title ?? review.title;
-    review.comment = req.body.comment ?? review.comment;
+  await updateProductRating(review.product);
 
-    await review.save();
+  res.status(200).json({
+    success: true,
+    message: "Review updated successfully",
+    review,
+  });
+});
 
-    await updateProductRating(review.product);
+export const deleteReview = asyncErrorHandler(async (req, res, next) => {
+  const review = await Review.findOne({
+    _id: req.params.id,
+    user: req.user._id,
+  });
 
-    res.status(200).json({
-      success: true,
-      message: "Review updated successfully",
-      review,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+  if (!review) {
+    return next(new ErrorHandler("Review not found", 404));
   }
-};
 
-// Delete Review
-export const deleteReview = async (req, res) => {
-  try {
-    const review = await Review.findOne({
-      _id: req.params.id,
-      user: req.user._id,
-    });
+  const productId = review.product;
 
-    if (!review) {
-      return res.status(404).json({
-        success: false,
-        message: "Review not found",
-      });
-    }
+  await review.deleteOne();
 
-    const productId = review.product;
+  await updateProductRating(productId);
 
-    await review.deleteOne();
-
-    await updateProductRating(productId);
-
-    res.status(200).json({
-      success: true,
-      message: "Review deleted successfully",
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
+  res.status(200).json({
+    success: true,
+    message: "Review deleted successfully",
+  });
+});
