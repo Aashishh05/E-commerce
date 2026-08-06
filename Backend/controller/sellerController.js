@@ -1,199 +1,134 @@
 import Seller from "../models/sellerModel.js";
+import asyncErrorHandler from "../middleware/asyncErrorHandler.js";
+import ErrorHandler from "../utils/ErrorHandler.js";
 
-export const createSeller = async (req, res) => {
-  try {
-    const userId = req.user._id;
+export const createSeller = asyncErrorHandler(async (req, res, next) => {
+  const userId = req.user._id;
 
-    const existingSeller = await Seller.findOne({ user: userId });
+  const existingSeller = await Seller.findOne({ user: userId });
 
-    if (existingSeller) {
-      return res.status(400).json({
-        success: false,
-        message: "Seller profile already exists",
-      });
-    }
-
-    const {
-      shopName,
-      description,
-      logo,
-      contactNumber,
-      address,
-      verificationStatus,
-      specialization,
-    } = req.body;
-
-    if (!shopName || !specialization) {
-      return res.status(400).json({
-        success: false,
-        message: "shopname and specialization are required",
-      });
-    }
-
-    const seller = await Seller.create({
-      user: userId,
-      shopName,
-      description,
-      contactNumber,
-      address,
-      verificationStatus,
-      specialization,
-    });
-
-    return res.status(201).json({
-      success: true,
-      message: "Seller profile created successfully",
-      seller,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed creating seller",
-      error: error.message,
-    });
+  if (existingSeller) {
+    return next(new ErrorHandler("Seller profile already exists", 400));
   }
-};
 
-const getSellerProfile = async (req, res) => {
-  try {
-    const seller = await Seller.findOne({ user: req.user._id }).populate(
-      "user",
-      "name email role",
+  const {
+    shopName,
+    description,
+    contactNumber,
+    address,
+    verificationStatus,
+    specialization,
+  } = req.body;
+
+  if (!shopName || !specialization) {
+    return next(
+      new ErrorHandler("shopName and specialization are required", 400),
     );
-
-    if (!seller) {
-      return res.status(404).json({
-        success: true,
-        message: "Seller not found",
-      });
-    }
-
-    res.status(200).json({
-      success: false,
-      message: "Seller profile fetched successfully",
-      data: seller,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch user profile",
-      error: error.message,
-    });
   }
-};
 
-export const getAllSeller = async (req, res) => {
-  try {
-    const sellers = await Seller.find().populate("user", "name email");
+  const seller = await Seller.create({
+    user: userId,
+    shopName,
+    description,
+    contactNumber,
+    address,
+    verificationStatus,
+    specialization,
+  });
 
-    res.status(200).json({
-      success: true,
-      message: "All seller fetched successfully",
-      count: sellers.length,
-      data: sellers,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch all seller",
-      error: error.message,
-    });
+  res.status(201).json({
+    success: true,
+    message: "Seller profile created successfully",
+    seller,
+  });
+});
+
+export const getSellerProfile = asyncErrorHandler(async (req, res, next) => {
+  const seller = await Seller.findOne({ user: req.user._id }).populate(
+    "user",
+    "name email role",
+  );
+
+  if (!seller) {
+    return next(new ErrorHandler("Seller not found", 404));
   }
-};
 
-export const getSellerById = async (req, res) => {
-  try {
-    const seller = await Seller.findById(req.params.id).populate(
-      "user",
-      "name email ",
-    );
+  res.status(200).json({
+    success: true,
+    message: "Seller profile fetched successfully",
+    data: seller,
+  });
+});
 
-    if (!seller) {
-      return res.status(404).json({
-        success: false,
-        message: "Seller not found",
-      });
-    }
+export const getAllSeller = asyncErrorHandler(async (req, res, next) => {
+  const sellers = await Seller.find().populate("user", "name email");
 
-    res.status(200).json({
-      success: true,
-      message: "Seller fetched successfully",
-      data: seller,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch seller",
-      error: error.message,
-    });
+  res.status(200).json({
+    success: true,
+    message: "All sellers fetched successfully",
+    count: sellers.length,
+    data: sellers,
+  });
+});
+
+export const getSellerById = asyncErrorHandler(async (req, res, next) => {
+  const seller = await Seller.findById(req.params.id).populate(
+    "user",
+    "name email",
+  );
+
+  if (!seller) {
+    return next(new ErrorHandler("Seller not found", 404));
   }
-};
 
-export const updateSeller = async (req, res) => {
-  try {
-    const { shopName, description, specialization } = req.body;
+  res.status(200).json({
+    success: true,
+    message: "Seller fetched successfully",
+    data: seller,
+  });
+});
 
-    const seller = await Seller.findOne({ userId: req.user._id });
+export const updateSeller = asyncErrorHandler(async (req, res, next) => {
+  const { shopName, description, specialization } = req.body;
 
-    if (!seller) {
-      return res.status(400).json({
-        success: false,
-        message: "Seller not found",
-      });
-    }
+  const seller = await Seller.findOne({ user: req.user._id });
 
-    if (shopName) seller.shopName = shopName;
-    if (description) seller.description = description;
-    if (specialization) seller.specialization = specialization;
-
-    await seller.save();
-
-    res.status(201).json({
-      success: true,
-      message: "Seller updated successfully",
-      data: seller,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to update seller",
-      error: error.message,
-    });
+  if (!seller) {
+    return next(new ErrorHandler("Seller not found", 404));
   }
-};
 
-export const verifySeller = async (req, res) => {
-  try {
-    const { status } = req.body;
+  if (shopName) seller.shopName = shopName;
+  if (description) seller.description = description;
+  if (specialization) seller.specialization = specialization;
 
-    if (!["approved", "rejected"].includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid verification status",
-      });
-    }
+  await seller.save();
 
-    const seller = await Seller.findById(req.params.id);
+  res.status(200).json({
+    success: true,
+    message: "Seller updated successfully",
+    data: seller,
+  });
+});
 
-    if (!seller) {
-      return res.status(404).json({
-        success: false,
-        message: "Seller not found",
-      });
-    }
+export const verifySeller = asyncErrorHandler(async (req, res, next) => {
+  const { status } = req.body;
 
-    seller.verificationStatus = status;
-    await seller.save();
-
-    res.status(200).json({
-      success: true,
-      message: `Seller ${status}`,
-      seller,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+  if (!["approved", "rejected"].includes(status)) {
+    return next(new ErrorHandler("Invalid verification status", 400));
   }
-};
+
+  const seller = await Seller.findById(req.params.id);
+
+  if (!seller) {
+    return next(new ErrorHandler("Seller not found", 404));
+  }
+
+  seller.verificationStatus = status;
+  await seller.save();
+
+  res.status(200).json({
+    success: true,
+    message: `Seller ${status}`,
+    seller,
+  });
+});
