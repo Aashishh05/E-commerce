@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import {
   Search,
   FileText,
@@ -11,64 +12,11 @@ import {
   XCircle,
   MoreVertical,
   Calendar,
-  Download
+  Download,
+  Package
 } from "lucide-react";
+import API from "../../utils/axios"; 
 
-// ── Mock Order Data ──
-const mockOrders = [
-  {
-    id: "ORD-902-XK",
-    customer: "Eleanor Harper",
-    email: "eleanor.h@example.com",
-    date: "2026-07-14T09:24:00Z",
-    total: 133.50,
-    items: 2,
-    status: "processing",
-    payment: "paid",
-  },
-  {
-    id: "ORD-901-PL",
-    customer: "Marcus Chen",
-    email: "m.chen88@example.com",
-    date: "2026-07-13T14:45:00Z",
-    total: 35.00,
-    items: 1,
-    status: "delivered",
-    payment: "paid",
-  },
-  {
-    id: "ORD-900-RT",
-    customer: "Sarah Jenkins",
-    email: "sarah.j@example.com",
-    date: "2026-07-13T10:12:00Z",
-    total: 245.00,
-    items: 4,
-    status: "shipped",
-    payment: "paid",
-  },
-  {
-    id: "ORD-899-BN",
-    customer: "David Alaba",
-    email: "dalaba.work@example.com",
-    date: "2026-07-12T16:30:00Z",
-    total: 85.50,
-    items: 1,
-    status: "pending",
-    payment: "unpaid",
-  },
-  {
-    id: "ORD-898-QM",
-    customer: "Mia Wallace",
-    email: "mia.w@example.com",
-    date: "2026-07-11T08:15:00Z",
-    total: 110.00,
-    items: 2,
-    status: "cancelled",
-    payment: "refunded",
-  },
-];
-
-// ── Animation Variants ──
 const stagger = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
@@ -83,7 +31,6 @@ const fadeUp = {
   },
 };
 
-// ── Helper Functions ──
 const getStatusConfig = (status) => {
   switch (status) {
     case "pending":
@@ -114,15 +61,45 @@ const formatDate = (dateString) => {
 const OrderList = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const [orders] = useState(mockOrders);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const filtered = orders.filter(
-    (o) =>
-      (o.id.toLowerCase().includes(search.toLowerCase()) || 
-       o.customer.toLowerCase().includes(search.toLowerCase())) &&
-      (statusFilter === "all" || o.status === statusFilter)
-  );
+  useEffect(() => {
+    const fetchSellerOrders = async () => {
+      try {
+        setLoading(true);
+        const res = await API.get("/api/order/seller");
+        console.log(res)
+        
+        const responseData = res.data?.data || res.data?.orders || res.data;
+        setOrders(Array.isArray(responseData) ? responseData : []);
+      } catch (error) {
+        if (!error._isHandled) {
+          toast.error(error.response?.data?.message || "Failed to fetch seller orders");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSellerOrders();
+  }, []);
+
+  const filtered = orders.filter((o) => {
+    const orderId = String(o.id || o._id || "");
+    const customerName = String(o.customer || o.shippingAddress?.fullName || "");
+    const customerEmail = String(o.email || o.customerEmail || "");
+
+    const matchesSearch = 
+      orderId.toLowerCase().includes(search.toLowerCase()) || 
+      customerName.toLowerCase().includes(search.toLowerCase()) ||
+      customerEmail.toLowerCase().includes(search.toLowerCase());
+
+    const matchesStatus = statusFilter === "all" || o.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <motion.div
@@ -131,7 +108,6 @@ const OrderList = () => {
       animate="visible"
       className="space-y-6"
     >
-      {/* ── Header Section ── */}
       <motion.div
         variants={fadeUp}
         className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4"
@@ -164,7 +140,6 @@ const OrderList = () => {
         </motion.button>
       </motion.div>
 
-      {/* ── Search & Filter Section ── */}
       <motion.div variants={fadeUp} className="flex flex-col lg:flex-row gap-4">
         <div className="flex-1 relative">
           <motion.div
@@ -199,17 +174,42 @@ const OrderList = () => {
         </div>
       </motion.div>
 
-      {/* ── Orders List ── */}
       <motion.div variants={stagger} className="space-y-4">
         <AnimatePresence mode="popLayout">
-          {filtered.length > 0 ? (
+          {loading ? (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center py-24 text-stone-400 border border-stone-200 rounded-3xl bg-white/40 backdrop-blur-sm"
+            >
+              <p className="font-semibold text-stone-600 text-center">Loading orders...</p>
+            </motion.div>
+          ) : filtered.length > 0 ? (
             filtered.map((order) => {
+              const orderId = order.id || order._id;
+              const customerName = order.customer || order.shippingAddress?.fullName || "Guest Customer";
               const statusCfg = getStatusConfig(order.status);
               const StatusIcon = statusCfg.icon;
+              const totalAmount = order.total ?? order.totalAmount ?? order.amount ?? 0;
+              
+              const itemsList = order.orderItems || order.items || [];
+              let productName = order.productName || order.product?.name;
+              if (!productName && itemsList.length > 0) {
+                const firstItem = itemsList[0];
+                productName = firstItem.name || firstItem.product?.name || firstItem.title;
+                if (itemsList.length > 1) {
+                  productName = `${productName} + ${itemsList.length - 1} more`;
+                }
+              }
+              productName = productName || "Various Products";
+
+              const orderDate = order.date || order.createdAt;
 
               return (
                 <motion.div
-                  key={order.id}
+                  key={orderId}
                   variants={fadeUp}
                   layout
                   initial={{ opacity: 0, y: 20 }}
@@ -222,29 +222,35 @@ const OrderList = () => {
                   }}
                   className="bg-white/70 backdrop-blur-sm border border-stone-200/60 rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-5 transition-all group"
                 >
-                  {/* Left Column: ID & Customer */}
-                  <div className="flex items-center gap-4 min-w-[240px]">
+                  <div className="flex items-center gap-5 min-w-[200px]">
                     <div className={`p-3 rounded-xl bg-${statusCfg.color}-50 text-${statusCfg.color}-600`}>
                       <StatusIcon size={20} />
                     </div>
                     <div>
-                      <h3 className="font-bold text-stone-900 text-sm mb-0.5">
-                        {order.id}
-                      </h3>
+                    
                       <p className="text-sm font-medium text-stone-600">
-                        {order.customer}
+                        {customerName}
                       </p>
                     </div>
                   </div>
 
-                  {/* Middle Column: Date & Items */}
-                  <div className="flex-1 grid grid-cols-2 gap-4">
+                
+                  <div className="min-w-[180px] flex-1">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1 flex items-center gap-1">
+                      <Package size={10} /> Product
+                    </p>
+                    <p className="text-sm font-semibold text-stone-800 truncate" title={productName}>
+                      {productName}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-20 min-w-[180px]">
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1 flex items-center gap-1">
                         <Calendar size={10} /> Date
                       </p>
                       <p className="text-sm text-stone-700 font-medium">
-                        {formatDate(order.date)}
+                        {orderDate ? formatDate(orderDate) : "N/A"}
                       </p>
                     </div>
                     <div>
@@ -252,13 +258,12 @@ const OrderList = () => {
                         Items
                       </p>
                       <p className="text-sm text-stone-700 font-medium">
-                        {order.items} product{order.items > 1 ? 's' : ''}
+                        {itemsList.length || 1} product{itemsList.length > 1 ? 's' : ''}
                       </p>
                     </div>
                   </div>
 
-                  {/* Right Column: Status & Price */}
-                  <div className="flex items-center justify-between md:justify-end gap-6 min-w-[280px]">
+                  <div className="flex items-center justify-between md:justify-end gap-6 min-w-[220px]">
                     <div className="flex flex-col items-start md:items-end">
                       <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border-2 mb-1.5 ${
                         order.status === 'delivered' ? 'text-green-700 bg-green-50 border-green-200/60' :
@@ -270,16 +275,15 @@ const OrderList = () => {
                         {statusCfg.label}
                       </span>
                       <p className="text-lg font-serif font-bold text-stone-900">
-                        ${order.total.toFixed(2)}
+                        ${Number(totalAmount).toFixed(2)}
                       </p>
                     </div>
 
-                    {/* Action Buttons */}
                     <div className="flex items-center gap-2">
                       <motion.button
                         whileHover={{ scale: 1.05, backgroundColor: "rgba(22, 101, 52, 0.08)" }}
                         whileTap={{ scale: 0.95 }}
-                        onClick={() => navigate(`/seller/orders/${order.id}`)}
+                        onClick={() => navigate(`/seller/orders/${orderId}`)}
                         className="p-2.5 text-green-700 border-2 border-green-200/60 rounded-xl hover:border-green-700 bg-green-50/40 transition-all cursor-pointer"
                         title="View Details"
                       >
