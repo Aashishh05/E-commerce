@@ -131,13 +131,13 @@ const CheckoutPage = () => {
           fullName: address.fullName,
           email: address.email,
           phone: address.phone,
-          address: address.street, 
+          address: address.street,
           city: address.city,
           state: address.state,
         },
         paymentMethod: selectedPayment,
         shippingPrice: shipping,
-        orderNotes, 
+        orderNotes,
       };
 
       console.log("📤 Sending order data:", orderData);
@@ -335,8 +335,7 @@ const CheckoutPage = () => {
                         </p>
                       )}
                     </motion.div>
-
-\                    <motion.div
+                    <motion.div
                       variants={slideUp}
                       className="grid grid-cols-1 md:grid-cols-2 gap-4"
                     >

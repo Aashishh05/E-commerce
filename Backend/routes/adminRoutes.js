@@ -1,5 +1,4 @@
 import express from "express";
-import multer from "multer";
 import {
   getAllUsers,
   getUserById,
@@ -24,21 +23,7 @@ import { authorize, protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Configure multer for file uploads
-const storage = multer.memoryStorage();
-const upload = multer({
-  storage: storage,
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only image files are allowed"), false);
-    }
-  },
-  limits: {
-    fileSize: 5 * 1024 * 1024,
-  },
-});
+
 
 router.use(protect);
 router.use(authorize("admin"));
@@ -78,5 +63,6 @@ router.delete("/products/:productId", deleteProduct);
 
 router.get("/orders", getAllOrders);
 router.get("/orders/:id", getOrderById);
+
 
 export default router;

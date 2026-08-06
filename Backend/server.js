@@ -6,6 +6,7 @@ import express from "express";
 import cors from "cors"; // ← add this
 import ConnectDB from "./config/db.js";
 import cookieParser from "cookie-parser";
+import errorMiddleware from "./middleware/errorMiddleware.js";
 
 ConnectDB();
 const app = express();
@@ -25,6 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.use("/api", mainRoutes);
+app.use(errorMiddleware);
 
 app.get("/", (req, res) => {
   res.json("API is running.....");
