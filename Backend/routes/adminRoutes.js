@@ -20,10 +20,9 @@ import {
   getDashboardStats,
 } from "../controller/adminController.js";
 import { authorize, protect } from "../middleware/authMiddleware.js";
+import upload from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
-
-
 
 router.use(protect);
 router.use(authorize("admin"));
@@ -63,6 +62,5 @@ router.delete("/products/:productId", deleteProduct);
 
 router.get("/orders", getAllOrders);
 router.get("/orders/:id", getOrderById);
-
 
 export default router;
