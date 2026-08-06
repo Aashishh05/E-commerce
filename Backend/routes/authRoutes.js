@@ -12,10 +12,10 @@ import {
 import { protect } from "../middleware/authMiddleware.js";
 import { body } from "express-validator";
 import { validate } from "../middleware/validate.js";
+import { forgotPasswordRateLimiter, loginRateLimiter } from "../middleware/rateLimiter.js";
 
 const router = express.Router();
 
-// Validation rules
 const registerValidation = [
   body("name").trim().notEmpty().withMessage("Name is required"),
   body("email").isEmail().withMessage("Valid email is required"),
@@ -33,12 +33,12 @@ const loginValidation = [
 ];
 
 router.post("/register", registerValidation, validate, registerUser);
-router.post("/login", loginValidation, validate, loginUser);
+router.post("/login",loginRateLimiter, loginValidation, validate, loginUser);
 router.post("/logout", logout);
 router.get("/me", protect, getUser);
 router.put("/profile", protect, updateProfile);
 
 router.post("/verify-otp", verifyOTP);
-router.post("/forgot-password", forgotPassword);
+router.post("/forgot-password",forgotPasswordRateLimiter, forgotPassword);
 router.post("/reset-password", resetPassword);
 export default router;
