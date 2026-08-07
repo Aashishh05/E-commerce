@@ -26,13 +26,13 @@ import {
   AlertCircle,
   LoaderCircle,
 } from "lucide-react";
-import Navbar from "../Components/auth/Navbar";
-import Footer from "../Components/auth/Footer";
-import ProductCard from "../Components/auth/ProductCard";
+import Navbar from "../../Components/auth/Navbar.jsx";
+import Footer from "../../Components/auth/Footer.jsx";
+import ProductCard from "../../Components/auth/ProductCard.jsx";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { logout } from "../Redux/authSlice";
-import API from "../utils/axios.js";
+import { logout } from "../../Redux/authSlice.js";
+import API from "../../utils/axios.js";
 
 const RevealText = ({ children, delay = 0, className = "" }) => (
   <motion.div

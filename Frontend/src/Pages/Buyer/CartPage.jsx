@@ -13,10 +13,10 @@ import {
   X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../Components/auth/Navbar";
-import Footer from "../Components/auth/Footer";
+import Navbar from "../../Components/auth/Navbar";
+import Footer from "../../Components/auth/Footer";
 import { useDispatch, useSelector } from "react-redux";
-import API from "../utils/axios";
+import API from "../../utils/axios";
 import {
   clearCart,
   removeItem,
@@ -24,7 +24,7 @@ import {
   setError,
   setLoading,
   updateQuantity,
-} from "../Redux/cartSlice";
+} from "../../Redux/cartSlice";
 import toast from "react-hot-toast";
 
 const placeholder =

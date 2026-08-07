@@ -15,9 +15,9 @@ import {
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
-import Navbar from "../Components/auth/Navbar";
-import Footer from "../Components/auth/Footer";
-import API from "../utils/axios";
+import Navbar from "../../Components/auth/Navbar";
+import Footer from "../../Components/auth/Footer";
+import API from "../../utils/axios";
 import toast from "react-hot-toast";
 
 const Order = () => {

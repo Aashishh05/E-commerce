@@ -7,7 +7,6 @@ import Login from "./Pages/auth/Login";
 import ForgotPassword from "./Pages/auth/ForgotPassword";
 import VerifyOTP from "./Pages/auth/VerifyOTP";
 import ResetPassword from "./Pages/auth/ResetPassword";
-import Homepage from "./Pages/Homepage";
 import SellerDashboard from "./Pages/Seller/Sellerdashboard";
 import SellerLayout from "./Components/Seller/SellerLayout";
 import CategoryForm from "./Pages/Seller/Categoryform";
@@ -22,12 +21,13 @@ import AdminDashboard from "./Pages/Admin/AdminDashboard";
 import AdminProducts from "./Pages/Admin/AdminProducts";
 import AdminCategories from "./Pages/Admin/AdminCategories";
 import ProductDetails from "./Components/ProductDetails";
-import CartPage from "./Pages/CartPage";
-import CheckoutPage from "./Pages/Checkoutpage";
-import Order from "./Pages/Order";
 import Payment from "./Payment/Payment";
 import Success from "./Payment/Success";
 import Failure from "./Payment/Failure";
+import CartPage from "./Pages/Buyer/CartPage";
+import CheckoutPage from "./Pages/Buyer/Checkoutpage";
+import Homepage from "./Pages/Buyer/Homepage";
+import Order from "./Pages/Seller/Order";
 const App = () => {
   return (
     <>
@@ -37,9 +37,9 @@ const App = () => {
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/order" element={<Order />} />
-        <Route path="/payment" element={<Payment/>}/>
-        <Route path="/success" element={<Success/>}/>
-        <Route path="/failure" element={<Failure/>}/>
+        <Route path="/payment" element={<Payment />} />
+        <Route path="/success" element={<Success />} />
+        <Route path="/failure" element={<Failure />} />
 
         <Route element={<AdminLayout />}>
           <Route path="/admin/sellers" element={<AdminSellers />} />
@@ -51,7 +51,10 @@ const App = () => {
 
         <Route element={<SellerLayout />}>
           <Route path="/category-form" element={<CategoryForm />} />
-          <Route path="/category-form/:id" element={<CategoryForm key="edit"/>} />
+          <Route
+            path="/category-form/:id"
+            element={<CategoryForm key="edit" />}
+          />
           <Route path="/category-list" element={<CategoryList />} />
           <Route path="/product-form" element={<ProductForm />} />
           <Route path="/product-form/:id" element={<ProductForm />} />
