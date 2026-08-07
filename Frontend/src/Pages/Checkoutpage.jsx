@@ -154,7 +154,13 @@ const CheckoutPage = () => {
           toast.success("Order placed successfully!");
           nav("/order-confirmation", { state: { orderId } });
         } else if (selectedPayment === "esewa") {
-          toast.success("Redirecting to eSewa payment...");
+          nav("/payment", {
+            state: {
+              paymentMethod: "esewa",
+              orderId: orderId,
+              amount: total, // total amount
+            },
+          });
           // Implement eSewa payment gateway integration
           // window.location.href = esewa_payment_url;
         } else if (selectedPayment === "khalti") {

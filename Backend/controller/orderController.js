@@ -86,16 +86,17 @@ export const createOrder = asyncErrorHandler(async (req, res, next) => {
   }
 
   const order = await Order.create({
-    buyer: req.user._id,
-    orderItems,
-    shippingAddress,
-    paymentMethod,
-    shippingPrice,
-    totalAmount,
-    notes: orderNotes,
-    status: "pending",
-    paymentStatus: paymentMethod === "cod" ? "pending" : "unpaid",
-  });
+  buyer: req.user._id,
+  orderItems,
+  shippingAddress,
+  paymentMethod,
+  shippingPrice,
+  totalAmount,
+  notes: orderNotes,
+  status: "pending",
+  paymentStatus: "pending",
+});
+
 
   cart.items = [];
   cart.totalItems = 0;

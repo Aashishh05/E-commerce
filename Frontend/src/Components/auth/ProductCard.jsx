@@ -4,7 +4,6 @@ import {
   Heart,
   Star,
   ShoppingCart,
-  Eye,
   Store,
   ChevronRight,
 } from "lucide-react";

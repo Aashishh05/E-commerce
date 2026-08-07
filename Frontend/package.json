@@ -13,6 +13,7 @@
     "@reduxjs/toolkit": "^2.12.0",
     "@tailwindcss/vite": "^4.3.2",
     "axios": "^1.18.1",
+    "crypto-js": "^4.2.0",
     "dayjs": "^1.11.21",
     "formik": "^2.4.9",
     "framer-motion": "^12.42.2",
@@ -29,11 +30,12 @@
     "react-loading-skeleton": "^3.5.0",
     "react-paginate": "^8.3.0",
     "react-redux": "^9.3.0",
-    "react-router-dom": "^7.18.1",
+    "react-router-dom": "^7.11.0",
     "react-spinners": "^0.17.0",
     "react-zoom-pan-pinch": "^4.0.3",
     "swiper": "^14.0.5",
     "tailwindcss": "^4.3.2",
+    "uuid": "^14.0.1",
     "yup": "^1.7.1"
   },
   "devDependencies": {
