@@ -20,7 +20,6 @@ import AdminUsers from "./Pages/Admin/Adminusers";
 import AdminDashboard from "./Pages/Admin/AdminDashboard";
 import AdminProducts from "./Pages/Admin/AdminProducts";
 import AdminCategories from "./Pages/Admin/AdminCategories";
-import ProductDetails from "./Components/ProductDetails";
 import Payment from "./Payment/Payment";
 import Success from "./Payment/Success";
 import Failure from "./Payment/Failure";
@@ -28,6 +27,7 @@ import CartPage from "./Pages/Buyer/CartPage";
 import CheckoutPage from "./Pages/Buyer/Checkoutpage";
 import Homepage from "./Pages/Buyer/Homepage";
 import Order from "./Pages/Seller/Order";
+import ProductDetails from "./Components/Seller/ProductDetails";
 const App = () => {
   return (
     <>

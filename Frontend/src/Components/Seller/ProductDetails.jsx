@@ -17,10 +17,10 @@ import {
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
-import API from "../utils/axios.js";
-import Navbar from "../Components/auth/Navbar";
-import Footer from "../Components/auth/Footer";
-import { setCart } from "../Redux/cartSlice.js";
+import API from "../../utils/axios.js";
+import Navbar from "../auth/Navbar.jsx";
+import Footer from "../auth/Footer.jsx";
+import { setCart } from "../../Redux/cartSlice.js";
 const ProductDetails = () => {
   const { id } = useParams();
   const nav = useNavigate();
