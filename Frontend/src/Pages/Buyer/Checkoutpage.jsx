@@ -152,7 +152,7 @@ const CheckoutPage = () => {
 
         if (selectedPayment === "cod") {
           toast.success("Order placed successfully!");
-          nav("/order-confirmation", { state: { orderId } });
+          nav("/order", { state: { orderId } });
         } else if (selectedPayment === "esewa") {
           nav("/payment", {
             state: {
