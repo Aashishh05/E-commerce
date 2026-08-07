@@ -216,7 +216,7 @@ const Payment = () => {
               type="submit"
               className="w-full bg-gradient-to-r from-emerald-700 to-emerald-600 hover:from-emerald-800 hover:to-emerald-700 text-white py-4 rounded-xl font-cormorant text-lg tracking-wide font-light transition-all duration-300 shadow-lg hover:shadow-xl"
             >
-              Pay with eSewa
+              Pay Rs.{totalPayable.toLocaleString()} with eSewa
             </motion.button>
           </motion.div>
         </div>
