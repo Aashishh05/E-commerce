@@ -13,9 +13,9 @@ import {
   MoreVertical,
   Calendar,
   Download,
-  Package
+  Package,
 } from "lucide-react";
-import API from "../../utils/axios"; 
+import API from "../../utils/axios";
 
 const stagger = {
   hidden: {},
@@ -49,12 +49,12 @@ const getStatusConfig = (status) => {
 };
 
 const formatDate = (dateString) => {
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit'
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
   }).format(new Date(dateString));
 };
 
@@ -70,13 +70,15 @@ const OrderList = () => {
       try {
         setLoading(true);
         const res = await API.get("/api/order/seller");
-        console.log(res)
-        
+        console.log(res);
+
         const responseData = res.data?.data || res.data?.orders || res.data;
         setOrders(Array.isArray(responseData) ? responseData : []);
       } catch (error) {
         if (!error._isHandled) {
-          toast.error(error.response?.data?.message || "Failed to fetch seller orders");
+          toast.error(
+            error.response?.data?.message || "Failed to fetch seller orders",
+          );
         }
       } finally {
         setLoading(false);
@@ -88,11 +90,13 @@ const OrderList = () => {
 
   const filtered = orders.filter((o) => {
     const orderId = String(o.id || o._id || "");
-    const customerName = String(o.customer || o.shippingAddress?.fullName || "");
+    const customerName = String(
+      o.customer || o.shippingAddress?.fullName || "",
+    );
     const customerEmail = String(o.email || o.customerEmail || "");
 
-    const matchesSearch = 
-      orderId.toLowerCase().includes(search.toLowerCase()) || 
+    const matchesSearch =
+      orderId.toLowerCase().includes(search.toLowerCase()) ||
       customerName.toLowerCase().includes(search.toLowerCase()) ||
       customerEmail.toLowerCase().includes(search.toLowerCase());
 
@@ -157,7 +161,14 @@ const OrderList = () => {
         </div>
 
         <div className="flex gap-2 overflow-x-auto pb-2 lg:pb-0 hide-scrollbar">
-          {["all", "pending", "processing", "shipped", "delivered", "cancelled"].map((status) => (
+          {[
+            "all",
+            "pending",
+            "processing",
+            "shipped",
+            "delivered",
+            "cancelled",
+          ].map((status) => (
             <motion.button
               key={status}
               onClick={() => setStatusFilter(status)}
@@ -184,21 +195,31 @@ const OrderList = () => {
               exit={{ opacity: 0 }}
               className="flex flex-col items-center justify-center py-24 text-stone-400 border border-stone-200 rounded-3xl bg-white/40 backdrop-blur-sm"
             >
-              <p className="font-semibold text-stone-600 text-center">Loading orders...</p>
+              <p className="font-semibold text-stone-600 text-center">
+                Loading orders...
+              </p>
             </motion.div>
           ) : filtered.length > 0 ? (
             filtered.map((order) => {
               const orderId = order.id || order._id;
-              const customerName = order.customer || order.shippingAddress?.fullName || "Guest Customer";
+              const customerName =
+                order.customer ||
+                order.shippingAddress?.fullName ||
+                "Guest Customer";
               const statusCfg = getStatusConfig(order.status);
               const StatusIcon = statusCfg.icon;
-              const totalAmount = order.total ?? order.totalAmount ?? order.amount ?? 0;
-              
+
               const itemsList = order.orderItems || order.items || [];
+
+              const totalAmount = itemsList.reduce(
+                (sum, item) => sum + item.price * item.quantity,
+                0,
+              );
               let productName = order.productName || order.product?.name;
               if (!productName && itemsList.length > 0) {
                 const firstItem = itemsList[0];
-                productName = firstItem.name || firstItem.product?.name || firstItem.title;
+                productName =
+                  firstItem.name || firstItem.product?.name || firstItem.title;
                 if (itemsList.length > 1) {
                   productName = `${productName} + ${itemsList.length - 1} more`;
                 }
@@ -223,23 +244,26 @@ const OrderList = () => {
                   className="bg-white/70 backdrop-blur-sm border border-stone-200/60 rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-5 transition-all group"
                 >
                   <div className="flex items-center gap-5 min-w-[200px]">
-                    <div className={`p-3 rounded-xl bg-${statusCfg.color}-50 text-${statusCfg.color}-600`}>
+                    <div
+                      className={`p-3 rounded-xl bg-${statusCfg.color}-50 text-${statusCfg.color}-600`}
+                    >
                       <StatusIcon size={20} />
                     </div>
                     <div>
-                    
                       <p className="text-sm font-medium text-stone-600">
                         {customerName}
                       </p>
                     </div>
                   </div>
 
-                
                   <div className="min-w-[180px] flex-1">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1 flex items-center gap-1">
                       <Package size={10} /> Product
                     </p>
-                    <p className="text-sm font-semibold text-stone-800 truncate" title={productName}>
+                    <p
+                      className="text-sm font-semibold text-stone-800 truncate"
+                      title={productName}
+                    >
                       {productName}
                     </p>
                   </div>
@@ -258,30 +282,40 @@ const OrderList = () => {
                         Items
                       </p>
                       <p className="text-sm text-stone-700 font-medium">
-                        {itemsList.length || 1} product{itemsList.length > 1 ? 's' : ''}
+                        {itemsList.length || 1} product
+                        {itemsList.length > 1 ? "s" : ""}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between md:justify-end gap-6 min-w-[220px]">
                     <div className="flex flex-col items-start md:items-end">
-                      <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border-2 mb-1.5 ${
-                        order.status === 'delivered' ? 'text-green-700 bg-green-50 border-green-200/60' :
-                        order.status === 'processing' ? 'text-blue-700 bg-blue-50 border-blue-200/60' :
-                        order.status === 'cancelled' ? 'text-red-700 bg-red-50 border-red-200/60' :
-                        order.status === 'shipped' ? 'text-purple-700 bg-purple-50 border-purple-200/60' :
-                        'text-amber-700 bg-amber-50 border-amber-200/60'
-                      }`}>
+                      <span
+                        className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border-2 mb-1.5 ${
+                          order.status === "delivered"
+                            ? "text-green-700 bg-green-50 border-green-200/60"
+                            : order.status === "processing"
+                              ? "text-blue-700 bg-blue-50 border-blue-200/60"
+                              : order.status === "cancelled"
+                                ? "text-red-700 bg-red-50 border-red-200/60"
+                                : order.status === "shipped"
+                                  ? "text-purple-700 bg-purple-50 border-purple-200/60"
+                                  : "text-amber-700 bg-amber-50 border-amber-200/60"
+                        }`}
+                      >
                         {statusCfg.label}
                       </span>
                       <p className="text-lg font-serif font-bold text-stone-900">
-                        ${Number(totalAmount).toFixed(2)}
+                        Rs.{Number(totalAmount).toFixed()}
                       </p>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <motion.button
-                        whileHover={{ scale: 1.05, backgroundColor: "rgba(22, 101, 52, 0.08)" }}
+                        whileHover={{
+                          scale: 1.05,
+                          backgroundColor: "rgba(22, 101, 52, 0.08)",
+                        }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => navigate(`/seller/orders/${orderId}`)}
                         className="p-2.5 text-green-700 border-2 border-green-200/60 rounded-xl hover:border-green-700 bg-green-50/40 transition-all cursor-pointer"
@@ -290,7 +324,10 @@ const OrderList = () => {
                         <Eye size={16} />
                       </motion.button>
                       <motion.button
-                        whileHover={{ scale: 1.05, backgroundColor: "rgba(28, 25, 23, 0.05)" }}
+                        whileHover={{
+                          scale: 1.05,
+                          backgroundColor: "rgba(28, 25, 23, 0.05)",
+                        }}
                         whileTap={{ scale: 0.95 }}
                         className="p-2.5 text-stone-500 border-2 border-stone-200/60 rounded-xl hover:border-stone-400 hover:text-stone-700 bg-transparent transition-all cursor-pointer"
                         title="More Actions"
