@@ -183,7 +183,7 @@ const AdminSidebar = ({ open, setOpen }) => {
                 className="overflow-hidden"
               >
                 <p className="text-white font-bold text-sm tracking-wide leading-none">
-                  Aura Botanicals
+                  Aura MarketPlace
                 </p>
                 <p className="text-amber-500 text-[10px] font-semibold uppercase tracking-widest mt-0.5">
                   Admin Panel
