@@ -1,8 +1,9 @@
 import React from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, Search, ChevronRight, Store, Menu } from "lucide-react";
+import { Bell, Search, ChevronRight, Store} from "lucide-react";
 import SellerSidebar from "../../Components/seller/SellerSidebar";
+import { useSelector } from "react-redux";
 
 const breadcrumbMap = {
   "/seller": ["Overview"],
@@ -16,7 +17,10 @@ const breadcrumbMap = {
 
 const SellerLayout = () => {
   const location = useLocation();
-  const navigate = useNavigate();
+
+  const user = useSelector((state) => state.auth?.user || {});
+  const userName = user?.name || "";
+
   const crumbs = breadcrumbMap[location.pathname] || ["Dashboard"];
   const [notifications] = React.useState(3);
   const [searchActive, setSearchActive] = React.useState(false);
@@ -26,9 +30,7 @@ const SellerLayout = () => {
       <SellerSidebar />
 
       <div className="flex-1 flex flex-col min-w-0">
-        {/* ── Premium Top Bar ── */}
         <header className="h-20 bg-white/70 backdrop-blur-xl border-b border-stone-200/40 flex items-center justify-between px-8 sticky top-0 z-30 shadow-sm">
-          {/* Left: Breadcrumb Navigation */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -44,10 +46,7 @@ const SellerLayout = () => {
             <span className="text-stone-400">Aura Botanicals</span>
             {crumbs.map((crumb, i) => (
               <React.Fragment key={i}>
-                <motion.div
-                  whileHover={{ x: 2 }}
-                  className="text-stone-300"
-                >
+                <motion.div whileHover={{ x: 2 }} className="text-stone-300">
                   <ChevronRight size={12} />
                 </motion.div>
                 <motion.span
@@ -61,21 +60,18 @@ const SellerLayout = () => {
             ))}
           </motion.div>
 
-          {/* Right: Actions */}
           <motion.div
             className="flex items-center gap-3"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.35 }}
           >
-            {/* Search Bar */}
             <motion.div
               animate={{ width: searchActive ? 240 : 180 }}
               transition={{ duration: 0.3 }}
               className="relative"
             >
-              <div className="flex items-center gap-2 bg-gradient-to-br from-stone-50 to-stone-100/50 border border-stone-200/70 rounded-2xl px-4 py-2.5 text-xs text-stone-600 focus-within:border-green-800/50 focus-within:ring-2 focus-within:ring-green-800/10 transition-all"
-              >
+              <div className="flex items-center gap-2 bg-gradient-to-br from-stone-50 to-stone-100/50 border border-stone-200/70 rounded-2xl px-4 py-2.5 text-xs text-stone-600 focus-within:border-green-800/50 focus-within:ring-2 focus-within:ring-green-800/10 transition-all">
                 <Search size={13} className="text-stone-400 shrink-0" />
                 <input
                   type="text"
@@ -87,10 +83,8 @@ const SellerLayout = () => {
               </div>
             </motion.div>
 
-            {/* Divider */}
             <div className="hidden sm:block w-px h-6 bg-stone-200/50" />
 
-            {/* Notifications Bell */}
             <motion.button
               whileTap={{ scale: 0.92 }}
               whileHover={{ backgroundColor: "rgba(34, 197, 94, 0.1)" }}
@@ -107,17 +101,18 @@ const SellerLayout = () => {
               </motion.span>
             </motion.button>
 
-            {/* User Avatar */}
             <motion.div
-              whileHover={{ scale: 1.08, boxShadow: "0 8px 24px rgba(22, 101, 52, 0.2)" }}
+              whileHover={{
+                scale: 1.08,
+                boxShadow: "0 8px 24px rgba(22, 101, 52, 0.2)",
+              }}
               className="w-10 h-10 rounded-2xl bg-gradient-to-br from-green-600 to-green-800 text-white text-xs font-bold flex items-center justify-center cursor-pointer select-none shadow-md transition-shadow"
             >
-              AS
+              {userName?.charAt(0).toUpperCase()}
+              {userName?.split(" ")[1]?.charAt(0).toUpperCase()}
             </motion.div>
           </motion.div>
         </header>
-
-        {/* ── Main Content Area ── */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="max-w-7xl mx-auto px-8 py-8">
             <AnimatePresence mode="wait">
