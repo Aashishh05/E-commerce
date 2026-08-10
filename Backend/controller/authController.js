@@ -107,12 +107,6 @@ export const loginUser = asyncErrorHandler(async (req, res, next) => {
     return next(new ErrorHandler("Invalid email or password", 401));
   }
 
-  if (!user.isVerified) {
-    return next(
-      new ErrorHandler("Please verify your account before logging in", 403),
-    );
-  }
-
   if (!user.isActive) {
     return next(
       new ErrorHandler("Account has been deactivated. Contact admin.", 403),
