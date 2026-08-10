@@ -89,22 +89,21 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+useEffect(() => {
   const fetchCategory = async () => {
-    setLoading(true);
     try {
-      const res = await API.get(`/api/category/getall`);
+      const res = await API.get("/api/category/getall");
       setCategory(res.data.data);
     } catch (error) {
-      console.log(error);
+      console.error(error);
       setError("Error fetching category");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchCategory();
-  }, []);
+  fetchCategory();
+}, []);
 
   return (
     <header

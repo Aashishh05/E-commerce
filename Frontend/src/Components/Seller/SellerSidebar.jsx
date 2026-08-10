@@ -224,7 +224,7 @@ const SellerSidebar = () => {
         <nav className="flex-1 px-2.5 py-5 space-y-1 overflow-y-auto overflow-x-hidden">
           {navItems.map((item) => {
             if (!item.children) {
-              const active = location.pathname === item.path;
+              // const active = location.pathname === item.path;
               return (
                 <NavLink key={item.key} to={item.path} className="no-underline">
                   {({ isActive }) => (
@@ -331,7 +331,7 @@ const SellerSidebar = () => {
                     >
                       <div className="ml-2.5 pt-1 pb-2 pl-4 border-l-2 border-green-200/60 space-y-1">
                         {item.children.map((child) => {
-                          const childActive = location.pathname === child.path;
+                          // const childActive = location.pathname === child.path;
                           return (
                             <NavLink key={child.path} to={child.path} className="no-underline">
                               {({ isActive }) => (
