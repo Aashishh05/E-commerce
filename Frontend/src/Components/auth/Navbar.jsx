@@ -153,12 +153,7 @@ const Navbar = () => {
         className="max-w-7xl mx-auto px-6 py-2 flex items-center justify-between gap-6"
         style={{ zIndex: 2 }}
       >
-        <motion.a
-          href="/"
-          className="flex items-center gap-2.5 shrink-0 group"
-          whileHover={{ y: -2 }}
-          transition={{ duration: 0.2 }}
-        >
+        <motion.a href="/" className="flex items-center gap-2.5 shrink-0 group">
           <motion.div
             whileHover={{ rotate: 20, scale: 1.1 }}
             transition={{ type: "spring", stiffness: 400 }}
@@ -169,14 +164,9 @@ const Navbar = () => {
             <h1 className="text-2xl font-serif font-bold text-green-900 tracking-tight leading-none">
               AURA
             </h1>
-            <motion.p
-              className="text-[9px] font-bold text-stone-500 tracking-[0.25em] mt-0.5 uppercase absolute top-full left-0"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-            >
+            <p className="text-[9px] font-bold text-stone-500 tracking-[0.25em] mt-0.5 uppercase absolute top-full left-0">
               Marketplace
-            </motion.p>
+            </p>
           </div>
         </motion.a>
 
@@ -587,16 +577,7 @@ const Navbar = () => {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
               whileHover={{ scale: 1.05 }}
-            >
-              <motion.span
-                className="w-2.5 h-2.5 rounded-full bg-amber-500"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-              <span className="text-xs font-bold text-stone-500 uppercase tracking-widest">
-                LIVE
-              </span>
-            </motion.div>
+            ></motion.div>
           </div>
         </div>
       </motion.nav>
