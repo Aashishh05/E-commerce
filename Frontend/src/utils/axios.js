@@ -2,7 +2,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 const API = axios.create({
-  baseURL: "https://e-commerce-mhr5.onrender.com/api",
+  baseURL: "https://e-commerce-mhr5.onrender.com",
   withCredentials: true,
 });
 
