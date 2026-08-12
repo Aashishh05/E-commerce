@@ -64,7 +64,7 @@ const CategoryList = () => {
       console.log(error);
       toast.error("Failed to delete category");
     } finally {
-      Isdeleting(false);
+      setIsDeleting(false);
     }
   };
 
