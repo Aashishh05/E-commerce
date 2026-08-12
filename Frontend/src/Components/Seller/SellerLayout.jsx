@@ -2,7 +2,7 @@ import React from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, Search, ChevronRight, Store} from "lucide-react";
-import SellerSidebar from "../../Components/seller/SellerSidebar";
+import SellerSidebar from "../../Components/Seller/SellerSidebar";
 import { useSelector } from "react-redux";
 
 const breadcrumbMap = {
