@@ -5,8 +5,8 @@ import toast from "react-hot-toast";
 const API = axios.create({
   baseURL:
     import.meta.env.MODE === "production"
-      ? "https://e-commerce-mhr5.onrender.com/api"
-      : "http://localhost:5000/api",
+      ? "https://e-commerce-mhr5.onrender.com"
+      : "http://localhost:5000",
   withCredentials: true,
 });
 
