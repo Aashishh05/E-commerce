@@ -7,7 +7,7 @@ import errorMiddleware from "./middleware/errorMiddleware.js";
 const app = express();
 
 const allowedOrigins = [
-  "http://localhost:5173",
+  "http://localhost:5173","e-commerce-aashish11.vercel.app"
 ];
 
 app.use(
