@@ -2,7 +2,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_BASE_URL || "http://localhost:5000",
+  baseURL: import.meta.env.VITE_BASE_URL,
   withCredentials: true,
 });
 
