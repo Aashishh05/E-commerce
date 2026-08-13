@@ -77,18 +77,30 @@ const CategoryForm = () => {
       const formdata = new FormData();
       formdata.append("name", values.name);
       formdata.append("description", values.description);
-      if (values.image) {
+
+      // Append image only if it's a File object (user selected a new image)
+      if (values.image instanceof File) {
         formdata.append("image", values.image);
       }
 
+      const config = {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      };
+
       if (isEditMode) {
-        const res = await API.put(`/api/category/update/${id}`, formdata);
+        const res = await API.put(
+          `/api/category/update/${id}`,
+          formdata,
+          config
+        );
         if (res.status === 200) {
           toast.success("Category updated successfully");
           navigate("/category-list");
         }
       } else {
-        await API.post(`/api/category/create`, formdata);
+        await API.post(`/api/category/create`, formdata, config);
         setSubmitted(true);
         toast.success("Category created successfully");
         setTimeout(() => navigate("/category-list"), 1600);

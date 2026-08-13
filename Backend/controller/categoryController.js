@@ -1,9 +1,8 @@
-import Category from "../models/categoriesModel.js";
 import UploadToCloudinary from "../utils/uploadCloudinaryImage.js";
 import deleteCloudinaryImage from "../utils/deleteCloudinaryImage.js";
-import fs from "fs";
 import asyncErrorHandler from "../middleware/asyncErrorHandler.js";
 import ErrorHandler from "../utils/ErrorHandler.js";
+import Category from "../models/categoriesModel.js"
 
 export const createCategory = asyncErrorHandler(async (req, res, next) => {
   const { name, description } = req.body;
@@ -14,9 +13,11 @@ export const createCategory = asyncErrorHandler(async (req, res, next) => {
 
   const trimmedName = name.trim();
 
+  const escapedName = trimmedName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
   const existingCategory = await Category.findOne({
     name: {
-      $regex: new RegExp(`^${trimmedName}$`, "i"),
+      $regex: new RegExp(`^${escapedName}$`, "i"),
     },
   });
 
@@ -27,13 +28,17 @@ export const createCategory = asyncErrorHandler(async (req, res, next) => {
   }
 
   let image = {};
+
   if (req.file) {
-    const uploadImage = await UploadToCloudinary(req.file.buffer, "E-commerce");
+    const uploadImage = await UploadToCloudinary(
+      req.file.buffer,
+      "Blog",
+    );
+    console.log(uploadImage)
 
     image = {
       url: uploadImage.url,
       public_id: uploadImage.public_id,
-      path: uploadImage.path,
     };
   }
 
@@ -76,7 +81,7 @@ export const getCategoryById = asyncErrorHandler(async (req, res, next) => {
 export const updateCategory = asyncErrorHandler(async (req, res, next) => {
   const { name, description } = req.body;
 
-  if (!name && !description && !req.file) {
+  if (name === undefined && description === undefined && !req.file) {
     return next(new ErrorHandler("Provide at least one field to update", 400));
   }
 
@@ -86,12 +91,18 @@ export const updateCategory = asyncErrorHandler(async (req, res, next) => {
     return next(new ErrorHandler("Category not found", 404));
   }
 
-  if (name) {
+  if (name !== undefined) {
+    if (!name.trim()) {
+      return next(new ErrorHandler("Category name cannot be empty", 400));
+    }
+
     const trimmedName = name.trim();
+
+    const escapedName = trimmedName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
     const existingCategory = await Category.findOne({
       name: {
-        $regex: new RegExp(`^${trimmedName}$`, "i"),
+        $regex: new RegExp(`^${escapedName}$`, "i"),
       },
       _id: {
         $ne: req.params.id,
@@ -107,7 +118,7 @@ export const updateCategory = asyncErrorHandler(async (req, res, next) => {
     category.name = trimmedName;
   }
 
-  if (description) {
+  if (description !== undefined) {
     category.description = description.trim();
   }
 
@@ -116,12 +127,14 @@ export const updateCategory = asyncErrorHandler(async (req, res, next) => {
       await deleteCloudinaryImage(category.image.public_id);
     }
 
-    const uploadImage = await UploadToCloudinary(req.file.buffer, "E-commerce");
+    const uploadImage = await UploadToCloudinary(
+      req.file.buffer,
+      "E-commerce/Categories",
+    );
 
     category.image = {
       url: uploadImage.url,
       public_id: uploadImage.public_id,
-      path: uploadImage.path,
     };
   }
 
