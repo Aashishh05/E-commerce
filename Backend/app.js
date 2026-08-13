@@ -8,7 +8,6 @@ const app = express();
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://e-commerce-git-main-aashish11.vercel.app",
 ];
 
 app.use(

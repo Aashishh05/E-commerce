@@ -198,7 +198,7 @@ const Homepage = () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await API.get(`/api/product/getall`);
+      const res = await API.get("/api/product/getall");
 
       if (!res.data || !res.data.data) {
         throw new Error("Invalid response format from server");
@@ -222,7 +222,7 @@ const Homepage = () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await API.get(`/api/category/getall`);
+      const res = await API.get("/api/category/getall");
 
       if (!res.data || !res.data.data) {
         throw new Error("Invalid response format from server");

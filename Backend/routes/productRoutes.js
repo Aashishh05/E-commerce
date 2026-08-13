@@ -1,23 +1,23 @@
-import express from "express";
-import {
-  createProduct,
-  deleteProduct,
-  getAllProducts,
-  getProductById,
-  updateProduct,
-} from "../controller/productController.js";
-import { authorize, protect } from "../middleware/authMiddleware.js";
-import upload from "../middleware/uploadMiddleware.js"
+  import express from "express";
+  import {
+    createProduct,
+    deleteProduct,
+    getAllProducts,
+    getProductById,
+    updateProduct,
+  } from "../controller/productController.js";
+  import { authorize, protect } from "../middleware/authMiddleware.js";
+  import upload from "../middleware/uploadMiddleware.js"
 
-const router = express.Router();
+  const router = express.Router();
 
-//Public routes
-router.get("/getall", getAllProducts);
-router.get("/get/:id", getProductById);
+  //Public routes
+  router.get("/getall", getAllProducts);
+  router.get("/get/:id", getProductById);
 
-//Seller routes
-router.post("/create", protect, authorize("seller"),upload.array("images",5), createProduct);
-router.put("/update/:id", protect, authorize("seller"),upload.array("images",5), updateProduct);
-router.delete("/delete/:id", protect, authorize("seller"), deleteProduct);
+  //Seller routes
+  router.post("/create", protect, authorize("seller"),upload.array("images",5), createProduct);
+  router.put("/update/:id", protect, authorize("seller"),upload.array("images",5), updateProduct);
+  router.delete("/delete/:id", protect, authorize("seller"), deleteProduct);
 
-export default router;
+  export default router;

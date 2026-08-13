@@ -1,12 +1,8 @@
-
 import axios from "axios";
 import toast from "react-hot-toast";
 
 const API = axios.create({
-  baseURL:
-    import.meta.env.MODE === "production"
-      ? "https://e-commerce-mhr5.onrender.com"
-      : "http://localhost:5000",
+  baseURL: "http://localhost:5000",
   withCredentials: true,
 });
 
@@ -14,7 +10,11 @@ API.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 429) {
-      toast.error(error.response.data.message);
+      toast.error(
+        error.response?.data?.message ||
+          "Too many requests. Please try again later."
+      );
+
       error._isHandled = true;
     }
 
@@ -23,4 +23,3 @@ API.interceptors.response.use(
 );
 
 export default API;
-
