@@ -40,6 +40,15 @@ app.get("/", (req, res) => {
   res.json("API is running.....");
 });
 
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Server is healthy",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+});
+
 app.use("/api", mainRoutes);
 
 app.use(errorMiddleware);
