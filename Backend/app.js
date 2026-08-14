@@ -7,7 +7,10 @@ import errorMiddleware from "./middleware/errorMiddleware.js";
 const app = express();
 
 const allowedOrigins = [
-  "http://localhost:5173","https://e-commerce-aashish11.vercel.app","https://e-commerce-git-main-aashish11.vercel.app","e-commerce-kappa-gules-15.vercel.app"
+  "http://localhost:5173",
+  "https://e-commerce-aashish11.vercel.app",
+  "https://e-commerce-git-main-aashish11.vercel.app",
+  "https://e-commerce-kappa-gules-15.vercel.app",
 ];
 
 app.use(
@@ -26,7 +29,7 @@ app.use(
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  })
+  }),
 );
 
 app.use(express.json());
