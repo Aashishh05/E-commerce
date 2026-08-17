@@ -244,3 +244,25 @@ export const deleteProduct = asyncErrorHandler(async (req, res, next) => {
     message: "Product deleted successfully",
   });
 });
+export const getMyProducts = asyncErrorHandler(async (req, res, next) => {
+  if (req.user.role !== "seller") {
+    return next(new ErrorHandler("Only sellers can access this", 403));
+  }
+
+  const seller = await Seller.findOne({ user: req.user._id });
+
+  if (!seller) {
+    return next(new ErrorHandler("Seller profile not found", 404));
+  }
+
+  const products = await Product.find({ seller: seller._id })
+    .populate("category", "name")
+    .populate("subCategory", "name")
+    .sort({ createdAt: -1 });
+
+  res.status(200).json({
+    success: true,
+    count: products.length,
+    data: products,
+  });
+});

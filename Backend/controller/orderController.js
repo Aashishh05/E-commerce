@@ -186,7 +186,7 @@ export const cancelOrder = asyncErrorHandler(async (req, res, next) => {
 
 export const getSellerOrders = asyncErrorHandler(async (req, res, next) => {
   const seller = await Seller.findOne({ user: req.user._id });
-
+console.log(seller);
   if (!seller) {
     return next(new ErrorHandler("Seller profile not found", 404));
   }
@@ -196,6 +196,8 @@ export const getSellerOrders = asyncErrorHandler(async (req, res, next) => {
   })
     .sort({ createdAt: -1 })
     .populate("buyer", "name email");
+    console.log(orders);
+    
 
   const sellerOrders = orders
     .map((order) => {

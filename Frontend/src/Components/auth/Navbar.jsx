@@ -67,13 +67,14 @@ const Navbar = () => {
     setIsMobileMenuOpen(false);
     nav("/");
   };
-
   const fetchCart = async () => {
     try {
       const res = await API.get(`/api/cart/get`);
       dispatch(setCart(res.data.data.items));
     } catch (error) {
-      console.log(error);
+      if (!error._isHandled) {
+        console.error("Failed to fetch cart:", error);
+      }
     }
   };
 
@@ -89,21 +90,21 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-useEffect(() => {
-  const fetchCategory = async () => {
-    try {
-      const res = await API.get("/api/category/getall");
-      setCategory(res.data.data);
-    } catch (error) {
-      console.error(error);
-      setError("Error fetching category");
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const fetchCategory = async () => {
+      try {
+        const res = await API.get("/api/category/getall");
+        setCategory(res.data.data);
+      } catch (error) {
+        console.error(error);
+        setError("Error fetching category");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchCategory();
-}, []);
+    fetchCategory();
+  }, []);
 
   return (
     <header

@@ -43,7 +43,7 @@ const ProductList = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await API.get(`/api/product/getall`);
+      const res = await API.get(`/api/product/my-products`);
       console.log("Products from API:", res.data);
       setProducts(res.data.data);
     } catch (error) {

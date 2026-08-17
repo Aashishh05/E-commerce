@@ -31,10 +31,7 @@ const Login = () => {
     setError(null);
     setLoading(true);
     try {
-      const response = await API.post(
-        "http://localhost:5000/api/auth/login",
-        values,
-      );
+      const response = await API.post("/api/auth/login", values);
       const { user, token } = response.data.data;
 
       dispatch(login({ user, token }));
