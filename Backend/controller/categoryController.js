@@ -3,6 +3,7 @@ import deleteCloudinaryImage from "../utils/deleteCloudinaryImage.js";
 import asyncErrorHandler from "../middleware/asyncErrorHandler.js";
 import ErrorHandler from "../utils/ErrorHandler.js";
 import Category from "../models/categoriesModel.js";
+import Seller from "../models/sellerModel.js";
 
 export const createCategory = asyncErrorHandler(async (req, res, next) => {
   const { name, description } = req.body;
