@@ -149,11 +149,15 @@ const Homepage = () => {
   const nav = useNavigate();
   const dispatch = useDispatch();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
+
+  // Products: own loading/error state, scoped to the product sections only
   const [products, setProducts] = useState([]);
-  const [category, setCategory] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [productsError, setProductsError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
+
+  // Categories: fetched independently, no dedicated loading/error UI
+  const [category, setCategory] = useState([]);
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const heroImages = [
@@ -196,8 +200,8 @@ const Homepage = () => {
 
   const fetchProducts = async () => {
     try {
-      setLoading(true);
-      setError(null);
+      setProductsLoading(true);
+      setProductsError(null);
       const res = await API.get("/api/product/getall");
 
       if (!res.data || !res.data.data) {
@@ -212,16 +216,14 @@ const Homepage = () => {
         error.response?.data?.message ||
         error.message ||
         "Failed to load products. Please try again.";
-      setError(errorMessage);
+      setProductsError(errorMessage);
     } finally {
-      setLoading(false);
+      setProductsLoading(false);
     }
   };
 
   const fetchCategory = async () => {
     try {
-      setLoading(true);
-      setError(null);
       const res = await API.get("/api/category/getall");
 
       if (!res.data || !res.data.data) {
@@ -229,16 +231,10 @@ const Homepage = () => {
       }
 
       setCategory(Array.isArray(res.data.data) ? res.data.data : []);
-      setRetryCount(0);
     } catch (error) {
       console.error("Error fetching categories:", error);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to load categories. Please try again.";
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
+      // No dedicated loading/error UI for categories — falls back to the
+      // existing "No categories available" empty state below.
     }
   };
 
@@ -247,85 +243,11 @@ const Homepage = () => {
     fetchCategory();
   }, []);
 
-  const handleRetry = () => {
+  const handleRetryProducts = () => {
     setRetryCount((prev) => prev + 1);
-    setError(null);
+    setProductsError(null);
     fetchProducts();
-    fetchCategory();
   };
-
-  if (loading && products.length === 0 && category.length === 0) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="min-h-screen flex flex-col items-center justify-center gap-4 bg-stone-50"
-      >
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-        >
-          <LoaderCircle size={50} className="text-green-800" />
-        </motion.div>
-        <p className="text-gray-600 text-lg font-medium">
-          Loading marketplace...
-        </p>
-      </motion.div>
-    );
-  }
-
-  if (error && products.length === 0 && category.length === 0) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.2 }}
-        className="min-h-screen flex items-center justify-center bg-stone-50 px-4"
-      >
-        <motion.div
-          initial={{ y: -20 }}
-          animate={{ y: 0 }}
-          className="bg-red-50 border border-red-200 rounded-3xl p-8 text-center shadow-lg max-w-md"
-        >
-          <motion.div
-            animate={{ rotate: [0, -10, 10, -10, 0] }}
-            transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 2 }}
-          >
-            <AlertCircle size={50} className="mx-auto text-red-500 mb-4" />
-          </motion.div>
-          <h2 className="text-2xl font-semibold text-red-600 mb-2">
-            Oops! Something went wrong
-          </h2>
-          <p className="text-gray-600 mb-6 text-sm">{error}</p>
-          <div className="space-y-3">
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={handleRetry}
-              className="w-full px-6 py-3 rounded-lg bg-red-500 text-white hover:bg-red-600 transition font-semibold"
-            >
-              Try Again
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={() => window.location.reload()}
-              className="w-full px-6 py-3 rounded-lg bg-gray-500 text-white hover:bg-gray-600 transition font-semibold"
-            >
-              Reload Page
-            </motion.button>
-          </div>
-          {retryCount > 2 && (
-            <p className="text-xs text-gray-500 mt-4">
-              If the problem persists, please contact support or try again
-              later.
-            </p>
-          )}
-        </motion.div>
-      </motion.div>
-    );
-  }
 
   const featuredVendors = [
     {
@@ -431,6 +353,60 @@ const Homepage = () => {
 
   const defaultCategoryImage =
     "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=600&h=600&fit=crop";
+
+  // Shared loading/error UI for the product sections (Flash Deals + Discover Products)
+  const renderProductsState = () => {
+    if (productsLoading) {
+      return (
+        <div className="col-span-full flex flex-col items-center justify-center py-16 gap-4">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          >
+            <LoaderCircle size={40} className="text-green-800" />
+          </motion.div>
+          <p className="text-stone-600 text-base font-medium">
+            Loading products...
+          </p>
+        </div>
+      );
+    }
+
+    if (productsError) {
+      return (
+        <div className="col-span-full flex items-center justify-center py-16 px-4">
+          <motion.div
+            initial={{ y: -10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.2 }}
+            className="bg-red-50 border border-red-200 rounded-3xl p-8 text-center shadow-sm max-w-md"
+          >
+            <AlertCircle size={40} className="mx-auto text-red-500 mb-4" />
+            <h3 className="text-xl font-semibold text-red-600 mb-2">
+              Couldn't load products
+            </h3>
+            <p className="text-stone-600 mb-6 text-sm">{productsError}</p>
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={handleRetryProducts}
+              className="px-6 py-3 rounded-lg bg-red-500 text-white hover:bg-red-600 transition font-semibold text-sm"
+            >
+              Try Again
+            </motion.button>
+            {retryCount > 2 && (
+              <p className="text-xs text-stone-500 mt-4">
+                If the problem persists, please contact support or try again
+                later.
+              </p>
+            )}
+          </motion.div>
+        </div>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <div className="bg-stone-50 font-sans overflow-x-hidden min-h-screen text-stone-800">
@@ -565,7 +541,7 @@ const Homepage = () => {
 
               <motion.div variants={slideUp} className="flex flex-wrap gap-4">
                 <MagneticButton className="px-8 py-4 bg-green-700 hover:bg-green-600 text-white font-bold rounded-full transition-colors shadow-xl hover:shadow-2xl flex items-center gap-2 cursor-pointer text-base">
-                  <ShoppingBag size={20}  />
+                  <ShoppingBag size={20} />
                   Shop Marketplace
                   <motion.span
                     animate={{ x: [0, 4, 0] }}
@@ -772,7 +748,9 @@ const Homepage = () => {
             viewport={{ once: true, margin: "-80px" }}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
           >
-            {products && products.length > 0 ? (
+            {productsLoading || productsError ? (
+              renderProductsState()
+            ) : products && products.length > 0 ? (
               products.slice(0, 4).map((product, i) => (
                 <motion.div
                   key={product?._id || i}
@@ -919,7 +897,9 @@ const Homepage = () => {
               transition={{ duration: 0.3 }}
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
             >
-              {products && products.length > 0 ? (
+              {productsLoading || productsError ? (
+                renderProductsState()
+              ) : products && products.length > 0 ? (
                 products.map((product, i) => (
                   <motion.div
                     key={product?._id || i}
