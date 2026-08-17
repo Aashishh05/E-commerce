@@ -32,7 +32,7 @@ const CategoryList = () => {
   const fetchCategory = async () => {
     setLoading(true);
     try {
-      const res = await API.get(`/api/category/getall`);
+      const res = await API.get(`/api/category/my-categories`);
       setCategories(res.data.data);
     } catch (error) {
       setError("Error fetching categories", error);

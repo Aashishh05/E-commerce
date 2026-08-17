@@ -2,7 +2,7 @@ import UploadToCloudinary from "../utils/uploadCloudinaryImage.js";
 import deleteCloudinaryImage from "../utils/deleteCloudinaryImage.js";
 import asyncErrorHandler from "../middleware/asyncErrorHandler.js";
 import ErrorHandler from "../utils/ErrorHandler.js";
-import Category from "../models/categoriesModel.js"
+import Category from "../models/categoriesModel.js";
 
 export const createCategory = asyncErrorHandler(async (req, res, next) => {
   const { name, description } = req.body;
@@ -30,11 +30,8 @@ export const createCategory = asyncErrorHandler(async (req, res, next) => {
   let image = {};
 
   if (req.file) {
-    const uploadImage = await UploadToCloudinary(
-      req.file.buffer,
-      "Blog",
-    );
-    console.log(uploadImage)
+    const uploadImage = await UploadToCloudinary(req.file.buffer, "Blog");
+    console.log(uploadImage);
 
     image = {
       url: uploadImage.url,
@@ -163,5 +160,27 @@ export const deleteCategory = asyncErrorHandler(async (req, res, next) => {
   res.status(200).json({
     success: true,
     message: "Category deleted successfully",
+  });
+});
+
+export const getMyCategories = asyncErrorHandler(async (req, res, next) => {
+  if (req.user.role !== "seller") {
+    return next(new ErrorHandler("Only sellers can access this", 403));
+  }
+
+  const seller = await Seller.findOne({ user: req.user._id });
+
+  if (!seller) {
+    return next(new ErrorHandler("Seller profile not found", 404));
+  }
+
+  const categories = await Category.find({ seller: seller._id }).sort({
+    createdAt: -1,
+  });
+
+  res.status(200).json({
+    success: true,
+    count: categories.length,
+    data: categories,
   });
 });

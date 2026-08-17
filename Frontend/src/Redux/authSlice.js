@@ -3,6 +3,7 @@ import {
   getUser,
   removeToken,
   removeUser,
+  setToken,
   setUser,
 } from "../Localstorage/storage";
 import { createSlice } from "@reduxjs/toolkit";
@@ -43,6 +44,7 @@ const authSlice = createSlice({
       state.isAuthenticated = true;
 
       setUser(user);
+      setToken(token);
     },
     logout(state) {
       const user = getUser();

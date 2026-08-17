@@ -4,6 +4,7 @@ import {
   deleteCategory,
   getAllCategories,
   getCategoryById,
+  getMyCategories,
   updateCategory,
 } from "../controller/categoryController.js";
 import { authorize, protect } from "../middleware/authMiddleware.js";
@@ -19,5 +20,6 @@ router.get("/get/:id", getCategoryById);
 router.post("/create", protect, authorize("seller"),upload.single("image"), createCategory);
 router.put("/update/:id", protect, authorize("seller"),upload.single("image"), updateCategory);
 router.delete("/delete/:id", protect, authorize("seller"), deleteCategory);
+router.get("/my-categories", protect, getMyCategories);
 
 export default router;
