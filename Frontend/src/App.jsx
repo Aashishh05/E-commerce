@@ -2,11 +2,15 @@ import { Route, Routes } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
 import AuthLayout from "./Components/auth/AuthLayout";
+import ProtectedRoutes from "./Components/ProtectedRoutes/ProtectedRoutes";
+import RoleProtectedRoutes from "./Components/ProtectedRoutes/RoleProtectedRoutes";
+
 import Register from "./Pages/auth/Register";
 import Login from "./Pages/auth/Login";
 import ForgotPassword from "./Pages/auth/ForgotPassword";
 import VerifyOTP from "./Pages/auth/VerifyOTP";
 import ResetPassword from "./Pages/auth/ResetPassword";
+
 import SellerDashboard from "./Pages/Seller/Sellerdashboard";
 import SellerLayout from "./Components/Seller/SellerLayout";
 import CategoryForm from "./Pages/Seller/CategoryForm";
@@ -14,62 +18,72 @@ import CategoryList from "./Pages/Seller/CategoryList";
 import ProductForm from "./Pages/Seller/ProductForm";
 import ProductList from "./Pages/Seller/ProductList";
 import OrderList from "./Pages/Seller/OrderList";
+
 import AdminLayout from "./Components/Admin/AdminLayout";
 import AdminSellers from "./Pages/Admin/Adminsellers";
 import AdminUsers from "./Pages/Admin/Adminusers";
 import AdminDashboard from "./Pages/Admin/AdminDashboard";
 import AdminProducts from "./Pages/Admin/AdminProducts";
 import AdminCategories from "./Pages/Admin/AdminCategories";
+
 import Payment from "./Payment/Payment";
 import Success from "./Payment/Success";
 import Failure from "./Payment/Failure";
+
 import CartPage from "./Pages/Buyer/CartPage";
 import CheckoutPage from "./Pages/Buyer/Checkoutpage";
 import Homepage from "./Pages/Buyer/Homepage";
 import Order from "./Pages/Seller/Order";
 import ProductDetails from "./Components/Seller/ProductDetails";
+
 const App = () => {
   return (
     <>
       <Routes>
-        <Route index element={<Homepage />} />
-        <Route path="/productdetails/:id" element={<ProductDetails />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/order" element={<Order />} />
-        <Route path="/payment" element={<Payment />} />
-        <Route path="/success" element={<Success />} />
-        <Route path="/failure" element={<Failure />} />
-
-        <Route element={<AdminLayout />}>
-          <Route path="/admin/sellers" element={<AdminSellers />} />
-          <Route path="/admin/users" element={<AdminUsers />} />
-          <Route path="/admin/products" element={<AdminProducts />} />
-          <Route path="/admin/categories" element={<AdminCategories />} />
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
-        </Route>
-
-        <Route element={<SellerLayout />}>
-          <Route path="/category-form" element={<CategoryForm />} />
-          <Route
-            path="/category-form/:id"
-            element={<CategoryForm key="edit" />}
-          />
-          <Route path="/category-list" element={<CategoryList />} />
-          <Route path="/product-form" element={<ProductForm />} />
-          <Route path="/product-form/:id" element={<ProductForm />} />
-          <Route path="/product-list" element={<ProductList />} />
-          <Route path="/order-list" element={<OrderList />} />
-          <Route path="/seller-dashboard" element={<SellerDashboard />} />
-        </Route>
         <Route element={<AuthLayout />}>
           <Route path="/register" element={<Register />} />
-
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify-otp" element={<VerifyOTP />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+        </Route>
+
+        <Route index element={<Homepage />} />
+        <Route path="/productdetails/:id" element={<ProductDetails />} />
+
+        <Route element={<ProtectedRoutes />}>
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/order" element={<Order />} />
+          <Route path="/payment" element={<Payment />} />
+          <Route path="/success" element={<Success />} />
+          <Route path="/failure" element={<Failure />} />
+        </Route>
+
+        <Route element={<RoleProtectedRoutes allowedRoles={["seller"]} />}>
+          <Route element={<SellerLayout />}>
+            <Route path="/seller-dashboard" element={<SellerDashboard />} />
+            <Route path="/category-form" element={<CategoryForm />} />
+            <Route
+              path="/category-form/:id"
+              element={<CategoryForm key="edit" />}
+            />
+            <Route path="/category-list" element={<CategoryList />} />
+            <Route path="/product-form" element={<ProductForm />} />
+            <Route path="/product-form/:id" element={<ProductForm />} />
+            <Route path="/product-list" element={<ProductList />} />
+            <Route path="/order-list" element={<OrderList />} />
+          </Route>
+        </Route>
+
+        <Route element={<RoleProtectedRoutes allowedRoles={["admin"]} />}>
+          <Route element={<AdminLayout />}>
+            <Route path="/admin/sellers" element={<AdminSellers />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/products" element={<AdminProducts />} />
+            <Route path="/admin/categories" element={<AdminCategories />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          </Route>
         </Route>
       </Routes>
 
