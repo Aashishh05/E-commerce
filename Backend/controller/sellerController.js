@@ -1,40 +1,8 @@
-import Seller from "../models/sellerModel.js";
 import asyncErrorHandler from "../middleware/asyncErrorHandler.js";
-import ErrorHandler from "../utils/ErrorHandler.js";
+import sellerService from "../services/sellerService.js";
 
-export const createSeller = asyncErrorHandler(async (req, res, next) => {
-  const userId = req.user._id;
-
-  const existingSeller = await Seller.findOne({ user: userId });
-
-  if (existingSeller) {
-    return next(new ErrorHandler("Seller profile already exists", 400));
-  }
-
-  const {
-    shopName,
-    description,
-    contactNumber,
-    address,
-    verificationStatus,
-    specialization,
-  } = req.body;
-
-  if (!shopName || !specialization) {
-    return next(
-      new ErrorHandler("shopName and specialization are required", 400),
-    );
-  }
-
-  const seller = await Seller.create({
-    user: userId,
-    shopName,
-    description,
-    contactNumber,
-    address,
-    verificationStatus,
-    specialization,
-  });
+export const createSeller = asyncErrorHandler(async (req, res) => {
+  const seller = await sellerService.createSeller(req.user, req.body);
 
   res.status(201).json({
     success: true,
@@ -43,15 +11,8 @@ export const createSeller = asyncErrorHandler(async (req, res, next) => {
   });
 });
 
-export const getSellerProfile = asyncErrorHandler(async (req, res, next) => {
-  const seller = await Seller.findOne({ user: req.user._id }).populate(
-    "user",
-    "name email role",
-  );
-
-  if (!seller) {
-    return next(new ErrorHandler("Seller not found", 404));
-  }
+export const getSellerProfile = asyncErrorHandler(async (req, res) => {
+  const seller = await sellerService.getSellerProfile(req.user);
 
   res.status(200).json({
     success: true,
@@ -60,8 +21,8 @@ export const getSellerProfile = asyncErrorHandler(async (req, res, next) => {
   });
 });
 
-export const getAllSeller = asyncErrorHandler(async (req, res, next) => {
-  const sellers = await Seller.find().populate("user", "name email");
+export const getAllSeller = asyncErrorHandler(async (req, res) => {
+  const sellers = await sellerService.getAllSellers();
 
   res.status(200).json({
     success: true,
@@ -71,15 +32,8 @@ export const getAllSeller = asyncErrorHandler(async (req, res, next) => {
   });
 });
 
-export const getSellerById = asyncErrorHandler(async (req, res, next) => {
-  const seller = await Seller.findById(req.params.id).populate(
-    "user",
-    "name email",
-  );
-
-  if (!seller) {
-    return next(new ErrorHandler("Seller not found", 404));
-  }
+export const getSellerById = asyncErrorHandler(async (req, res) => {
+  const seller = await sellerService.getSellerById(req.params.id);
 
   res.status(200).json({
     success: true,
@@ -88,20 +42,8 @@ export const getSellerById = asyncErrorHandler(async (req, res, next) => {
   });
 });
 
-export const updateSeller = asyncErrorHandler(async (req, res, next) => {
-  const { shopName, description, specialization } = req.body;
-
-  const seller = await Seller.findOne({ user: req.user._id });
-
-  if (!seller) {
-    return next(new ErrorHandler("Seller not found", 404));
-  }
-
-  if (shopName) seller.shopName = shopName;
-  if (description) seller.description = description;
-  if (specialization) seller.specialization = specialization;
-
-  await seller.save();
+export const updateSeller = asyncErrorHandler(async (req, res) => {
+  const seller = await sellerService.updateSeller(req.user, req.body);
 
   res.status(200).json({
     success: true,
@@ -110,25 +52,15 @@ export const updateSeller = asyncErrorHandler(async (req, res, next) => {
   });
 });
 
-export const verifySeller = asyncErrorHandler(async (req, res, next) => {
-  const { status } = req.body;
-
-  if (!["approved", "rejected"].includes(status)) {
-    return next(new ErrorHandler("Invalid verification status", 400));
-  }
-
-  const seller = await Seller.findById(req.params.id);
-
-  if (!seller) {
-    return next(new ErrorHandler("Seller not found", 404));
-  }
-
-  seller.verificationStatus = status;
-  await seller.save();
+export const verifySeller = asyncErrorHandler(async (req, res) => {
+  const seller = await sellerService.verifySeller(
+    req.params.id,
+    req.body.status,
+  );
 
   res.status(200).json({
     success: true,
-    message: `Seller ${status}`,
+    message: `Seller ${req.body.status}`,
     seller,
   });
 });
