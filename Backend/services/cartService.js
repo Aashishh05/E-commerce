@@ -1,3 +1,4 @@
+import redisClient from "../config/redis.js";
 import cartRepository from "../repositories/cartRepository.js";
 import ErrorHandler from "../utils/ErrorHandler.js";
 
@@ -73,17 +74,31 @@ class CartService {
 
     this.recalculateCart(cart);
 
-    return await cartRepository.saveCart(cart);
+    const savedCart = await cartRepository.saveCart(cart);
+
+    await redisClient.del(`cart:${user._id}`);
+
+    return savedCart;
   }
 
   async getCart(user) {
     this.checkBuyer(user);
+
+    const catchKey = `cart${user._id}`;
+
+    const catchedCart = await redisClient.get(catchKey);
+
+    if (catchedCart) {
+      return JSON.parse(catchedCart);
+    }
 
     let cart = await cartRepository.findCartByUserWithProducts(user._id);
 
     if (!cart) {
       cart = await cartRepository.createEmptyCart(user._id);
     }
+
+    await redisClient.setEx(catchKey, JSON.stringify(cart), { EX: 300 });
 
     return cart;
   }
@@ -123,7 +138,11 @@ class CartService {
 
     this.recalculateCart(cart);
 
-    return await cartRepository.saveCart(cart);
+    const savedCart = await cartRepository.saveCart(cart);
+
+    await redisClient.del(`cart:${user._id}`);
+
+    return savedCart;
   }
 
   async removeFromCart(user, productId) {
@@ -146,8 +165,12 @@ class CartService {
     }
 
     this.recalculateCart(cart);
+    const savedCart = await cartRepository.saveCart(cart);
 
-    return await cartRepository.saveCart(cart);
+    // Cart changed → remove old cache
+    await redisClient.del(`cart:${user._id}`);
+
+    return savedCart;
   }
 
   async deleteCart(user) {
@@ -158,6 +181,8 @@ class CartService {
     if (!cart) {
       throw new ErrorHandler("Cart not found", 404);
     }
+
+    await redisClient.del(`cart:${user._id}`);
 
     return cart;
   }
