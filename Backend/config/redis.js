@@ -1,9 +1,10 @@
 import redis from "redis";
 
 const redisClient = redis.createClient({
-  host: "localhost",
-  port: 6379,
-  // password: "redis123",
+  socket: {
+    host: "localhost",
+    port: 6379,
+  },
 });
 
 redisClient.on("error", (err) => {
