@@ -2,6 +2,7 @@ import categoryRepository from "../repositories/categoryRepository.js";
 import UploadToCloudinary from "../utils/uploadCloudinaryImage.js";
 import deleteCloudinaryImage from "../utils/deleteCloudinaryImage.js";
 import ErrorHandler from "../utils/ErrorHandler.js";
+import redisClient from "../config/redis.js";
 
 class CategoryService {
   validateCategoryName(name, message) {
@@ -34,7 +35,6 @@ class CategoryService {
     }
 
     const seller = await categoryRepository.findSellerByUser(user._id);
-   
 
     if (!seller) {
       throw new ErrorHandler("Seller profile not found", 404);
@@ -53,25 +53,56 @@ class CategoryService {
         public_id: uploadImage.public_id,
       };
     }
- 
-    return await categoryRepository.createCategory({
+
+    const category = await categoryRepository.createCategory({
       name: trimmedName,
       description: description?.trim(),
       image,
       seller: seller._id,
     });
+
+    await redisClient.del("categories");
+    await redisClient.del(`categories:seller:${seller._id}`);
+
+    return category;
   }
 
   async getAllCategories() {
-    return await categoryRepository.findAllCategories();
+    const cacheKey = "categories";
+
+    const cachedCategories = await redisClient.get(cacheKey);
+
+    if (cachedCategories) {
+      return JSON.parse(cachedCategories);
+    }
+
+    const categories = await categoryRepository.findAllCategories();
+
+    await redisClient.set(cacheKey, JSON.stringify(categories), {
+      EX: 300,
+    });
+
+    return categories;
   }
 
   async getCategoryById(categoryId) {
+    const cacheKey = `category:${categoryId}`;
+
+    const cachedCategory = await redisClient.get(cacheKey);
+
+    if (cachedCategory) {
+      return JSON.parse(cachedCategory);
+    }
+
     const category = await categoryRepository.findCategoryById(categoryId);
 
     if (!category) {
       throw new ErrorHandler("Category not found", 404);
     }
+
+    await redisClient.set(cacheKey, JSON.stringify(category), {
+      EX: 300,
+    });
 
     return category;
   }
@@ -128,7 +159,16 @@ class CategoryService {
       };
     }
 
-    return await categoryRepository.saveCategory(category);
+    const updatedCategory = await categoryRepository.saveCategory(category);
+
+    await redisClient.del(`category:${categoryId}`);
+    await redisClient.del("categories");
+
+    if (category.seller) {
+      await redisClient.del(`categories:seller:${category.seller}`);
+    }
+
+    return updatedCategory;
   }
 
   async deleteCategory(categoryId) {
@@ -143,6 +183,13 @@ class CategoryService {
     }
 
     await categoryRepository.deleteCategory(category);
+
+    await redisClient.del(`category:${categoryId}`);
+    await redisClient.del("categories");
+
+    if (category.seller) {
+      await redisClient.del(`categories:seller:${category.seller}`);
+    }
   }
 
   async getMyCategories(user) {
@@ -154,7 +201,23 @@ class CategoryService {
       throw new ErrorHandler("Seller profile not found", 404);
     }
 
-    return await categoryRepository.findCategoriesBySeller(seller._id);
+    const cacheKey = `categories:seller:${seller._id}`;
+
+    const cachedCategories = await redisClient.get(cacheKey);
+
+    if (cachedCategories) {
+      return JSON.parse(cachedCategories);
+    }
+
+    const categories = await categoryRepository.findCategoriesBySeller(
+      seller._id,
+    );
+
+    await redisClient.set(cacheKey, JSON.stringify(categories), {
+      EX: 300,
+    });
+
+    return categories;
   }
 }
 
