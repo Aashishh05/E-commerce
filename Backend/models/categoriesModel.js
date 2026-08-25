@@ -10,7 +10,11 @@ const categorySchema = new mongoose.Schema(
       unique: true,
       maxlength: 100,
     },
-
+    seller: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Seller",
+      required: true,
+    },
     slug: {
       type: String,
       unique: true,

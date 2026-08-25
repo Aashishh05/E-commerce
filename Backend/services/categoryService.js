@@ -14,29 +14,30 @@ class CategoryService {
 
   checkSeller(user) {
     if (user.role !== "seller") {
-      throw new ErrorHandler(
-        "Only sellers can access this",
-        403,
-      );
+      throw new ErrorHandler("Only sellers can access this", 403);
     }
   }
 
-  async createCategory(name, description, file) {
+  async createCategory(name, description, file, user) {
+    this.checkSeller(user);
+
     const trimmedName = this.validateCategoryName(
       name,
       "Category name is required",
     );
 
     const existingCategory =
-      await categoryRepository.findCategoryByName(
-        trimmedName,
-      );
+      await categoryRepository.findCategoryByName(trimmedName);
 
     if (existingCategory) {
-      throw new ErrorHandler(
-        "Category with this name already exists",
-        400,
-      );
+      throw new ErrorHandler("Category with this name already exists", 400);
+    }
+
+    const seller = await categoryRepository.findSellerByUser(user._id);
+   
+
+    if (!seller) {
+      throw new ErrorHandler("Seller profile not found", 404);
     }
 
     let image = {};
@@ -52,11 +53,12 @@ class CategoryService {
         public_id: uploadImage.public_id,
       };
     }
-
+ 
     return await categoryRepository.createCategory({
       name: trimmedName,
       description: description?.trim(),
       image,
+      seller: seller._id,
     });
   }
 
@@ -65,10 +67,7 @@ class CategoryService {
   }
 
   async getCategoryById(categoryId) {
-    const category =
-      await categoryRepository.findCategoryById(
-        categoryId,
-      );
+    const category = await categoryRepository.findCategoryById(categoryId);
 
     if (!category) {
       throw new ErrorHandler("Category not found", 404);
@@ -77,27 +76,12 @@ class CategoryService {
     return category;
   }
 
-  async updateCategory(
-    categoryId,
-    name,
-    description,
-    file,
-  ) {
-    if (
-      name === undefined &&
-      description === undefined &&
-      !file
-    ) {
-      throw new ErrorHandler(
-        "Provide at least one field to update",
-        400,
-      );
+  async updateCategory(categoryId, name, description, file) {
+    if (name === undefined && description === undefined && !file) {
+      throw new ErrorHandler("Provide at least one field to update", 400);
     }
 
-    const category =
-      await categoryRepository.findCategoryById(
-        categoryId,
-      );
+    const category = await categoryRepository.findCategoryById(categoryId);
 
     if (!category) {
       throw new ErrorHandler("Category not found", 404);
@@ -109,11 +93,10 @@ class CategoryService {
         "Category name cannot be empty",
       );
 
-      const existingCategory =
-        await categoryRepository.findCategoryByName(
-          trimmedName,
-          categoryId,
-        );
+      const existingCategory = await categoryRepository.findCategoryByName(
+        trimmedName,
+        categoryId,
+      );
 
       if (existingCategory) {
         throw new ErrorHandler(
@@ -131,9 +114,7 @@ class CategoryService {
 
     if (file) {
       if (category.image?.public_id) {
-        await deleteCloudinaryImage(
-          category.image.public_id,
-        );
+        await deleteCloudinaryImage(category.image.public_id);
       }
 
       const uploadImage = await UploadToCloudinary(
@@ -147,25 +128,18 @@ class CategoryService {
       };
     }
 
-    return await categoryRepository.saveCategory(
-      category,
-    );
+    return await categoryRepository.saveCategory(category);
   }
 
   async deleteCategory(categoryId) {
-    const category =
-      await categoryRepository.findCategoryById(
-        categoryId,
-      );
+    const category = await categoryRepository.findCategoryById(categoryId);
 
     if (!category) {
       throw new ErrorHandler("Category not found", 404);
     }
 
     if (category.image?.public_id) {
-      await deleteCloudinaryImage(
-        category.image.public_id,
-      );
+      await deleteCloudinaryImage(category.image.public_id);
     }
 
     await categoryRepository.deleteCategory(category);
@@ -174,21 +148,13 @@ class CategoryService {
   async getMyCategories(user) {
     this.checkSeller(user);
 
-    const seller =
-      await categoryRepository.findSellerByUser(
-        user._id,
-      );
+    const seller = await categoryRepository.findSellerByUser(user._id);
 
     if (!seller) {
-      throw new ErrorHandler(
-        "Seller profile not found",
-        404,
-      );
+      throw new ErrorHandler("Seller profile not found", 404);
     }
 
-    return await categoryRepository.findCategoriesBySeller(
-      seller._id,
-    );
+    return await categoryRepository.findCategoriesBySeller(seller._id);
   }
 }
 
