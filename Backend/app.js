@@ -3,8 +3,11 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import mainRoutes from "./routes/mainRoutes.js";
 import errorMiddleware from "./middleware/errorMiddleware.js";
+import redisClient from "./config/redis.js"
 
 const app = express();
+
+app.locals.redisClient = redisClient;
 
 const allowedOrigins = [
   "http://localhost:5173",
