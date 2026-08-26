@@ -1,19 +1,11 @@
 import bcrypt from "bcrypt";
-
-import authRepository from "../repositories/authRepository.js";
-
-import UploadToCloudinary from "../utils/uploadCloudinaryImage.js";
-
-import deleteCloudinaryImage from "../utils/deleteCloudinaryImage.js";
-
+import authRepository from "../repositories/authRepository.js"
+import UploadToCloudinary from "../middleware/uploadMiddleware.js"
+import deleteCloudinaryImage from "../utils/deleteCloudinaryImage.js"
 import { transporter } from "../config/nodemailer.js";
-
 import { generateToken } from "../utils/jwt.js";
-
 import ErrorHandler from "../utils/ErrorHandler.js";
-
 import fs from "fs";
-
 import redisClient from "../config/redis.js";
 
 class AuthService {

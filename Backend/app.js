@@ -1,9 +1,9 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import mainRoutes from "./routes/mainRoutes.js";
-import errorMiddleware from "./middleware/errorMiddleware.js";
-import redisClient from "./config/redis.js"
+import mainRoutes from "./src/routes/mainRoutes.js";
+import errorMiddleware from "./src/middleware/errorMiddleware.js";
+import redisClient from "./src/config/redis.js"
 
 const app = express();
 

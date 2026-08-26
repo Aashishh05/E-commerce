@@ -7,8 +7,6 @@ import Seller from "../models/sellerModel.js";
 import Category from "../models/categoriesModel.js";
 
 class AdminRepository {
-  // ==================== USERS ====================
-
   async findAllUsers(filter, skip, limit) {
     return await User.find(filter)
       .select("-password")
@@ -37,8 +35,6 @@ class AdminRepository {
     return await User.findByIdAndDelete(id);
   }
 
-  // ==================== SELLERS ====================
-
   async findAllSellers(skip, limit) {
     return await Seller.find()
       .populate("user", "name email role")
@@ -52,10 +48,7 @@ class AdminRepository {
   }
 
   async findSellerById(id) {
-    return await Seller.findById(id).populate(
-      "user",
-      "name email role"
-    );
+    return await Seller.findById(id).populate("user", "name email role");
   }
 
   async findSellerByIdWithoutPopulate(id) {
@@ -65,8 +58,6 @@ class AdminRepository {
   async saveSeller(seller) {
     return await seller.save();
   }
-
-  // ==================== CATEGORIES ====================
 
   async findCategoryByName(nameRegex) {
     return await Category.findOne({
@@ -116,8 +107,6 @@ class AdminRepository {
     return await category.deleteOne();
   }
 
-  // ==================== PRODUCTS ====================
-
   async findAllProducts(query, skip, limit) {
     return await Product.find(query)
       .populate({
@@ -160,11 +149,9 @@ class AdminRepository {
             product: productId,
           },
         },
-      }
+      },
     );
   }
-
-  // ==================== ORDERS ====================
 
   async findAllOrders(query, skip, limit) {
     return await Order.find(query)
@@ -205,8 +192,6 @@ class AdminRepository {
       });
   }
 
-  // ==================== USER RELATED DATA ====================
-
   async deleteProductsBySeller(sellerId) {
     return await Product.deleteMany({
       seller: sellerId,
@@ -230,8 +215,6 @@ class AdminRepository {
       user: userId,
     });
   }
-
-  // ==================== DASHBOARD ====================
 
   async countBuyerUsers() {
     return await User.countDocuments({
