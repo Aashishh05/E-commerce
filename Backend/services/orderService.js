@@ -1,5 +1,8 @@
 import orderRepository from "../repositories/orderRepository.js";
+
 import ErrorHandler from "../utils/ErrorHandler.js";
+
+import redisClient from "../config/redis.js";
 
 const validTransitions = {
   pending: ["confirmed", "cancelled"],
@@ -34,9 +37,7 @@ class OrderService {
   ) {
     this.validateShippingAddress(shippingAddress);
 
-    const cart = await orderRepository.findCartByUser(
-      user._id,
-    );
+    const cart = await orderRepository.findCartByUser(user._id);
 
     if (!cart || cart.items.length === 0) {
       throw new ErrorHandler("Cart is empty", 400);
@@ -49,17 +50,11 @@ class OrderService {
       const product = item.product;
 
       if (!product) {
-        throw new ErrorHandler(
-          "One or more products no longer exist",
-          404,
-        );
+        throw new ErrorHandler("One or more products no longer exist", 404);
       }
 
       if (product.status !== "active") {
-        throw new ErrorHandler(
-          `${product.name} is not available`,
-          400,
-        );
+        throw new ErrorHandler(`${product.name} is not available`, 400);
       }
 
       if (product.stock < item.quantity) {
@@ -73,6 +68,8 @@ class OrderService {
       product.sold += item.quantity;
 
       await orderRepository.saveProduct(product);
+
+      await redisClient.del(`product:${product._id}`);
 
       orderItems.push({
         product: product._id,
@@ -107,55 +104,79 @@ class OrderService {
 
     await orderRepository.saveCart(cart);
 
+    await redisClient.del(`cart:${user._id}`);
+    await redisClient.del(`orders:buyer:${user._id}`);
+    await redisClient.del("admin:dashboard");
+    await redisClient.del("admin:orders");
+
     return order;
   }
 
   async getMyOrders(user) {
-    return await orderRepository.findOrdersByBuyer(
-      user._id,
-    );
+    const cacheKey = `orders:buyer:${user._id}`;
+
+    const cachedOrders = await redisClient.get(cacheKey);
+
+    if (cachedOrders) {
+      return JSON.parse(cachedOrders);
+    }
+
+    const orders = await orderRepository.findOrdersByBuyer(user._id);
+
+    await redisClient.set(cacheKey, JSON.stringify(orders), {
+      EX: 300,
+    });
+
+    return orders;
   }
 
   async getOrderById(orderId, user) {
-    const order =
-      await orderRepository.findOrderById(orderId);
+    const cacheKey = `order:${orderId}`;
+
+    const cachedOrder = await redisClient.get(cacheKey);
+
+    if (cachedOrder) {
+      const order = JSON.parse(cachedOrder);
+
+      if (
+        order.buyer._id.toString() !== user._id.toString() &&
+        user.role !== "admin"
+      ) {
+        throw new ErrorHandler("Not authorized to view this order", 403);
+      }
+
+      return order;
+    }
+
+    const order = await orderRepository.findOrderById(orderId);
 
     if (!order) {
       throw new ErrorHandler("Order not found", 404);
     }
 
     if (
-      order.buyer._id.toString() !==
-        user._id.toString() &&
+      order.buyer._id.toString() !== user._id.toString() &&
       user.role !== "admin"
     ) {
-      throw new ErrorHandler(
-        "Not authorized to view this order",
-        403,
-      );
+      throw new ErrorHandler("Not authorized to view this order", 403);
     }
+
+    await redisClient.set(cacheKey, JSON.stringify(order), {
+      EX: 300,
+    });
 
     return order;
   }
 
   async cancelOrder(orderId, user, cancelReason) {
-    const order =
-      await orderRepository.findOrderByIdWithoutPopulate(
-        orderId,
-      );
+    const order = await orderRepository.findOrderByIdWithoutPopulate(orderId);
 
     if (!order) {
       throw new ErrorHandler("Order not found", 404);
     }
 
-    if (
-      order.buyer.toString() !==
-      user._id.toString()
-    ) {
-      throw new ErrorHandler(
-        "Unauthorized to cancel this order",
-        403,
-      );
+    if (order.buyer.toString() !== user._id.toString()) {
+      throw new ErrorHandler("Unauthorized to cancel this order", 403);
     }
 
     if (order.status !== "pending") {
@@ -166,58 +187,55 @@ class OrderService {
     }
 
     for (const item of order.orderItems) {
-      const product =
-        await orderRepository.findProductById(
-          item.product,
-        );
+      const product = await orderRepository.findProductById(item.product);
 
       if (product) {
         product.stock += item.quantity;
-        product.sold = Math.max(
-          0,
-          product.sold - item.quantity,
-        );
+
+        product.sold = Math.max(0, product.sold - item.quantity);
 
         await orderRepository.saveProduct(product);
+
+        await redisClient.del(`product:${product._id}`);
       }
     }
 
     order.status = "cancelled";
-    order.cancelReason =
-      cancelReason ||
-      "User requested cancellation";
+
+    order.cancelReason = cancelReason || "User requested cancellation";
 
     await orderRepository.saveOrder(order);
+
+    await redisClient.del(`order:${orderId}`);
+    await redisClient.del(`orders:buyer:${user._id}`);
+    await redisClient.del("admin:dashboard");
+    await redisClient.del("admin:orders");
 
     return order;
   }
 
   async getSellerOrders(user) {
-    const seller =
-      await orderRepository.findSellerByUser(
-        user._id,
-      );
+    const seller = await orderRepository.findSellerByUser(user._id);
 
     if (!seller) {
-      throw new ErrorHandler(
-        "Seller profile not found",
-        404,
-      );
+      throw new ErrorHandler("Seller profile not found", 404);
     }
 
-    const orders =
-      await orderRepository.findOrdersBySeller(
-        seller._id,
-      );
+    const cacheKey = `orders:seller:${seller._id}`;
 
-    return orders
+    const cachedOrders = await redisClient.get(cacheKey);
+
+    if (cachedOrders) {
+      return JSON.parse(cachedOrders);
+    }
+
+    const orders = await orderRepository.findOrdersBySeller(seller._id);
+
+    const result = orders
       .map((order) => {
-        const sellerItems =
-          order.orderItems.filter(
-            (item) =>
-              item.sellerId.toString() ===
-              seller._id.toString(),
-          );
+        const sellerItems = order.orderItems.filter(
+          (item) => item.sellerId.toString() === seller._id.toString(),
+        );
 
         if (sellerItems.length === 0) {
           return null;
@@ -239,54 +257,36 @@ class OrderService {
         };
       })
       .filter((order) => order !== null);
+
+    await redisClient.set(cacheKey, JSON.stringify(result), {
+      EX: 300,
+    });
+
+    return result;
   }
 
-  async updateOrderStatus(
-    orderId,
-    user,
-    status,
-    trackingNumber,
-  ) {
-    const seller =
-      await orderRepository.findSellerByUser(
-        user._id,
-      );
+  async updateOrderStatus(orderId, user, status, trackingNumber) {
+    const seller = await orderRepository.findSellerByUser(user._id);
 
     if (!seller) {
-      throw new ErrorHandler(
-        "Seller not found",
-        404,
-      );
+      throw new ErrorHandler("Seller not found", 404);
     }
 
-    const order =
-      await orderRepository.findOrderByIdWithoutPopulate(
-        orderId,
-      );
+    const order = await orderRepository.findOrderByIdWithoutPopulate(orderId);
 
     if (!order) {
-      throw new ErrorHandler(
-        "Order not found",
-        404,
-      );
+      throw new ErrorHandler("Order not found", 404);
     }
 
     const ownerOrder = order.orderItems.some(
-      (item) =>
-        item.sellerId.toString() ===
-        seller._id.toString(),
+      (item) => item.sellerId.toString() === seller._id.toString(),
     );
 
     if (!ownerOrder) {
-      throw new ErrorHandler(
-        "Unauthorized to update this order",
-        403,
-      );
+      throw new ErrorHandler("Unauthorized to update this order", 403);
     }
 
-    if (
-      !validTransitions[order.status]?.includes(status)
-    ) {
+    if (!validTransitions[order.status]?.includes(status)) {
       throw new ErrorHandler(
         `Cannot change order status from '${order.status}' to '${status}'`,
         400,
@@ -305,6 +305,12 @@ class OrderService {
     }
 
     await orderRepository.saveOrder(order);
+
+    await redisClient.del(`order:${orderId}`);
+    await redisClient.del(`orders:buyer:${order.buyer}`);
+    await redisClient.del(`orders:seller:${seller._id}`);
+    await redisClient.del("admin:dashboard");
+    await redisClient.del("admin:orders");
 
     return order;
   }
