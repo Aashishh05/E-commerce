@@ -1,12 +1,20 @@
 import bcrypt from "bcrypt";
 
-import authRepository from "../repositories/authRepository.js"
+import authRepository from "../repositories/authRepository.js";
+
 import UploadToCloudinary from "../utils/uploadCloudinaryImage.js";
+
 import deleteCloudinaryImage from "../utils/deleteCloudinaryImage.js";
+
 import { transporter } from "../config/nodemailer.js";
+
 import { generateToken } from "../utils/jwt.js";
+
 import ErrorHandler from "../utils/ErrorHandler.js";
+
 import fs from "fs";
+
+import redisClient from "../config/redis.js";
 
 class AuthService {
   async registerUser(data, file) {
@@ -72,6 +80,8 @@ class AuthService {
       `,
     });
 
+    await redisClient.del(`auth:user:${email}`);
+
     const token = generateToken(user._id);
 
     return {
@@ -110,7 +120,6 @@ class AuthService {
       );
     }
 
-    // Check seller status
     if (user.role === "seller") {
       const seller = await authRepository.findSellerByUserId(user._id);
 
@@ -137,11 +146,23 @@ class AuthService {
   }
 
   async getCurrentUser(userId) {
+    const cacheKey = `auth:user:${userId}`;
+
+    const cachedUser = await redisClient.get(cacheKey);
+
+    if (cachedUser) {
+      return JSON.parse(cachedUser);
+    }
+
     const user = await authRepository.findUserByIdWithoutPassword(userId);
 
     if (!user) {
       throw new ErrorHandler("User not found", 404);
     }
+
+    await redisClient.set(cacheKey, JSON.stringify(user), {
+      EX: 300,
+    });
 
     return user;
   }
@@ -181,6 +202,8 @@ class AuthService {
       await authRepository.saveUser(user);
     }
 
+    await redisClient.del(`auth:user:${userId}`);
+
     return user;
   }
 
@@ -208,6 +231,8 @@ class AuthService {
     user.otpExpire = null;
 
     await authRepository.saveUser(user);
+
+    await redisClient.del(`auth:user:${user._id}`);
   }
 
   async forgotPassword(email) {
@@ -223,6 +248,8 @@ class AuthService {
     user.otpExpire = Date.now() + 10 * 60 * 1000;
 
     await authRepository.saveUser(user);
+
+    await redisClient.del(`auth:user:${user._id}`);
 
     await transporter.sendMail({
       from: process.env.SMTP_SENDER,
@@ -257,11 +284,12 @@ class AuthService {
     }
 
     user.password = await bcrypt.hash(password, 10);
-
     user.otp = null;
     user.otpExpire = null;
 
     await authRepository.saveUser(user);
+
+    await redisClient.del(`auth:user:${user._id}`);
   }
 }
 
