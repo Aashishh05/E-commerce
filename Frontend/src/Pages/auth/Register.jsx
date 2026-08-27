@@ -58,7 +58,6 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const navigate = useNavigate();
-
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
       const payload = {
@@ -76,7 +75,7 @@ const Register = () => {
       const res = await API.post("/api/auth/register", payload);
       toast.success(res.data.message || "Registration successful! 🎉");
       setTimeout(
-        () => navigate("/verify-otp", { state: { email: values.email } }),
+        () => navigate("/login"), 
         1000,
       );
     } catch (error) {

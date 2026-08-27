@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
-import authRepository from "../repositories/authRepository.js"
-import UploadToCloudinary from "../middleware/uploadMiddleware.js"
-import deleteCloudinaryImage from "../utils/deleteCloudinaryImage.js"
+import authRepository from "../repositories/authRepository.js";
+import UploadToCloudinary from "../middleware/uploadMiddleware.js";
+import deleteCloudinaryImage from "../utils/deleteCloudinaryImage.js";
 import { transporter } from "../config/nodemailer.js";
 import { generateToken } from "../utils/jwt.js";
 import ErrorHandler from "../utils/ErrorHandler.js";
@@ -10,7 +10,18 @@ import redisClient from "../config/redis.js";
 
 class AuthService {
   async registerUser(data, file) {
-    const { name, email, password, role, shopName, specialization } = data;
+    const {
+      name,
+      email,
+      password,
+      role,
+      shopName,
+      specialization,
+      description,
+      contactNumber,
+      address,
+    } = data;
+    console.log(data);
 
     if (!name || !email || !password) {
       throw new ErrorHandler("All fields are required", 400);
@@ -40,39 +51,31 @@ class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
+  
     const user = await authRepository.createUser({
       name,
       email,
       images,
       password: hashedPassword,
-      otp,
-      otpExpire: Date.now() + 10 * 60 * 1000,
+      isVerified: true,
       role: role || "buyer",
     });
 
+  
     if (role === "seller") {
       await authRepository.createSeller({
         user: user._id,
         shopName: shopName || `${name}'s Shop`,
         specialization: specialization || "General",
+        ...(description && { description }),
+        ...(contactNumber && { contactNumber }),
+        ...(address && { address }),
       });
     }
 
-    await transporter.sendMail({
-      from: process.env.SMTP_SENDER,
-      to: email,
-      subject: "Verify your account — OTP",
-      html: `
-        <h2>Welcome to the platform!</h2>
-        <p>Your verification OTP is:</p>
-        <h1>${otp}</h1>
-        <p>This OTP is valid for 10 minutes.</p>
-      `,
-    });
-
+   
     await redisClient.del(`auth:user:${email}`);
+    await redisClient.del(`auth:user:${user._id}`);
 
     const token = generateToken(user._id);
 
@@ -87,7 +90,6 @@ class AuthService {
       },
     };
   }
-
   async loginUser(email, password) {
     if (!email || !password) {
       throw new ErrorHandler("Email and password are required", 400);
