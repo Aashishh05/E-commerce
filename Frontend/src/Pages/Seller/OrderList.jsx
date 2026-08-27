@@ -14,6 +14,7 @@ import {
   Calendar,
   Download,
   Package,
+  Hash,
 } from "lucide-react";
 import API from "../../utils/axios";
 
@@ -31,10 +32,21 @@ const fadeUp = {
   },
 };
 
+const validTransitions = {
+  pending: ["confirmed", "cancelled"],
+  confirmed: ["processing"],
+  processing: ["shipped"],
+  shipped: ["delivered"],
+  delivered: [],
+  cancelled: [],
+};
+
 const getStatusConfig = (status) => {
   switch (status) {
     case "pending":
       return { color: "amber", icon: Clock, label: "Pending" };
+    case "confirmed":
+      return { color: "blue", icon: FileText, label: "Confirmed" };
     case "processing":
       return { color: "blue", icon: FileText, label: "Processing" };
     case "shipped":
@@ -58,26 +70,35 @@ const formatDate = (dateString) => {
   }).format(new Date(dateString));
 };
 
+const StatusPriority = {
+  pending: 1,
+  confirmed: 2,
+  processing: 3,
+  shipped: 4,
+  delivered: 6,
+  cancelled: 5,
+};
+
 const OrderList = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [openMenu, setOpenMenu] = useState(null);
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
 
   useEffect(() => {
     const fetchSellerOrders = async () => {
       try {
         setLoading(true);
         const res = await API.get("/api/order/seller");
-        console.log(res);
-
         const responseData = res.data?.data || res.data?.orders || res.data;
         setOrders(Array.isArray(responseData) ? responseData : []);
       } catch (error) {
         if (!error._isHandled) {
           toast.error(
-            error.response?.data?.message || "Failed to fetch seller orders",
+            error.response?.data?.message || "Failed to fetch seller orders"
           );
         }
       } finally {
@@ -88,10 +109,39 @@ const OrderList = () => {
     fetchSellerOrders();
   }, []);
 
+  const handleStatusUpdate = async (
+    orderId,
+    newStatus,
+    trackingNumber = ""
+  ) => {
+    try {
+      setUpdatingOrderId(orderId);
+      await API.put(`/api/order/update/${orderId}`, {
+        status: newStatus,
+        trackingNumber: newStatus === "shipped" ? trackingNumber : undefined,
+      });
+
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order._id === orderId ? { ...order, status: newStatus } : order
+        )
+      );
+
+      toast.success(`Order status updated to ${newStatus}`);
+      setOpenMenu(null);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to update order status"
+      );
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
   const filtered = orders.filter((o) => {
-    const orderId = String(o.id || o._id || "");
+    const orderId = String(o.orderId || o._id || "");
     const customerName = String(
-      o.customer || o.shippingAddress?.fullName || "",
+      o.buyer?.name || o.customer || o.shippingAddress?.fullName || ""
     );
     const customerEmail = String(o.email || o.customerEmail || "");
 
@@ -103,6 +153,13 @@ const OrderList = () => {
     const matchesStatus = statusFilter === "all" || o.status === statusFilter;
 
     return matchesSearch && matchesStatus;
+  });
+
+  // Sort orders: pending/confirmed/processing first, then shipped, cancelled, delivered last
+  const sortedOrders = [...filtered].sort((a, b) => {
+    const priorityA = StatusPriority[a.status] || 0;
+    const priorityB = StatusPriority[b.status] || 0;
+    return priorityA - priorityB;
   });
 
   return (
@@ -164,6 +221,7 @@ const OrderList = () => {
           {[
             "all",
             "pending",
+            "confirmed",
             "processing",
             "shipped",
             "delivered",
@@ -199,10 +257,12 @@ const OrderList = () => {
                 Loading orders...
               </p>
             </motion.div>
-          ) : filtered.length > 0 ? (
-            filtered.map((order) => {
-              const orderId = order.id || order._id;
+          ) : sortedOrders.length > 0 ? (
+            sortedOrders.map((order) => {
+              const orderId = order._id;
+              const orderNumber = order.orderId || `#${order._id?.slice(-8).toUpperCase()}`;
               const customerName =
+                order.buyer?.name ||
                 order.customer ||
                 order.shippingAddress?.fullName ||
                 "Guest Customer";
@@ -213,7 +273,7 @@ const OrderList = () => {
 
               const totalAmount = itemsList.reduce(
                 (sum, item) => sum + item.price * item.quantity,
-                0,
+                0
               );
               let productName = order.productName || order.product?.name;
               if (!productName && itemsList.length > 0) {
@@ -227,6 +287,7 @@ const OrderList = () => {
               productName = productName || "Various Products";
 
               const orderDate = order.date || order.createdAt;
+              const availableTransitions = validTransitions[order.status] || [];
 
               return (
                 <motion.div
@@ -241,15 +302,21 @@ const OrderList = () => {
                     boxShadow: "0 12px 32px rgba(0, 0, 0, 0.05)",
                     transition: { duration: 0.2 },
                   }}
-                  className="bg-white/70 backdrop-blur-sm border border-stone-200/60 rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-5 transition-all group"
+                  className="bg-white/70 backdrop-blur-sm border border-stone-200/60 rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-5 transition-all group relative"
                 >
-                  <div className="flex items-center gap-5 min-w-[200px]">
+                  <div className="flex items-center gap-5 min-w-[250px]">
                     <div
                       className={`p-3 rounded-xl bg-${statusCfg.color}-50 text-${statusCfg.color}-600`}
                     >
                       <StatusIcon size={20} />
                     </div>
                     <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Hash size={14} className="text-stone-400" />
+                        <p className="text-xs font-bold text-stone-500 tracking-wider">
+                          {orderNumber}
+                        </p>
+                      </div>
                       <p className="text-sm font-medium text-stone-600">
                         {customerName}
                       </p>
@@ -294,13 +361,15 @@ const OrderList = () => {
                         className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border-2 mb-1.5 ${
                           order.status === "delivered"
                             ? "text-green-700 bg-green-50 border-green-200/60"
-                            : order.status === "processing"
-                              ? "text-blue-700 bg-blue-50 border-blue-200/60"
-                              : order.status === "cancelled"
-                                ? "text-red-700 bg-red-50 border-red-200/60"
-                                : order.status === "shipped"
-                                  ? "text-purple-700 bg-purple-50 border-purple-200/60"
-                                  : "text-amber-700 bg-amber-50 border-amber-200/60"
+                            : order.status === "cancelled"
+                              ? "text-red-700 bg-red-50 border-red-200/60"
+                              : order.status === "processing"
+                                ? "text-blue-700 bg-blue-50 border-blue-200/60"
+                                : order.status === "confirmed"
+                                  ? "text-blue-700 bg-blue-50 border-blue-200/60"
+                                  : order.status === "shipped"
+                                    ? "text-purple-700 bg-purple-50 border-purple-200/60"
+                                    : "text-amber-700 bg-amber-50 border-amber-200/60"
                         }`}
                       >
                         {statusCfg.label}
@@ -323,17 +392,75 @@ const OrderList = () => {
                       >
                         <Eye size={16} />
                       </motion.button>
-                      <motion.button
-                        whileHover={{
-                          scale: 1.05,
-                          backgroundColor: "rgba(28, 25, 23, 0.05)",
-                        }}
-                        whileTap={{ scale: 0.95 }}
-                        className="p-2.5 text-stone-500 border-2 border-stone-200/60 rounded-xl hover:border-stone-400 hover:text-stone-700 bg-transparent transition-all cursor-pointer"
-                        title="More Actions"
-                      >
-                        <MoreVertical size={16} />
-                      </motion.button>
+
+                      <div className="relative">
+                        <motion.button
+                          whileHover={{
+                            scale: 1.05,
+                            backgroundColor: "rgba(28, 25, 23, 0.05)",
+                          }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() =>
+                            setOpenMenu(openMenu === orderId ? null : orderId)
+                          }
+                          disabled={
+                            order.status === "cancelled" ||
+                            order.status === "delivered"
+                          }
+                          className={`p-2.5 border-2 rounded-xl transition-all cursor-pointer ${
+                            order.status === "cancelled" ||
+                            order.status === "delivered"
+                              ? "text-stone-300 border-stone-200/40 cursor-not-allowed opacity-50"
+                              : "text-stone-500 border-stone-200/60 hover:border-stone-400 hover:text-stone-700"
+                          }`}
+                          title="More Actions"
+                        >
+                          <MoreVertical size={16} />
+                        </motion.button>
+
+                        <AnimatePresence>
+                          {openMenu === orderId &&
+                            order.status !== "cancelled" &&
+                            order.status !== "delivered" && (
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                className="absolute right-0 mt-2 bg-white border border-stone-200/60 rounded-xl shadow-lg z-50 min-w-[180px] overflow-hidden"
+                              >
+                                {availableTransitions.length > 0 ? (
+                                  <div className="py-1">
+                                    {availableTransitions.map((nextStatus) => (
+                                      <motion.button
+                                        key={nextStatus}
+                                        whileHover={{
+                                          backgroundColor:
+                                            "rgba(22, 101, 52, 0.05)",
+                                        }}
+                                        onClick={() =>
+                                          handleStatusUpdate(
+                                            orderId,
+                                            nextStatus
+                                          )
+                                        }
+                                        disabled={updatingOrderId === orderId}
+                                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-stone-700 hover:bg-green-50 transition-colors disabled:opacity-50"
+                                      >
+                                        {nextStatus === "cancelled"
+                                          ? "🚫 Cancel Order"
+                                          : `Update to ${nextStatus}`}
+                                      </motion.button>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="px-4 py-3 text-xs text-stone-500 font-medium">
+                                    No actions available
+                                  </div>
+                                )}
+                              </motion.div>
+                            )}
+                        </AnimatePresence>
+                      </div>
                     </div>
                   </div>
                 </motion.div>

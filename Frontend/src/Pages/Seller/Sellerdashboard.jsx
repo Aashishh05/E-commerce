@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
 import {
   Plus,
   Tag,
@@ -9,12 +8,12 @@ import {
   FileText,
   Zap,
   ArrowUpRight,
+  TrendingUp,
+  Bell,
+  CheckCircle2,
+  Truck,
 } from "lucide-react";
 import API from "../../utils/axios";
-
-// ============================================================================
-// ANIMATIONS
-// ============================================================================
 
 const stagger = {
   hidden: {},
@@ -30,14 +29,12 @@ const fadeUp = {
   },
 };
 
-// ============================================================================
-// UTILITY FUNCTIONS
-// ============================================================================
-
 const getStatusConfig = (status) => {
   switch (status) {
     case "pending":
       return { color: "amber", label: "Pending" };
+    case "confirmed":
+      return { color: "blue", label: "Confirmed" };
     case "processing":
       return { color: "blue", label: "Processing" };
     case "shipped":
@@ -51,29 +48,16 @@ const getStatusConfig = (status) => {
   }
 };
 
-// ============================================================================
-// MAIN DASHBOARD COMPONENT (Overview only)
-// ============================================================================
-
 const SellerDashboard = () => {
   const navigate = useNavigate();
 
-  // Products data
   const [products, setProducts] = useState([]);
-
-  // Categories data
   const [categories, setCategories] = useState([]);
-
-  // Orders data
   const [orders, setOrders] = useState([]);
+  const [messages, setMessages] = useState([]);
 
-  // Loading and error states
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  // ============================================================================
-  // DATA FETCHING
-  // ============================================================================
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -99,7 +83,23 @@ const SellerDashboard = () => {
     try {
       const res = await API.get("/api/order/seller");
       const responseData = res.data?.data || res.data?.orders || res.data;
-      setOrders(Array.isArray(responseData) ? responseData : []);
+      const ordersArray = Array.isArray(responseData) ? responseData : [];
+      setOrders(ordersArray);
+
+      const newMessages = ordersArray
+        .filter((order) =>
+          ["confirmed", "shipped", "delivered"].includes(order.status),
+        )
+        .map((order) => ({
+          id: `${order._id}-${order.status}`,
+          orderId: order._id,
+          status: order.status,
+          customer:
+            order.buyer?.name || order.shippingAddress?.fullName || "Customer",
+          createdAt: order.updatedAt || order.createdAt,
+        }));
+
+      setMessages(newMessages);
     } catch (err) {
       if (!err._isHandled) {
         console.error("Error fetching orders:", err);
@@ -124,9 +124,20 @@ const SellerDashboard = () => {
     loadDashboardData();
   }, [fetchProducts, fetchCategories, fetchOrders]);
 
-  // ============================================================================
-  // LOADING STATE
-  // ============================================================================
+  const totalSales = orders
+    .filter((o) => o.status === "delivered")
+    .reduce((sum, order) => {
+      const itemsList = order.orderItems || order.items || [];
+      const orderTotal = itemsList.reduce(
+        (s, item) => s + item.price * item.quantity,
+        0,
+      );
+      return sum + orderTotal;
+    }, 0);
+
+  const deliveredOrdersCount = orders.filter(
+    (o) => o.status === "delivered",
+  ).length;
 
   if (loading) {
     return (
@@ -147,10 +158,6 @@ const SellerDashboard = () => {
     );
   }
 
-  // ============================================================================
-  // RENDER
-  // ============================================================================
-
   return (
     <motion.div
       variants={stagger}
@@ -158,7 +165,6 @@ const SellerDashboard = () => {
       animate="visible"
       className="space-y-8 px-4"
     >
-      {/* Header */}
       <motion.div
         variants={fadeUp}
         className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6"
@@ -203,11 +209,32 @@ const SellerDashboard = () => {
         </motion.button>
       </motion.div>
 
-      {/* Main Grid - Stats and Feed */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column - Summary Cards */}
         <motion.div variants={fadeUp} className="lg:col-span-1 space-y-5">
-          {/* Total Products */}
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200/60 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-green-700 mb-1">
+                  Total Sales
+                </p>
+                <p className="text-sm text-green-600">From delivered orders</p>
+              </div>
+              <motion.div
+                animate={{ y: [0, -4, 0] }}
+                transition={{ duration: 2.5, repeat: Infinity }}
+              >
+                <TrendingUp className="text-green-700" size={24} />
+              </motion.div>
+            </div>
+            <p className="text-4xl font-serif font-bold text-green-900 mt-2">
+              Rs. {Number(totalSales).toFixed(0)}
+            </p>
+            <p className="text-xs text-green-600 mt-3 font-medium">
+              {deliveredOrdersCount} delivered order
+              {deliveredOrdersCount !== 1 ? "s" : ""}
+            </p>
+          </div>
+
           <div className="bg-white border border-stone-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-medium text-stone-600">
@@ -223,7 +250,6 @@ const SellerDashboard = () => {
             </p>
           </div>
 
-          {/* Total Categories */}
           <div className="bg-white border border-stone-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-medium text-stone-600">Categories</p>
@@ -237,7 +263,6 @@ const SellerDashboard = () => {
             </p>
           </div>
 
-          {/* Total Orders */}
           <div className="bg-white border border-stone-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-medium text-stone-600">Total Orders</p>
@@ -250,88 +275,165 @@ const SellerDashboard = () => {
           </div>
         </motion.div>
 
-        {/* Right Column - Live Activity Feed */}
-        <motion.div
-          variants={fadeUp}
-          className="lg:col-span-2 bg-white border border-stone-200 rounded-2xl shadow-sm"
-        >
-          <div className="border-b border-stone-200 px-6 py-4">
-            <h2 className="font-semibold text-stone-900 text-lg">
-              Recent Activity
-            </h2>
-            <p className="text-xs text-stone-500 mt-1">
-              Latest updates from your store
-            </p>
+        <motion.div variants={fadeUp} className="lg:col-span-2 space-y-5">
+          <div className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="border-b border-stone-200 px-6 py-4 flex items-center gap-2">
+              <Bell size={18} className="text-blue-700" />
+              <div>
+                <h2 className="font-semibold text-stone-900 text-lg">
+                  Order Updates
+                </h2>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Status notifications from confirmed orders
+                </p>
+              </div>
+            </div>
+
+            <div className="divide-y divide-stone-100 max-h-64 overflow-y-auto">
+              <AnimatePresence>
+                {messages.length > 0 ? (
+                  messages.slice(0, 8).map((msg, idx) => {
+                    const statusCfg = getStatusConfig(msg.status);
+                    const StatusIcon =
+                      msg.status === "delivered"
+                        ? CheckCircle2
+                        : msg.status === "shipped"
+                          ? Truck
+                          : FileText;
+
+                    const statusMessages = {
+                      confirmed: `Order confirmed from ${msg.customer}`,
+                      shipped: `Order shipped to ${msg.customer}`,
+                      delivered: `Order delivered to ${msg.customer} ✓`,
+                    };
+
+                    return (
+                      <motion.div
+                        key={msg.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.05 }}
+                        className={`p-4 hover:bg-${statusCfg.color}-50 transition-colors border-l-4 border-${statusCfg.color}-400`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div
+                            className={`flex-shrink-0 p-2 rounded-lg bg-${statusCfg.color}-50 text-${statusCfg.color}-600`}
+                          >
+                            <StatusIcon size={16} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-stone-900">
+                              {statusMessages[msg.status]}
+                            </p>
+                            <div className="flex items-center gap-2 mt-2">
+                              <span
+                                className={`text-[10px] font-bold px-2 py-1 rounded-full bg-${statusCfg.color}-50 text-${statusCfg.color}-700`}
+                              >
+                                {statusCfg.label}
+                              </span>
+                              <p className="text-[11px] text-stone-400">
+                                {msg.createdAt
+                                  ? new Intl.DateTimeFormat("en-US", {
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    }).format(new Date(msg.createdAt))
+                                  : "Just now"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                ) : (
+                  <div className="p-8 text-center text-stone-500">
+                    <p className="text-sm">No updates yet</p>
+                  </div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
-          <div className="divide-y divide-stone-100 max-h-96 overflow-y-auto">
-            <AnimatePresence>
-              {orders.length > 0 ? (
-                orders.slice(0, 8).map((order, idx) => {
-                  const customer =
-                    order.customer ||
-                    order.shippingAddress?.fullName ||
-                    "Guest";
-                  const itemsList = order.orderItems || order.items || [];
-                  const totalAmount = itemsList.reduce(
-                    (sum, item) => sum + item.price * item.quantity,
-                    0,
-                  );
+          <div className="bg-white border border-stone-200 rounded-2xl shadow-sm">
+            <div className="border-b border-stone-200 px-6 py-4">
+              <h2 className="font-semibold text-stone-900 text-lg">
+                Recent Activity
+              </h2>
+              <p className="text-xs text-stone-500 mt-1">
+                Latest updates from your store
+              </p>
+            </div>
 
-                  return (
-                    <motion.div
-                      key={order._id || order.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      className="p-4 hover:bg-stone-50 transition-colors"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div
-                          className={`flex-shrink-0 w-2 h-2 rounded-full mt-1.5 ${
-                            order.status === "delivered"
-                              ? "bg-green-500"
-                              : order.status === "cancelled"
-                                ? "bg-red-500"
-                                : "bg-amber-500"
-                          }`}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-stone-900 truncate">
-                            {customer} placed an order
-                          </p>
-                          <p className="text-xs text-stone-500 mt-1">
-                            Rs. {Number(totalAmount).toFixed(2)} •{" "}
-                            <span className="capitalize">{order.status}</span>
-                          </p>
-                          <p className="text-[11px] text-stone-400 mt-1">
-                            {order.createdAt
-                              ? new Intl.DateTimeFormat("en-US", {
-                                  month: "short",
-                                  day: "numeric",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                }).format(new Date(order.createdAt))
-                              : "Just now"}
-                          </p>
+            <div className="divide-y divide-stone-100 max-h-96 overflow-y-auto">
+              <AnimatePresence>
+                {orders.length > 0 ? (
+                  orders.slice(0, 8).map((order, idx) => {
+                    const customer =
+                      order.buyer?.name ||
+                      order.customer ||
+                      order.shippingAddress?.fullName ||
+                      "Guest";
+                    const itemsList = order.orderItems || order.items || [];
+                    const totalAmount = itemsList.reduce(
+                      (sum, item) => sum + item.price * item.quantity,
+                      0,
+                    );
+
+                    return (
+                      <motion.div
+                        key={order._id || order.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.05 }}
+                        className="p-4 hover:bg-stone-50 transition-colors"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div
+                            className={`flex-shrink-0 w-2 h-2 rounded-full mt-1.5 ${
+                              order.status === "delivered"
+                                ? "bg-green-500"
+                                : order.status === "cancelled"
+                                  ? "bg-red-500"
+                                  : "bg-amber-500"
+                            }`}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-stone-900 truncate">
+                              {customer} placed an order
+                            </p>
+                            <p className="text-xs text-stone-500 mt-1">
+                              Rs. {Number(totalAmount).toFixed(2)} •{" "}
+                              <span className="capitalize">{order.status}</span>
+                            </p>
+                            <p className="text-[11px] text-stone-400 mt-1">
+                              {order.createdAt
+                                ? new Intl.DateTimeFormat("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  }).format(new Date(order.createdAt))
+                                : "Just now"}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  );
-                })
-              ) : (
-                <div className="p-8 text-center text-stone-500">
-                  <p className="text-sm">No orders yet. Keep promoting!</p>
-                </div>
-              )}
-            </AnimatePresence>
+                      </motion.div>
+                    );
+                  })
+                ) : (
+                  <div className="p-8 text-center text-stone-500">
+                    <p className="text-sm">No orders yet. Keep promoting!</p>
+                  </div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </motion.div>
       </div>
 
-      {/* Products, Categories, Orders Compact Lists */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Products List */}
         <motion.div
           variants={fadeUp}
           className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden"
@@ -394,14 +496,13 @@ const SellerDashboard = () => {
           </div>
           <motion.button
             whileHover={{ backgroundColor: "rgb(249 250 251)" }}
-            onClick={() => navigate("/all-products")}
+            onClick={() => navigate("/product-list")}
             className="w-full px-6 py-3 text-sm font-medium text-green-700 border-t border-stone-200 hover:bg-stone-50 transition-colors"
           >
             View all products →
           </motion.button>
         </motion.div>
 
-        {/* Categories List */}
         <motion.div
           variants={fadeUp}
           className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden"
@@ -455,14 +556,13 @@ const SellerDashboard = () => {
           </div>
           <motion.button
             whileHover={{ backgroundColor: "rgb(249 250 251)" }}
-            onClick={() => navigate("/all-categories")}
+            onClick={() => navigate("/category-list")}
             className="w-full px-6 py-3 text-sm font-medium text-blue-700 border-t border-stone-200 hover:bg-stone-50 transition-colors"
           >
             View all categories →
           </motion.button>
         </motion.div>
 
-        {/* Orders List */}
         <motion.div
           variants={fadeUp}
           className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden"
@@ -480,7 +580,10 @@ const SellerDashboard = () => {
             {orders.length > 0 ? (
               orders.slice(0, 6).map((order, idx) => {
                 const customer =
-                  order.customer || order.shippingAddress?.fullName || "Guest";
+                  order.buyer?.name ||
+                  order.customer ||
+                  order.shippingAddress?.fullName ||
+                  "Guest";
                 const itemsList = order.orderItems || order.items || [];
                 const totalAmount = itemsList.reduce(
                   (sum, item) => sum + item.price * item.quantity,
@@ -534,7 +637,7 @@ const SellerDashboard = () => {
           </div>
           <motion.button
             whileHover={{ backgroundColor: "rgb(249 250 251)" }}
-            onClick={() => navigate("/seller/orders")}
+            onClick={() => navigate("/order-list")}
             className="w-full px-6 py-3 text-sm font-medium text-amber-700 border-t border-stone-200 hover:bg-stone-50 transition-colors"
           >
             View all orders →
