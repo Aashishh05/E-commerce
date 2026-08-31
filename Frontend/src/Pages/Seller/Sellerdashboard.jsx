@@ -61,7 +61,7 @@ const SellerDashboard = () => {
 
   const fetchProducts = useCallback(async () => {
     try {
-      const res = await API.get("/api/product/getall");
+      const res = await API.get("/api/product/my-products");
       setProducts(Array.isArray(res.data.data) ? res.data.data : []);
     } catch (err) {
       console.error("Error fetching products:", err);
@@ -71,7 +71,7 @@ const SellerDashboard = () => {
 
   const fetchCategories = useCallback(async () => {
     try {
-      const res = await API.get("/api/category/getall");
+      const res = await API.get("/api/category/my-categories");
       setCategories(Array.isArray(res.data.data) ? res.data.data : []);
     } catch (err) {
       console.error("Error fetching categories:", err);

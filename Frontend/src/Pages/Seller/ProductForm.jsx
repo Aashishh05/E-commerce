@@ -97,7 +97,7 @@ const ProductForm = () => {
   const fetchCategories = async () => {
     setLoadingCategories(true);
     try {
-      const res = await API.get("/api/category/getall");
+      const res = await API.get("/api/category/my-categories");
       setCategories(res.data.data || []);
     } catch {
       toast.error("Failed to load categories");
