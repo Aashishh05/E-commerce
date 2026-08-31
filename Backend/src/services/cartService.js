@@ -84,12 +84,12 @@ class CartService {
   async getCart(user) {
     this.checkBuyer(user);
 
-    const catchKey = `cart${user._id}`;
+    const cacheKey = `cart:${user._id}`;
 
-    const catchedCart = await redisClient.get(catchKey);
+    const cachedCart = await redisClient.get(cacheKey);
 
-    if (catchedCart) {
-      return JSON.parse(catchedCart);
+    if (cachedCart) {
+      return JSON.parse(cachedCart);
     }
 
     let cart = await cartRepository.findCartByUserWithProducts(user._id);
@@ -98,7 +98,7 @@ class CartService {
       cart = await cartRepository.createEmptyCart(user._id);
     }
 
-    await redisClient.setEx(catchKey, JSON.stringify(cart), { EX: 300 });
+    await redisClient.setEx(cacheKey, 300, JSON.stringify(cart));
 
     return cart;
   }
