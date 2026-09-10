@@ -1038,7 +1038,7 @@ const Homepage = () => {
               </div>
             </div>
           </motion.section>
-        )}
+        ) : null}
       </AnimatePresence>
 
       <section className="py-24 bg-white relative overflow-hidden">
