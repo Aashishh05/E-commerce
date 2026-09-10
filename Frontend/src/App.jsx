@@ -35,6 +35,8 @@ import CheckoutPage from "./Pages/Buyer/Checkoutpage";
 import Homepage from "./Pages/Buyer/Homepage";
 import MyOrders from "./Pages/Buyer/MyOrders";
 import WishlistPage from "./Pages/Buyer/WishlistPage";
+import AllProductsPage from "./Pages/Buyer/AllProductsPage";
+import MarketplacePage from "./Pages/Buyer/MarketplacePage";
 import Order from "./Pages/Seller/Order";
 import ProductDetails from "./Components/Seller/ProductDetails";
 
@@ -51,6 +53,8 @@ const App = () => {
         </Route>
 
         <Route index element={<Homepage />} />
+        <Route path="/all-products" element={<AllProductsPage />} />
+        <Route path="/marketplace" element={<MarketplacePage />} />
         <Route path="/productdetails/:id" element={<ProductDetails />} />
 
         <Route element={<ProtectedRoutes />}>
