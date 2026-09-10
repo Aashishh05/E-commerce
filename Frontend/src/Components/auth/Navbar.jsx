@@ -17,6 +17,7 @@ import {
   Shield,
   AlertCircle,
   LoaderCircle,
+  Package,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -241,6 +242,17 @@ const Navbar = () => {
             </motion.a>
           )}
 
+          {isAuthenticated && user?.role === "buyer" && (
+            <motion.a
+              href="/my-orders"
+              className="p-2.5 text-stone-700 hover:text-green-800 transition-colors group"
+              whileHover={{ y: -2 }}
+              title="My Orders"
+            >
+              <Truck size={20} className="group-hover:scale-110 transition-transform" />
+            </motion.a>
+          )}
+
           {!isAuthenticated ? (
             <motion.a
               onClick={() => nav("/login")}
@@ -309,6 +321,20 @@ const Navbar = () => {
                           <User size={15} className="text-stone-400" />
                           My Profile
                         </motion.button>
+
+                        {user?.role === "buyer" && (
+                          <motion.button
+                            whileHover={{ x: 3 }}
+                            onClick={() => {
+                              nav("/my-orders");
+                              setOpen(false);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 hover:text-green-900 rounded-xl transition-all"
+                          >
+                            <Package size={15} className="text-stone-400" />
+                            My Orders
+                          </motion.button>
+                        )}
 
                         {user?.role === "seller" && (
                           <motion.button
@@ -696,17 +722,30 @@ const Navbar = () => {
                       </div>
                     </div>
                     <div className="p-2 bg-white">
-                      <motion.button
-                        whileHover={{ x: 3 }}
-                        onClick={() => {
-                          nav("/profile");
-                          setIsMobileMenuOpen(false);
-                        }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-stone-700 hover:bg-stone-900 hover:text-green-900 rounded-xl transition-all"
-                      >
-                        <User size={15} className="text-stone-400" />
-                        My Profile
-                      </motion.button>
+                        <motion.button
+                          whileHover={{ x: 3 }}
+                          onClick={() => {
+                            nav("/profile");
+                            setIsMobileMenuOpen(false);
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-stone-700 hover:bg-stone-900 hover:text-green-900 rounded-xl transition-all"
+                        >
+                          <User size={15} className="text-stone-400" />
+                          My Profile
+                        </motion.button>
+                        {user?.role === "buyer" && (
+                          <motion.button
+                            whileHover={{ x: 3 }}
+                            onClick={() => {
+                              nav("/my-orders");
+                              setIsMobileMenuOpen(false);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-stone-700 hover:bg-stone-900 hover:text-green-900 rounded-xl transition-all"
+                          >
+                            <Package size={15} className="text-stone-400" />
+                            My Orders
+                          </motion.button>
+                        )}
                       <div className="my-1.5 border-t border-stone-100" />
                       <motion.button
                         whileHover={{ x: 3 }}

@@ -525,7 +525,7 @@ const Order = () => {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => nav("/orders")}
+                  onClick={() => nav("/my-orders")}
                   className="w-full py-3 bg-green-800 text-white font-bold rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2"
                 >
                   View All Orders
