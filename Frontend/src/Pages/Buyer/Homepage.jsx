@@ -899,16 +899,10 @@ const Homepage = () => {
         </div>
       </section>
 
-      <AnimatePresence mode="wait">
-        {!isAuthenticated ? (
-          <motion.section
-            key="auth-section"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="py-24 bg-gradient-to-br from-green-900 via-green-800 to-emerald-900 relative overflow-hidden"
-          >
+      {!isAuthenticated && (
+        <section
+          className="py-24 bg-gradient-to-br from-green-900 via-green-800 to-emerald-900 relative overflow-hidden"
+        >
             <motion.div
               className="absolute top-10 right-10 w-96 h-96 bg-green-400/8 rounded-full blur-3xl"
               animate={{ scale: [1, 1.15, 1], x: [0, 30, 0] }}
@@ -1037,9 +1031,8 @@ const Homepage = () => {
                 </motion.div>
               </div>
             </div>
-          </motion.section>
-        ) : null}
-      </AnimatePresence>
+          </section>
+      )}
 
       <section className="py-24 bg-white relative overflow-hidden">
         <div
