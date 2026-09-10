@@ -14,9 +14,7 @@ import {
   ArrowRight,
   Sparkles,
   Zap,
-  Star,
   Users,
-  Compass,
   TrendingUp,
   Shield,
   Globe,
@@ -248,41 +246,6 @@ const Homepage = () => {
     setProductsError(null);
     fetchProducts();
   };
-
-  const featuredVendors = [
-    {
-      name: "Aura Botanicals",
-      type: "Official Store",
-      rating: 4.9,
-      productsCount: 65,
-      logo: "🌿",
-      bannerImage:
-        "https://images.unsplash.com/photo-1559056199-641a0ac8b3f4?w=400&h=200&fit=crop",
-      description: "100% natural botanical skincare & self-care elixirs.",
-    },
-    {
-      name: "Linen & Loom",
-      type: "Local Artisan",
-      rating: 4.8,
-      productsCount: 42,
-      logo: "🧵",
-      bannerImage:
-        "https://images.unsplash.com/photo-1544441893-675973e31985?w=400&h=200&fit=crop",
-      description:
-        "Slow-fashion garments spun from pure, bio-degradable flax fibers.",
-    },
-    {
-      name: "Earthy Pots Co.",
-      type: "Verified Studio",
-      rating: 4.7,
-      productsCount: 29,
-      logo: "🏺",
-      bannerImage:
-        "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&h=200&fit=crop",
-      description:
-        "Stoneware ceramics handcrafted in wood-fired mountain kilns.",
-    },
-  ];
 
   const stats = [
     {
@@ -927,113 +890,6 @@ const Homepage = () => {
               <ChevronRight size={18} />
             </MagneticButton>
           </RevealText>
-        </div>
-      </section>
-
-      <section className="py-20 bg-stone-50 border-t border-b border-stone-200">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-16 gap-4">
-            <RevealText>
-              <div className="flex items-center gap-2 mb-3">
-                <Users className="text-green-800" size={20} />
-                <span className="text-xs font-extrabold uppercase tracking-widest text-green-800">
-                  Meet the Producers
-                </span>
-              </div>
-              <h2 className="font-serif text-4xl md:text-5xl font-bold text-stone-900">
-                Featured Shops
-              </h2>
-            </RevealText>
-            <RevealText delay={0.1}>
-              <a
-                href="#all-vendors"
-                className="text-green-800 hover:text-green-950 font-semibold flex items-center gap-1 group"
-              >
-                View All 500+ Shops
-                <motion.span
-                  className="inline-block"
-                  animate={{ x: [0, 4, 0] }}
-                  transition={{ repeat: Infinity, duration: 1.6 }}
-                >
-                  <ArrowRight size={16} />
-                </motion.span>
-              </a>
-            </RevealText>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {featuredVendors.map((vendor, i) => (
-              <motion.div
-                key={vendor?.name || i}
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-60px" }}
-                transition={{
-                  duration: 0.4,
-                  delay: i * 0.06,
-                  ease: [0.25, 0.46, 0.45, 0.94],
-                }}
-                whileHover={{
-                  y: -8,
-                  boxShadow: "0 24px 48px rgba(0,0,0,0.12)",
-                  transition: { duration: 0.15 },
-                }}
-                className="bg-white rounded-2xl border border-stone-200 overflow-hidden flex flex-col h-full shadow-md hover:shadow-xl transition-shadow duration-300"
-              >
-                <div className="h-40 relative bg-stone-100 overflow-hidden">
-                  <img
-                    src={vendor?.bannerImage}
-                    alt={vendor?.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    onError={(e) => {
-                      e.target.src = defaultCategoryImage;
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                  <div className="absolute -bottom-6 left-6 w-14 h-14 rounded-2xl bg-white border-2 border-stone-200 shadow-lg flex items-center justify-center text-2xl">
-                    {vendor?.logo}
-                  </div>
-                </div>
-                <div className="p-6 pt-10 flex-grow flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-start justify-between mb-3">
-                      <h3 className="font-serif text-xl font-bold text-stone-900 cursor-pointer">
-                        {vendor?.name}
-                      </h3>
-                      <span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-green-900 bg-green-50 border border-green-200 rounded-full">
-                        {vendor?.type}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 mb-4 text-sm text-stone-600">
-                      <Star
-                        size={14}
-                        className="fill-amber-500 text-amber-500"
-                      />
-                      <span className="font-bold text-stone-800">
-                        {vendor?.rating}
-                      </span>
-                      <span>•</span>
-                      <span>{vendor?.productsCount} products</span>
-                    </div>
-                    <p className="text-sm text-stone-600 leading-relaxed mb-6">
-                      {vendor?.description}
-                    </p>
-                  </div>
-                  <motion.button
-                    whileHover={{
-                      backgroundColor: "#166534",
-                      color: "#f0fdf4",
-                      borderColor: "#166534",
-                    }}
-                    className="w-full py-3 border border-stone-300 rounded-lg text-sm font-bold text-stone-700 transition-colors flex items-center justify-center gap-2 cursor-pointer hover:shadow-md"
-                  >
-                    <Compass size={16} />
-                    <span>Visit Shop Portal</span>
-                  </motion.button>
-                </div>
-              </motion.div>
-            ))}
-          </div>
         </div>
       </section>
 
