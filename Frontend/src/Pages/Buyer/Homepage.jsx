@@ -368,7 +368,7 @@ const Homepage = () => {
   };
 
   return (
-    <div className="bg-stone-50 font-sans overflow-x-hidden min-h-screen text-stone-800">
+    <div className="bg-stone-50 font-sans overflow-x-clip min-h-screen text-stone-800">
       <Navbar />
 
       <section className="relative w-full h-screen overflow-hidden">
