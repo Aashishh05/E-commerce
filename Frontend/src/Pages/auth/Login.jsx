@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { TbMail, TbLock, TbEye, TbEyeOff } from "react-icons/tb";
 import { FcGoogle } from "react-icons/fc";
 import * as Yup from "yup";
-import toast, { Toaster } from "react-hot-toast"; // Imported toast and Toaster component
+import toast from "react-hot-toast";
 import API from "../../utils/axios";
 import { useDispatch } from "react-redux";
 import { login } from "../../Redux/authSlice";
@@ -137,8 +137,6 @@ const Login = () => {
       animate="visible"
       variants={containerVariants}
     >
-      <Toaster position="top-right" reverseOrder={false} />
-
       <motion.div className="mb-6" variants={itemVariants}>
         <p className="uppercase tracking-[0.35em] text-[9px] text-[#A4B494] font-semibold">
           Welcome Back
