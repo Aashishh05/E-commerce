@@ -18,9 +18,7 @@ import {
   TrendingUp,
   Shield,
   Globe,
-  LogOut,
   Store,
-  User,
   AlertCircle,
   LoaderCircle,
 } from "lucide-react";
@@ -29,7 +27,6 @@ import Footer from "../../Components/auth/Footer.jsx";
 import ProductCard from "../../Components/auth/ProductCard.jsx";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { logout } from "../../Redux/authSlice.js";
 import API from "../../utils/axios.js";
 
 const RevealText = ({ children, delay = 0, className = "" }) => (
@@ -1042,136 +1039,6 @@ const Homepage = () => {
               </div>
             </div>
           </motion.section>
-        ) : (
-          <motion.section
-            key="user-section"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="py-24 bg-gradient-to-br from-green-900 via-green-800 to-emerald-900 relative overflow-hidden"
-          >
-            <motion.div
-              className="absolute top-10 right-10 w-96 h-96 bg-green-400/8 rounded-full blur-3xl"
-              animate={{ scale: [1, 1.15, 1], x: [0, 30, 0] }}
-              transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <motion.div
-              className="absolute bottom-0 left-20 w-80 h-80 bg-green-300/8 rounded-full blur-3xl"
-              animate={{ scale: [1, 1.2, 1], y: [0, -30, 0] }}
-              transition={{
-                duration: 8,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 2,
-              }}
-            />
-
-            <div className="relative max-w-6xl mx-auto px-6">
-              <motion.div
-                initial="hidden"
-                animate="visible"
-                variants={{
-                  visible: { transition: { staggerChildren: 0.08 } },
-                }}
-                className="flex flex-col lg:flex-row items-center justify-between gap-12"
-              >
-                <div className="text-white text-center lg:text-left">
-                  <motion.div
-                    variants={slideUp}
-                    className="flex items-center gap-4 mb-6 justify-center lg:justify-start"
-                  >
-                    <div className="w-20 h-20 rounded-full bg-white/20 border-2 border-white/40 text-white font-bold flex items-center justify-center text-3xl font-serif">
-                      {user?.name?.charAt(0).toUpperCase() || "U"}
-                    </div>
-                    <div className="text-left">
-                      <p className="text-green-300 text-xs uppercase tracking-widest font-semibold">
-                        Welcome back
-                      </p>
-                      <h2 className="font-serif text-4xl font-bold">
-                        {user?.name || "User"}
-                      </h2>
-                    </div>
-                  </motion.div>
-                  <motion.p
-                    variants={slideUp}
-                    className="text-green-100/80 text-base mb-3"
-                  >
-                    Signed in as{" "}
-                    <span className="font-semibold text-white">
-                      {user?.email || "user@example.com"}
-                    </span>
-                  </motion.p>
-                  <motion.span
-                    variants={slideUp}
-                    className="inline-block px-4 py-2 bg-white/15 border border-white/30 rounded-full text-xs text-green-200 capitalize font-semibold tracking-wide"
-                  >
-                    {user?.role || "user"} Account
-                  </motion.span>
-                </div>
-
-                <motion.div
-                  variants={slideUp}
-                  className="flex flex-col sm:flex-row gap-4 flex-wrap justify-center w-full lg:w-auto"
-                >
-                  <motion.button
-                    whileHover={{
-                      scale: 1.02,
-                      backgroundColor: "#f0fdf4",
-                      color: "#14532d",
-                    }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => nav("/profile")}
-                    className="flex items-center gap-2.5 px-8 py-4 bg-white text-green-900 font-bold rounded-full shadow-lg transition-all cursor-pointer text-base"
-                  >
-                    <User size={18} />
-                    My Profile
-                  </motion.button>
-
-                  {user?.role === "seller" && (
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => nav("/seller-dashboard")}
-                      className="flex items-center gap-2.5 px-8 py-4 bg-amber-500 hover:bg-amber-400 text-white font-bold rounded-full shadow-lg transition-all cursor-pointer text-base"
-                    >
-                      <Store size={18} />
-                      Seller Dashboard
-                    </motion.button>
-                  )}
-
-                  {user?.role === "admin" && (
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => nav("/admin-dashboard")}
-                      className="flex items-center gap-2.5 px-8 py-4 bg-amber-500 hover:bg-amber-400 text-white font-bold rounded-full shadow-lg transition-all cursor-pointer text-base"
-                    >
-                      <Zap size={18} />
-                      Admin Dashboard
-                    </motion.button>
-                  )}
-
-                  <motion.button
-                    whileHover={{
-                      scale: 1.02,
-                      backgroundColor: "rgba(239,68,68,0.15)",
-                    }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => {
-                      dispatch(logout());
-                      nav("/");
-                    }}
-                    className="flex items-center gap-2.5 px-8 py-4 bg-white/15 hover:bg-red-500/10 border border-white/30 hover:border-red-400/50 text-white hover:text-red-300 font-bold rounded-full transition-all cursor-pointer text-base"
-                  >
-                    <LogOut size={18} />
-                    Sign Out
-                  </motion.button>
-                </motion.div>
-              </motion.div>
-            </div>
-          </motion.section>
-        )}
       </AnimatePresence>
 
       <section className="py-24 bg-white relative overflow-hidden">
