@@ -3,7 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_BASE_URL || "https://e-commerce-1-qwfc.onrender.com",
+  baseURL: import.meta.env.VITE_BASE_URL,
   withCredentials: true,
 });
 
