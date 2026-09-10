@@ -803,7 +803,11 @@ const Homepage = () => {
                       {cat?.description || "Explore this collection"}
                     </p>
                     <a
-                      href="#"
+                      href={`/all-products?category=${cat?._id}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        nav(`/all-products?category=${cat?._id}`);
+                      }}
                       className="inline-flex items-center gap-2 text-sm font-bold text-white hover:text-green-300 transition-colors"
                     >
                       Shop Collection

@@ -567,8 +567,12 @@ const Navbar = () => {
                             category.map((cat, idx) => (
                               <motion.a
                                 key={cat._id}
-                                href={`#category-${cat.slug}`}
-                                onClick={() => setIsCategoriesOpen(false)}
+                                href={`/all-products?category=${cat._id}`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  nav(`/all-products?category=${cat._id}`);
+                                  setIsCategoriesOpen(false);
+                                }}
                                 initial={{ opacity: 0, x: -10 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: idx * 0.05 }}
@@ -681,8 +685,12 @@ const Navbar = () => {
                   {category.map((cat) => (
                     <motion.a
                       key={cat._id}
-                      href={`#category-${cat.slug}`}
-                      onClick={() => setIsMobileMenuOpen(false)}
+                      href={`/all-products?category=${cat._id}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        nav(`/all-products?category=${cat._id}`);
+                        setIsMobileMenuOpen(false);
+                      }}
                       className="px-3 py-2.5 text-sm bg-stone-50 rounded-lg"
                     >
                       {cat.name}
