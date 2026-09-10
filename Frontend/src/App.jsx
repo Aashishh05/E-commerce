@@ -34,6 +34,7 @@ import CartPage from "./Pages/Buyer/CartPage";
 import CheckoutPage from "./Pages/Buyer/Checkoutpage";
 import Homepage from "./Pages/Buyer/Homepage";
 import MyOrders from "./Pages/Buyer/MyOrders";
+import WishlistPage from "./Pages/Buyer/WishlistPage";
 import Order from "./Pages/Seller/Order";
 import ProductDetails from "./Components/Seller/ProductDetails";
 
@@ -56,6 +57,7 @@ const App = () => {
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/my-orders" element={<MyOrders />} />
+          <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/order" element={<Order />} />
           <Route path="/payment" element={<Payment />} />
           <Route path="/success" element={<Success />} />

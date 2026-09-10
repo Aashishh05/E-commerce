@@ -25,6 +25,7 @@ import { logout } from "../../Redux/authSlice";
 import { clearStorage } from "../../Localstorage/storage";
 import API from "../../utils/axios";
 import { clearCart, setCart } from "../../Redux/cartSlice";
+import { selectWishlistCount, setWishlistIds, clearWishlist } from "../../Redux/wishlistSlice";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -37,6 +38,7 @@ const Navbar = () => {
   const [error, setError] = useState(null);
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   const cartItems = useSelector((state) => state.cart.items);
+  const wishlistCount = useSelector(selectWishlistCount);
   const nav = useNavigate();
   const dispatch = useDispatch();
 
@@ -63,6 +65,7 @@ const Navbar = () => {
 
   const handleLogout = () => {
     dispatch(clearCart());
+    dispatch(clearWishlist());
     dispatch(logout());
     clearStorage();
     setIsMobileMenuOpen(false);
@@ -79,9 +82,21 @@ const Navbar = () => {
     }
   };
 
+  const fetchWishlistIds = async () => {
+    try {
+      const res = await API.get("/api/wishlist/ids");
+      dispatch(setWishlistIds(res.data.data || []));
+    } catch (error) {
+      if (!error._isHandled) {
+        console.error("Failed to fetch wishlist:", error);
+      }
+    }
+  };
+
   useEffect(() => {
     if (isAuthenticated && user) {
       fetchCart();
+      fetchWishlistIds();
     }
   }, [isAuthenticated, user]);
 
@@ -206,19 +221,21 @@ const Navbar = () => {
         >
           {isAuthenticated && (
             <motion.a
-              href="#wishlist"
-              className="relative p-2.5 text-stone-700 hover:text-green-800 transition-colors group"
+              href="/wishlist"
+              className="relative p-2.5 text-stone-700 hover:text-red-500 transition-colors group"
               whileHover={{ y: -2 }}
             >
               <div className="relative">
                 <Heart size={20} className="group-hover:fill-red-400" />
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -top-1 -right-1 w-4.5 h-4.5 bg-gradient-to-br from-red-500 to-red-600 text-[10px] text-white font-bold rounded-full flex items-center justify-center shadow-md"
-                >
-                  3
-                </motion.span>
+                {wishlistCount > 0 && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-1 -right-1 w-4.5 h-4.5 bg-gradient-to-br from-red-500 to-red-600 text-[10px] text-white font-bold rounded-full flex items-center justify-center shadow-md"
+                  >
+                    {wishlistCount}
+                  </motion.span>
+                )}
               </div>
             </motion.a>
           )}
@@ -336,6 +353,20 @@ const Navbar = () => {
                           </motion.button>
                         )}
 
+                        {user?.role === "buyer" && (
+                          <motion.button
+                            whileHover={{ x: 3 }}
+                            onClick={() => {
+                              nav("/wishlist");
+                              setOpen(false);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 hover:text-green-900 rounded-xl transition-all"
+                          >
+                            <Heart size={15} className="text-stone-400" />
+                            My Wishlist
+                          </motion.button>
+                        )}
+
                         {user?.role === "seller" && (
                           <motion.button
                             whileHover={{ x: 3 }}
@@ -370,6 +401,7 @@ const Navbar = () => {
                           whileHover={{ x: 3 }}
                           onClick={() => {
                             dispatch(clearCart());
+                            dispatch(clearWishlist());
                             dispatch(logout());
                             setOpen(false);
                             nav("/");
@@ -744,6 +776,19 @@ const Navbar = () => {
                           >
                             <Package size={15} className="text-stone-400" />
                             My Orders
+                          </motion.button>
+                        )}
+                        {user?.role === "buyer" && (
+                          <motion.button
+                            whileHover={{ x: 3 }}
+                            onClick={() => {
+                              nav("/wishlist");
+                              setIsMobileMenuOpen(false);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-stone-700 hover:bg-stone-900 hover:text-green-900 rounded-xl transition-all"
+                          >
+                            <Heart size={15} className="text-stone-400" />
+                            My Wishlist
                           </motion.button>
                         )}
                       <div className="my-1.5 border-t border-stone-100" />

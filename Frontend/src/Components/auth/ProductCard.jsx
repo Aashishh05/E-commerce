@@ -13,12 +13,14 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import API from "../../utils/axios";
 import { setCart } from "../../Redux/cartSlice";
+import { toggleWishlistId } from "../../Redux/wishlistSlice";
 
 const ProductCard = ({ product }) => {
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [showAddedMessage, setShowAddedMessage] = useState(false);
   const { isAuthenticated } = useSelector((state) => state.auth);
+  const wishlistIds = useSelector((state) => state.wishlist.ids);
+  const isWishlisted = wishlistIds.includes(product._id);
   const dispatch = useDispatch();
   const nav = useNavigate();
 
@@ -131,9 +133,19 @@ const ProductCard = ({ product }) => {
       </div>
 
       <motion.button
-        onClick={(e) => {
+        onClick={async (e) => {
           e.stopPropagation();
-          setIsWishlisted(!isWishlisted);
+          if (!isAuthenticated) {
+            toast.error("Please login first");
+            return;
+          }
+          try {
+            dispatch(toggleWishlistId(product._id));
+            await API.post("/api/wishlist/toggle", { productId: product._id });
+          } catch {
+            dispatch(toggleWishlistId(product._id));
+            toast.error("Failed to update wishlist");
+          }
         }}
         className="absolute top-3 right-3 z-20 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md border border-stone-200/80 flex items-center justify-center text-stone-600 hover:text-red-500 hover:bg-white shadow-lg transition-all duration-300"
         whileHover={{ scale: 1.15, rotate: 10 }}
