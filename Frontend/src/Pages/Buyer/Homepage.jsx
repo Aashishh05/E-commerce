@@ -26,7 +26,7 @@ import Navbar from "../../Components/auth/Navbar.jsx";
 import Footer from "../../Components/auth/Footer.jsx";
 import ProductCard from "../../Components/auth/ProductCard.jsx";
 import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import API from "../../utils/axios.js";
 
 const RevealText = ({ children, delay = 0, className = "" }) => (
@@ -142,7 +142,6 @@ const Homepage = () => {
   const [formEmail, setFormEmail] = useState("");
   const [productCategoryTab, setProductCategoryTab] = useState("all");
   const nav = useNavigate();
-  const dispatch = useDispatch();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
 
   // Products: own loading/error state, scoped to the product sections only
@@ -1039,6 +1038,7 @@ const Homepage = () => {
               </div>
             </div>
           </motion.section>
+        )}
       </AnimatePresence>
 
       <section className="py-24 bg-white relative overflow-hidden">
