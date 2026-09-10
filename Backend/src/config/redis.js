@@ -1,36 +1,33 @@
 import redis from "redis";
 
-const rawClient = redis.createClient({
-  url: process.env.REDIS_URL || undefined,
-  socket: process.env.REDIS_URL
-    ? undefined
-    : {
-        host: "localhost",
-        port: 6379,
-      },
-});
-
-rawClient.on("error", (err) => {
-  console.log("Redis Client Error", err.message);
-});
-
-rawClient.on("connect", () => {
-  console.log("Connected to Redis");
-});
-
+let rawClient = null;
 let isConnected = false;
 
-const connectRedis = async () => {
-  try {
-    await rawClient.connect();
-    isConnected = true;
-  } catch (err) {
-    console.log("Redis unavailable, continuing without cache:", err.message);
-    isConnected = false;
-  }
-};
+if (process.env.REDIS_URL) {
+  rawClient = redis.createClient({
+    url: process.env.REDIS_URL,
+  });
 
-connectRedis();
+  rawClient.on("error", (err) => {
+    console.log("Redis Client Error", err.message);
+  });
+
+  rawClient.on("connect", () => {
+    console.log("Connected to Redis");
+  });
+
+  const connectRedis = async () => {
+    try {
+      await rawClient.connect();
+      isConnected = true;
+    } catch (err) {
+      console.log("Redis unavailable, continuing without cache:", err.message);
+      isConnected = false;
+    }
+  };
+
+  connectRedis();
+}
 
 const safeGet = async (key) => {
   if (!isConnected) return null;
